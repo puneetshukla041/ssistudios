@@ -366,8 +366,8 @@ export default function App() {
             <Toaster position="top-center" reverseOrder={false} />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-zinc-800">Certificates Library</h2>
-                    <p className="text-sm text-zinc-500 mt-1">Create and manage professional HR certificates for employees with ready-to-use templates.</p>
+                    <h2 className="text-2xl font-bold text-zinc-800">Template Library</h2>
+                    <p className="text-sm text-zinc-500 mt-1">Browse, select, and start creating your next project.</p>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
