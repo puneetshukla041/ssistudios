@@ -113,35 +113,35 @@ export default function DashboardPage() {
       <Usernameheader/>
 
       {/* --- Advanced Analytics --- */}
-      <section className="mb-12">
-        <h2 className="text-xl font-semibold mb-6">Advanced Analytics</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard
-            title="Projects Created"
-            value="12"
-            icon={<LayoutGrid size={24} />}
-            color="bg-blue-500"
-          />
-          <MetricCard
-            title="Total Downloads"
-            value="28"
-            icon={<Download size={24} />}
-            color="bg-teal-500"
-          />
-          <MetricCard
-            title="Projects Contributed"
-            value="7"
-            icon={<FolderOpen size={24} />}
-            color="bg-orange-500"
-          />
-          <MetricCard
-            title="Total Uploads"
-            value="15"
-            icon={<Plus size={24} />}
-            color="bg-purple-500"
-          />
-        </div>
-      </section>
+<section className="mb-12">
+  <h2 className="text-xl font-semibold mb-6">Advanced Analytics</h2>
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <MetricCard
+      title="Projects Created"
+      value="0"
+      icon={<Sparkles size={24} className="text-yellow-500" />}
+      color="bg-yellow-100"
+    />
+    <MetricCard
+      title="Total Downloads"
+      value="0"
+      icon={<Download size={24} className="text-blue-500" />}
+      color="bg-blue-100"
+    />
+    <MetricCard
+      title="Projects Contributed"
+      value="0"
+      icon={<FolderOpen size={24} className="text-green-500" />}
+      color="bg-green-100"
+    />
+    <MetricCard
+      title="Total Uploads"
+      value="0"
+      icon={<Plus size={24} className="text-purple-500" />}
+      color="bg-purple-100"
+    />
+  </div>
+</section>
 
       {/* --- Quick Actions --- */}
       <section className="mb-12">
