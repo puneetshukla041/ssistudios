@@ -3,20 +3,12 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import {
-  ThemeProvider,
-  useTheme,
-  CherryBlossomBackground,
-} from "@/contexts/ThemeContext";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ThemeProvider, useTheme, CherryBlossomBackground } from "@/contexts/ThemeContext";
 import { ReactNode, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 // --- Animated Hamburger Icon ---
-type MotionLineProps = React.ComponentPropsWithoutRef<"line"> & {
-  variants?: any;
-  [key: string]: any;
-};
+type MotionLineProps = React.ComponentPropsWithoutRef<"line"> & { variants?: any; [key: string]: any };
 const MotionLine = motion.line as React.FC<MotionLineProps>;
 
 const AnimatedHamburgerIcon = ({
@@ -49,30 +41,9 @@ const AnimatedHamburgerIcon = ({
       initial={false}
       variants={{ open: {}, closed: {} }}
     >
-      <MotionLine
-        x1="4"
-        y1="6"
-        x2="20"
-        y2="6"
-        variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: 45, y: 6 } }}
-        {...commonLineAttributes}
-      />
-      <MotionLine
-        x1="4"
-        y1="12"
-        x2="20"
-        y2="12"
-        variants={{ closed: { opacity: 1 }, open: { opacity: 0 } }}
-        {...commonLineAttributes}
-      />
-      <MotionLine
-        x1="4"
-        y1="18"
-        x2="20"
-        y2="18"
-        variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: -45, y: -6 } }}
-        {...commonLineAttributes}
-      />
+      <MotionLine x1="4" y1="6" x2="20" y2="6" variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: 45, y: 6 } }} {...commonLineAttributes} />
+      <MotionLine x1="4" y1="12" x2="20" y2="12" variants={{ closed: { opacity: 1 }, open: { opacity: 0 } }} {...commonLineAttributes} />
+      <MotionLine x1="4" y1="18" x2="20" y2="18" variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: -45, y: -6 } }} {...commonLineAttributes} />
     </motion.svg>
   );
 };
@@ -114,11 +85,7 @@ function AppLayout({ children }: { children: ReactNode }) {
       <CherryBlossomBackground /> {/* ✅ Render petals globally */}
       {!isLoginPage ? (
         <div className={`flex relative z-10 min-h-screen ${themeBg}`}>
-          <Sidebar
-            forceActive={forceActive}
-            isOpen={isSidebarOpen}
-            toggleSidebar={toggleSidebar}
-          />
+          <Sidebar forceActive={forceActive} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
           <main className="flex-1 overflow-y-auto transition-all duration-300 p-4 lg:p-8 relative">
             <div className="flex items-center justify-between mb-6 lg:hidden">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
@@ -144,27 +111,19 @@ function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
       ) : (
-        <main className="min-h-screen flex flex-col items-center justify-center relative z-10 px-4 bg-white">
-          {children}
-        </main>
+        <main className="min-h-screen flex flex-col items-center justify-center relative z-10 px-4 bg-white">{children}</main>
       )}
     </>
   );
 }
 
 // --- Main Client Layout ---
-export default function ClientRootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function ClientRootLayout({ children }: { children: ReactNode }) {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <ThemeProvider>
-          <AppLayout>{children}</AppLayout>
-        </ThemeProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <ThemeProvider>
+        <AppLayout>{children}</AppLayout>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
