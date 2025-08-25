@@ -3,8 +3,9 @@
 import { Bell, Mail, User, Search } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import clsx from 'clsx'
+import Link from 'next/link'
 
-// A reusable component for icon buttons to keep the code clean and consistent.
+// A reusable component for icon buttons
 const IconWrapper = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <button
     type="button"
@@ -20,7 +21,7 @@ export default function DashboardHeader() {
   const [isExpanded, setIsExpanded] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
 
-  // This effect manages the expand/collapse state with a delay to prevent flickering.
+  // Manage expand/collapse state with delay
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>
     if (isHovered) {
@@ -50,13 +51,11 @@ export default function DashboardHeader() {
           isHovered && 'shadow-[0_8px_24px_rgba(0,0,0,0.4)]'
         )}
         style={{
-          // FIX: Reduced expanded width for a more compact look
           width: isExpanded ? 'clamp(250px, 40vw, 500px)' : 120,
-          // FIX: Decreased padding to reduce height
           padding: '4px',
         }}
       >
-        {/* FIX: Wrapper for all expanded content that fades out together. */}
+        {/* Expanded View */}
         <div
           className={clsx(
             'flex items-center justify-between w-full transition-opacity duration-300',
@@ -91,13 +90,24 @@ export default function DashboardHeader() {
               <Mail size={20} />
             </IconWrapper>
             <div className="w-px h-6 bg-white/20 mx-1" />
-            <IconWrapper label="User Account">
-              <User size={20} />
-            </IconWrapper>
+
+            {/* User Account Icon - Always show green dot */}
+            <Link href="/userprofile" className="relative">
+              {isExpanded ? (
+                <IconWrapper label="User Account">
+                  <User size={20} />
+                </IconWrapper>
+              ) : (
+                <User size={20} className="text-white/80" />
+              )}
+
+              {/* Small green dot with pulse */}
+              <span className="absolute top-0 right-0 block w-2 h-2 bg-green-500 border border-white rounded-full animate-ping-slow" />
+            </Link>
           </div>
         </div>
 
-        {/* Collapsed State View - Fades in when the expanded view fades out. */}
+        {/* Collapsed State View */}
         <div
           className={clsx(
             'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-5 text-white/80 transition-opacity duration-300',
@@ -108,10 +118,12 @@ export default function DashboardHeader() {
           <Search size={20} />
           <Bell size={20} />
           <User size={20} />
+          {/* Green dot for collapsed view */}
+          <span className="absolute top-0 right-0 block w-2 h-2 bg-green-500 border border-white rounded-full animate-ping-slow" />
         </div>
       </header>
 
-      {/* Styles for the animated gradient background */}
+      {/* Animated Gradient Background and pulse animation */}
       <style>{`
         @keyframes gemini-flow {
           0% { background-position: 0% 50%; }
@@ -129,6 +141,15 @@ export default function DashboardHeader() {
           );
           background-size: 400% 400%;
           animation: gemini-flow 15s ease infinite;
+        }
+
+        @keyframes ping-slow {
+          0% { transform: scale(0.8); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.6; }
+          100% { transform: scale(0.8); opacity: 1; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 1.5s infinite ease-in-out;
         }
       `}</style>
     </>
