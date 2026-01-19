@@ -1,22 +1,23 @@
 import { ICertificateClient, SortKey, SortConfig } from './constants';
 
 /**
- * Robust Formatting Algorithm
- * Capitalizes the first letter at the start of the string or after:
- * Spaces, Dots (.), Commas (,), and Brackets ( ( ) ).
- * * Result Examples:
- * "dr (col) manoj" -> "Dr (Col) Manoj"
- * "bareilly,utterpradesh" -> "Bareilly,Utterpradesh"
+ * Robust Formatting Algorithm (Smart Title Case)
+ * * Logic:
+ * 1. Finds the first letter of the string.
+ * 2. Finds any letter following a Space, Dot (.), Comma (,), or Bracket ( ( ) ).
+ * 3. Capitalizes ONLY those letters.
+ * * ✅ Updates:
+ * - Removed .toLowerCase() from the start. This ensures acronyms (e.g., SSI, USA) 
+ * remain uppercase if the user typed them that way.
+ * - Added support for Brackets and Commas as separators.
  */
 export const formatName = (name: string): string => {
     if (!name) return '';
-    return name
-        .toLowerCase() // Start by normalizing the entire string
-        .replace(/(?:^|[\s.,\(\)])\w/g, (match) => match.toUpperCase());
+    return name.replace(/(?:^|[\s.,\(\)])\w/g, (match) => match.toUpperCase());
 };
 
 /**
- * Used for Hospital names to ensure address parts after commas are capitalized.
+ * Used for Hospital names. Uses the same robust logic as names.
  */
 export const toTitleCase = (str: string): string => {
     return formatName(str);
@@ -43,7 +44,7 @@ export const getTodayDoi = (): string => {
     return dateInputToDoi(new Date().toISOString().slice(0, 10));
 };
 
-// Helper for Hospital badges
+// Helper for consistent hospital colors
 export const getHospitalColor = (hospital: string): string => {
     const colors = [
         'bg-sky-100 text-sky-800',

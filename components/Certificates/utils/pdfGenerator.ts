@@ -1,7 +1,9 @@
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb } from "pdf-lib";
 import { ICertificateClient } from "./constants";
-import { formatName, toTitleCase } from "./helpers";
+// Note: We import formatName just in case you want to use it for fallbacks,
+// but the PDF generation main logic will use the raw data to respect manual edits.
+import { formatName } from "./helpers";
 
 interface PdfFileResult {
   filename: string;
@@ -16,9 +18,11 @@ export const generateCertificatePDF = async (
   isBulk: boolean = false
 ): Promise<PdfFileResult | null | void> => { 
 
-  // Format using updated robust logic
-  const fullName = formatName(certData.name || "Unknown Name");
-  const hospitalName = toTitleCase(certData.hospital || "Unknown Hospital");
+  // ✅ MODIFIED: Use the Name and Hospital EXACTLY as they appear in the database.
+  // This ensures if you saved "Dr. (col) Manoj", it prints exactly that.
+  // Fallback to "Unknown" if empty.
+  const fullName = certData.name || "Unknown Name";
+  const hospitalName = certData.hospital || "Unknown Hospital";
   
   if (!isBulk) {
     (setLoadingId as React.Dispatch<React.SetStateAction<string | null>>)(certData._id);
@@ -49,7 +53,7 @@ export const generateCertificatePDF = async (
     const pageWidth = firstPage.getWidth();
     const pageHeight = firstPage.getHeight();
 
-    // --- TEMPLATE 3 LOGIC ---
+    // --- TEMPLATE 3 LOGIC (Fortis / 100+) ---
     if (template === 'certificate3.pdf') {
         const fontSizeLarge = 24;
         const colorSoftCharcoal = rgb(0.25, 0.25, 0.25); 
@@ -65,7 +69,7 @@ export const generateCertificatePDF = async (
         });
 
     } 
-    // --- TEMPLATE 1 & 2 LOGIC ---
+    // --- TEMPLATE 1 & 2 LOGIC (Standard) ---
     else {
         const doiDDMMYYYY = certData.doi || "01-01-2025"; 
         const certificateNo = certData.certificateNo || "NO-ID";
@@ -84,7 +88,7 @@ export const generateCertificatePDF = async (
         // Full Name
         firstPage.drawText(fullName, { x, y: yBase, size: fontSizeLarge, font: soraFont, color: colorBlack });
         
-        // Hospital Name (Now capitalized after commas)
+        // Hospital Name
         firstPage.drawText(hospitalName, { x, y: yBase - 20, size: fontSizeMedium, font: soraSemiBoldFont, color: colorBlack });
         
         if (isV2Template) {
@@ -112,6 +116,7 @@ export const generateCertificatePDF = async (
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
     
+    // Sanitize filename
     const safeName = fullName.replace(/[\\/:*?"<>|]/g, '').trim() || "Unknown";
     const safeHospital = hospitalName.replace(/[\\/:*?"<>|]/g, '').trim() || "Hospital"; 
     
