@@ -1,26 +1,41 @@
-// D:\ssistudios\ssistudios\components\Certificates\utils\helpers.ts
-
 import { ICertificateClient, SortKey, SortConfig } from './constants';
 
-// --- NEW: Name Formatting Algorithm ---
+/**
+ * Robust Formatting Algorithm
+ * Capitalizes the first letter at the start of the string or after:
+ * Spaces, Dots (.), Commas (,), and Brackets ( ( ) ).
+ * * Result Examples:
+ * "dr (col) manoj" -> "Dr (Col) Manoj"
+ * "bareilly,utterpradesh" -> "Bareilly,Utterpradesh"
+ */
 export const formatName = (name: string): string => {
     if (!name) return '';
     return name
-        .toLowerCase() // Normalize to lowercase first
-        .replace(/(?:^|[\s.])\w/g, (match) => match.toUpperCase()); 
-        // Logic: Find character at (Start OR Space OR Dot) AND ensure it is a word char, then uppercase it.
+        .toLowerCase() // Start by normalizing the entire string
+        .replace(/(?:^|[\s.,\(\)])\w/g, (match) => match.toUpperCase());
+};
+
+/**
+ * Used for Hospital names to ensure address parts after commas are capitalized.
+ */
+export const toTitleCase = (str: string): string => {
+    return formatName(str);
 };
 
 // Helper to convert DD-MM-YYYY to YYYY-MM-DD for date input type
 export const doiToDateInput = (doi: string): string => {
     const parts = doi.split('-');
-    return parts.length === 3 ? `${parts[2]}-${parts.length === 3 && parts[1].length === 2 ? parts[1] : '01'}-${parts[0]}` : '';
+    if (parts.length !== 3) return '';
+    const [day, month, year] = parts;
+    return `${year}-${month.length === 2 ? month : '01'}-${day.length === 2 ? day : '01'}`;
 };
 
 // Helper to convert YYYY-MM-DD from date input back to DD-MM-YYYY
 export const dateInputToDoi = (dateInput: string): string => {
     const parts = dateInput.split('-');
-    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+    if (parts.length !== 3) return '';
+    const [year, month, day] = parts;
+    return `${day}-${month}-${year}`;
 };
 
 // Helper to get today's date in DD-MM-YYYY format
@@ -28,7 +43,7 @@ export const getTodayDoi = (): string => {
     return dateInputToDoi(new Date().toISOString().slice(0, 10));
 };
 
-// Helper to generate a consistent, PROFESSIONAL color hash for hospital names (Badges)
+// Helper for Hospital badges
 export const getHospitalColor = (hospital: string): string => {
     const colors = [
         'bg-sky-100 text-sky-800',
@@ -48,10 +63,6 @@ export const getHospitalColor = (hospital: string): string => {
     return colors[index];
 };
 
-/**
- * 💡 NEW HELPER: Defines the required column widths for Excel export.
- * Assumes the order: Certificate No., Name, Hospital, DOI.
- */
 export const getCertificateColumnConfig = () => {
     return [
         { wch: 14 },

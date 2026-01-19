@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ICertificateClient, CertificateTableProps, NotificationType } from '../utils/constants';
-import { sortCertificates, formatName } from '../utils/helpers'; // Ensure formatName is imported
+import { sortCertificates, formatName } from '../utils/helpers'; 
 import { generateCertificatePDF } from '../utils/pdfGenerator';
 
 type GeneratePDFType = (
@@ -40,13 +40,11 @@ export const useCertificateActions = ({
     setIsLoading,
 }: UseCertificateActionsProps) => {
      
-    // --- Row Actions State ---
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<Partial<ICertificateClient>>({});
     const [flashId, setFlashId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
      
-    // --- PDF Generation States ---
     const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
     const [generatingPdfV1Id, setGeneratingPdfV1Id] = useState<string | null>(null);
     const [isBulkGeneratingV1, setIsBulkGeneratingV1] = useState(false);
@@ -65,10 +63,7 @@ export const useCertificateActions = ({
     const formatForFilename = (text: string | undefined | null) => {
         if (!text) return 'Unknown';
         const cleanText = text.replace(/[\\/:*?"<>|]/g, '').trim();
-        if (!cleanText) return 'Unknown';
-        return cleanText.replace(/\w\S*/g, (txt) => {
-            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-        });
+        return formatName(cleanText); // Updated: use comma/bracket logic for filename too
     };
 
     const triggerFileDownload = (blob: Blob, filename: string) => {
@@ -82,7 +77,6 @@ export const useCertificateActions = ({
         window.URL.revokeObjectURL(url);
     };
 
-    // --- Selection & Delete Handlers ---
     const handleSelectOne = (id: string, checked: boolean) => {
         if (checked) setSelectedIds(prev => [...prev, id]);
         else setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
@@ -96,15 +90,12 @@ export const useCertificateActions = ({
     const handleBulkDelete = async () => { 
         if(selectedIds.length === 0) return;
         if (!confirm(`Are you sure you want to delete ${selectedIds.length} certificates?`)) return;
-         
         showNotification("Processing bulk delete...", "info");
-         
         let deletedCount = 0;
         for (const id of selectedIds) {
             const success = await deleteCertificate(id);
             if (success) deletedCount++;
         }
-
         if (deletedCount > 0) {
             showNotification(`Successfully deleted ${deletedCount} certificates.`, "success");
             setSelectedIds([]);
@@ -115,18 +106,14 @@ export const useCertificateActions = ({
     };
 
     const handleDelete = async (id: string) => { 
-        if (!confirm("Are you sure you want to delete this certificate? This action cannot be undone.")) return;
-
+        if (!confirm("Are you sure you want to delete this certificate?")) return;
         setDeletingId(id);
-         
         try {
             const success = await deleteCertificate(id);
             if (success) {
                 showNotification("Certificate deleted successfully", "success");
                 await fetchCertificates(false);
             }
-        } catch (error) {
-            console.error("Delete failed in handler", error);
         } finally {
             setDeletingId(null);
         }
@@ -137,21 +124,16 @@ export const useCertificateActions = ({
         setEditFormData({ ...certificate }); 
     };
      
-    // --- SAVE HANDLER ---
     const handleSave = async (id: string) => { 
         if(!editFormData) return;
-        
-        // Optimistic Feedback
         setFlashId(id);
 
-        // ✅ Apply formatName BEFORE saving to Database
+        // ✅ Apply formatName to BOTH name and hospital BEFORE saving
         const dataToSave = { ...editFormData };
-        if (dataToSave.name) {
-            dataToSave.name = formatName(dataToSave.name);
-        }
+        if (dataToSave.name) dataToSave.name = formatName(dataToSave.name);
+        if (dataToSave.hospital) dataToSave.hospital = formatName(dataToSave.hospital);
 
         const success = await updateCertificate(id, dataToSave);
-
         if (success) {
             setEditingId(null);
             showNotification("Edit saved successfully", "success");
@@ -160,35 +142,33 @@ export const useCertificateActions = ({
         }
     };
 
-    // ✅ CHANGED: Removed auto-formatting here. 
-    // This allows you to type freely. Formatting happens on Save or PDF Generation.
     const handleChange = (field: keyof ICertificateClient, value: string) => { 
         setEditFormData(prev => ({ ...prev, [field]: value })); 
     };
 
-    // --- PDF Generation Handlers ---
-
     const handleGeneratePDF_V2 = async (cert: ICertificateClient) => {
         if (generatingPdfId === cert._id) return;
-        
-        // ✅ Format Name specificially for the PDF
-        const formattedCert = { ...cert, name: formatName(cert.name) };
-
+        // Format for consistent display in PDF
+        const formattedCert = { 
+            ...cert, 
+            name: formatName(cert.name), 
+            hospital: formatName(cert.hospital) 
+        };
         const result = await generateCertificatePDFTyped(formattedCert, oldOnAlert, 'certificate2.pdf', setGeneratingPdfId, true);
-        if (result && result.blob) triggerFileDownload(result.blob, `${formatForFilename(cert.name)}_${formatForFilename(cert.hospital)}.pdf`);
+        if (result && result.blob) triggerFileDownload(result.blob, result.filename);
     };
 
     const handleGeneratePDF_V1 = async (cert: ICertificateClient) => {
         if (generatingPdfV1Id === cert._id) return;
-
-        // ✅ Format Name specificially for the PDF
-        const formattedCert = { ...cert, name: formatName(cert.name) };
-
+        const formattedCert = { 
+            ...cert, 
+            name: formatName(cert.name), 
+            hospital: formatName(cert.hospital) 
+        };
         const result = await generateCertificatePDFTyped(formattedCert, oldOnAlert, 'certificate1.pdf', setGeneratingPdfV1Id, true);
-        if (result && result.blob) triggerFileDownload(result.blob, `${formatForFilename(cert.name)}_${formatForFilename(cert.hospital)}.pdf`);
+        if (result && result.blob) triggerFileDownload(result.blob, result.filename);
     };
 
-    // --- BULK GENERATION LOGIC ---
     const handleBulkGenerate = async (
         template: 'certificate1.pdf' | 'certificate2.pdf' | 'certificate3.pdf', 
         setBulkState: React.Dispatch<React.SetStateAction<boolean>>, 
@@ -196,53 +176,34 @@ export const useCertificateActions = ({
         specificIds?: string[]
     ) => {
         const idsToProcess = specificIds && specificIds.length > 0 ? specificIds : selectedIds;
-
         if (idsToProcess.length === 0) {
-            showNotification(`Select certificates for ${typeLabel} export.`, 'info');
+            showNotification(`Select certificates for export.`, 'info');
             return;
         }
-
         setBulkState(true);
-        showNotification(`Preparing ${idsToProcess.length} ${typeLabel} certificates...`, 'info');
-
         try {
             let selectedCertificates = await fetchCertificatesForExport(true, idsToProcess);
-             
             selectedCertificates = selectedCertificates.filter(cert => idsToProcess.includes(cert._id));
-
-            if (selectedCertificates.length === 0) {
-                throw new Error(`Could not retrieve data for ${typeLabel} export.`);
-            }
-
             const pdfPromises = selectedCertificates.map(cert => {
-                // ✅ Format Name specificially for the Bulk PDF
-                const formattedCert = { ...cert, name: formatName(cert.name) };
+                const formattedCert = { 
+                    ...cert, 
+                    name: formatName(cert.name), 
+                    hospital: formatName(cert.hospital) 
+                };
                 return generateCertificatePDFTyped(formattedCert, oldOnAlert, template, setBulkState as any, true);
             });
-
             const results = await Promise.all(pdfPromises);
             let successCount = 0;
-
-            for (let i = 0; i < results.length; i++) {
-                const result = results[i];
+            for (const result of results) {
                 if (result && result.blob) {
                     triggerFileDownload(result.blob, result.filename);
                     successCount++;
                     await new Promise(resolve => setTimeout(resolve, 300));
                 }
             }
-
-            if (successCount > 0) {
-                triggerSuccess(`${successCount} Downloaded`);
-                if (!specificIds) {
-                    setSelectedIds([]);
-                }
-            } else {
-                showNotification('PDF generation failed.', 'error');
-            }
+            if (successCount > 0) triggerSuccess(`${successCount} Downloaded`);
         } catch (error: any) {
-            console.error(error);
-            showNotification(`Bulk Generation failed: ${error.message}`, 'error');
+            showNotification(`Bulk Generation failed.`, 'error');
         } finally {
             setBulkState(false);
         }
@@ -252,20 +213,16 @@ export const useCertificateActions = ({
     const handleBulkGeneratePDF_V2 = (ids?: string[]) => handleBulkGenerate('certificate2.pdf', setIsBulkGeneratingV2, 'Training', ids);
     const handleBulkGeneratePDF_V3 = (ids?: string[]) => handleBulkGenerate('certificate3.pdf', setIsBulkGeneratingV3, '100+ Others', ids);
 
-    // --- Excel Export Handler ---
     const handleDownload = async (type: 'xlsx' | 'csv') => {
-        showNotification('Fetching all filtered records for export, please wait...', 'info');
+        showNotification('Fetching records...', 'info');
         const allCertificates = await fetchCertificatesForExport();
-        if (allCertificates.length === 0) {
-            showNotification('No data found.', 'info');
-            return;
-        }
+        if (allCertificates.length === 0) return;
         const sortedExportData = sortCertificates(allCertificates, { key: '_id', direction: 'desc' });
         const dataToExport = sortedExportData.map((cert, index) => ({
             'S. No.': index + 1,
             'Certificate No.': cert.certificateNo,
-            'Name': formatName(cert.name), // ✅ Format name for Excel Export too
-            'Hospital': cert.hospital,
+            'Name': formatName(cert.name),
+            'Hospital': formatName(cert.hospital), // ✅ Capitalized for Excel
             'DOI': cert.doi,
         }));
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
