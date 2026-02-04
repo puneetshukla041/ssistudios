@@ -23,7 +23,7 @@ export const generateCertificatePDF = async (
   // Fallback to "Unknown" if empty.
   const fullName = certData.name || "Unknown Name";
   const hospitalName = certData.hospital || "Unknown Hospital";
-  
+   
   if (!isBulk) {
     (setLoadingId as React.Dispatch<React.SetStateAction<string | null>>)(certData._id);
   }
@@ -85,11 +85,11 @@ export const generateCertificatePDF = async (
         const colorBlack = rgb(0, 0, 0); 
         const isV2Template = template === 'certificate2.pdf';
 
-        // Full Name
-        firstPage.drawText(fullName, { x, y: yBase, size: fontSizeLarge, font: soraFont, color: colorBlack });
+        // ✅ MODIFIED: Full Name moved DOWN to yBase - 20 (The position where Hospital Name used to be)
+        firstPage.drawText(fullName, { x, y: yBase - 20, size: fontSizeLarge, font: soraFont, color: colorBlack });
         
-        // Hospital Name
-        firstPage.drawText(hospitalName, { x, y: yBase - 20, size: fontSizeMedium, font: soraSemiBoldFont, color: colorBlack });
+        // ✅ MODIFIED: Hospital Name REMOVED from PDF drawing (commented out)
+        // firstPage.drawText(hospitalName, { x, y: yBase - 20, size: fontSizeMedium, font: soraSemiBoldFont, color: colorBlack });
         
         if (isV2Template) {
             const programName = "Robotics Training Program";
