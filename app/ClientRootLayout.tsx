@@ -1,345 +1,213 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
-import { Eye, EyeOff, ArrowRight } from "lucide-react"; 
-import { useAuth } from "@/contexts/AuthContext"; 
-import RequestModal from "@/components/login/RequestModal";
-import AnimatedModals from "@/components/login/AnimatedModals";
+import { usePathname } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext"; 
+import { UsageProvider } from "@/contexts/UsageContext"; 
+import { ReactNode, useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
-export default function LoginLayout() {
-  const { login } = useAuth();
+// --- Animated Hamburger Icon ---
+type MotionLineProps = React.ComponentPropsWithoutRef<"line"> & { variants?: any; [key: string]: any };
+const MotionLine = motion.line as React.FC<MotionLineProps>;
 
-  // --- STATE ---
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showTick, setShowTick] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // --- Modal State ---
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [requestName, setRequestName] = useState("");
-  const [requestPhone, setRequestPhone] = useState("");
-  const [requestIDFile, setRequestIDFile] = useState<File | null>(null);
-  const [requestComment, setRequestComment] = useState("");
-  const [requestError, setRequestError] = useState("");
-  const [isRequestLoading, setIsRequestLoading] = useState(false);
-
-  const MAX_FILE_SIZE_MB = 10;
-  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-  
-  const logoSrc = "/logos/ssilogo.png";
-
-  // --- IOS-STYLE ANIMATION PHYSICS ---
-  const iosSpring = {
-    type: "spring" as const, // <--- FIXED: Added 'as const' here
-    stiffness: 300,
-    damping: 30,
-    mass: 1.2
+const AnimatedHamburgerIcon = ({
+  isOpen,
+  size = 20,
+  strokeWidth = 2,
+  className = "",
+}: {
+  isOpen: boolean;
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}) => {
+  const commonLineAttributes = {
+    vectorEffect: "non-scaling-stroke" as const,
+    stroke: "currentColor",
+    strokeWidth,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
   };
+  return (
+    <motion.svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      animate={isOpen ? "open" : "closed"}
+      initial={false}
+      variants={{ open: {}, closed: {} }}
+    >
+      <MotionLine x1="4" y1="6" x2="20" y2="6" variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: 45, y: 6 } }} {...commonLineAttributes} />
+      <MotionLine x1="4" y1="12" x2="20" y2="12" variants={{ closed: { opacity: 1 }, open: { opacity: 0 } }} {...commonLineAttributes} />
+      <MotionLine x1="4" y1="18" x2="20" y2="18" variants={{ closed: { rotate: 0, y: 0 }, open: { rotate: -45, y: -6 } }} {...commonLineAttributes} />
+    </motion.svg>
+  );
+};
 
-  const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.92, y: 20 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.8,
-        ease: [0.16, 1, 0.3, 1] as const,
-        when: "beforeChildren",
-        staggerChildren: 0.1
+// --- CHAOS STYLES (The Glitch Effect) ---
+const GlobalChaosStyles = ({ active }: { active: boolean }) => {
+  if (!active) return null;
+  return (
+    <style jsx global>{`
+      body {
+        overflow-x: hidden;
+        animation: shake-hard 0.2s infinite;
+        background-color: #000 !important;
       }
-    }
-  };
+      /* Disable interactions */
+      body * {
+        user-select: none !important;
+        pointer-events: none !important;
+      }
+      /* Glitch everything */
+      img, svg, div, p, h1, h2, span, button {
+        filter: invert(1) hue-rotate(180deg) blur(0.5px);
+        animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+      }
+      /* Text scatter */
+      h1, h2, h3, p, span, a {
+        text-shadow: 2px 0 red, -2px 0 blue;
+        animation: glitch-text 0.1s infinite;
+        font-family: 'Courier New', Courier, monospace !important; 
+      }
+      @keyframes shake-hard {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-3px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+      }
+      @keyframes glitch-skew {
+        0% { transform: skew(0deg); }
+        20% { transform: skew(-10deg); }
+        40% { transform: skew(10deg); }
+        60% { transform: skew(-5deg); }
+        80% { transform: skew(5deg); }
+        100% { transform: skew(0deg); }
+      }
+      @keyframes glitch-text {
+        0% { opacity: 1; transform: translateX(0); }
+        50% { opacity: 0.8; transform: translateX(2px); }
+        51% { opacity: 1; transform: translateX(-2px); }
+        100% { opacity: 1; transform: translateX(0); }
+      }
+    `}</style>
+  );
+};
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 15, filter: "blur(5px)" },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      filter: "blur(0px)",
-      transition: { duration: 0.5, ease: "easeOut" }
-    }
-  };
+function AppLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  // Safe check for useAuth context to prevent crashes if context is missing during initial render
+  const auth = useAuth(); 
+  const isAuthenticated = auth?.isAuthenticated;
+  
+  // --- REAL TIME POLLING LOGIC ---
+  const [isCrashed, setIsCrashed] = useState(false);
 
-  // --- HANDLERS ---
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
+  useEffect(() => {
+    // Poll the DB status every 3 seconds
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/system-status');
+        if (res.ok) {
+           const data = await res.json();
+           setIsCrashed(data.crashed);
+        }
+      } catch (err) {
+        console.error("Status check failed", err);
+      }
+    };
 
-    try {
-      const res = await fetch("/api/admin-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+    // Initial check
+    checkStatus();
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed.");
+    // Check every 3s
+    const interval = setInterval(checkStatus, 3000); 
 
-      setTimeout(() => {
-        setIsLoading(false);
-        setShowTick(true);
-        setTimeout(() => {
-          setShowTick(false);
-          setShowWelcome(true);
-          setTimeout(() => {
-            setShowWelcome(false);
-            login(data.user); 
-          }, 2000);
-        }, 1000);
-      }, 1500);
-    } catch (err: any) {
-      setError(err.message);
-      setIsLoading(false);
-    }
-  };
+    return () => clearInterval(interval);
+  }, []);
+  // -------------------------------
 
-  const handleIDFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    if (file && file.size > MAX_FILE_SIZE_BYTES) {
-      setRequestError(`File size must be less than ${MAX_FILE_SIZE_MB}MB.`);
-      setRequestIDFile(null);
-    } else {
-      setRequestError("");
-      setRequestIDFile(file);
-    }
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const forceActive = pathname === "/selector" ? "Dashboard" : undefined;
+  const isEditorPage = pathname?.startsWith("/editor");
+  const isLoginPage = pathname === "/login";
 
-  const handleRequestAccess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRequestError("");
-    setIsRequestLoading(true);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-    if (!requestName || !requestPhone) {
-      setRequestError("Full Name and Phone Number are required.");
-      setIsRequestLoading(false);
-      return;
-    }
+  useEffect(() => {
+    document.body.style.overflow = isSidebarOpen || isCrashed ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isSidebarOpen, isCrashed]);
 
-    const formData = new FormData();
-    formData.append("fullName", requestName);
-    formData.append("phoneNumber", requestPhone);
-    formData.append("comment", requestComment);
-    if (requestIDFile) {
-      formData.append("idCard", requestIDFile);
-    }
+  const themeBg = pathname === "/bgremover" ? "bg-white text-gray-900" 
+    : pathname === "/poster" ? "bg-slate-100 text-slate-900"
+    : pathname === "/idcard" ? "bg-slate-100 text-slate-900"
+    : pathname === "/userprofile" ? "bg-[#F3F4F6] text-gray-900"
+    : "bg-white text-gray-900"; 
 
-    try {
-      const res = await fetch("/api/request-access", {
-        method: "POST",
-        body: formData,
-      });
+  // Don't render layout elements for editor page, just children
+  if (isEditorPage) return <>{children}</>;
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Failed to submit request.");
-
-      alert("Your access request has been submitted successfully!");
-      setShowRequestModal(false);
-      setRequestName("");
-      setRequestPhone("");
-      setRequestIDFile(null);
-      setRequestComment("");
-      setIsRequestLoading(false);
-
-    } catch (err: any) {
-      console.error("API Error Response:", err);
-      setRequestError(err.message);
-      setIsRequestLoading(false);
-    }
-  };
-
-  const modalProps = { isLoading, showTick, showWelcome, username };
-  const requestModalProps = {
-    showRequestModal, setShowRequestModal, requestName, setRequestName,
-    requestPhone, setRequestPhone, requestIDFile, setRequestIDFile,
-    requestComment, setRequestComment, requestError, setRequestError,
-    isRequestLoading, handleRequestAccess, handleIDFileChange,
-    MAX_FILE_SIZE_MB, MAX_FILE_SIZE_BYTES
-  };
+  // Optional: Redirect or hide content if not authenticated (handled by Middleware usually, but safe here)
+  if (!isAuthenticated && !isLoginPage) {
+     // You might want to return null or a loading spinner here while redirecting
+     // For now returning null as per your original code
+     // return null; 
+  }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 font-sans antialiased relative overflow-hidden">
-      
-      {/* IOS DYNAMIC WALLPAPER BACKGROUND */}
-      <div className="absolute inset-0 z-0">
-         <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] via-[#5856D6] to-[#AF52DE] opacity-90" />
-         <motion.div 
-           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
-           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-white/20 rounded-full blur-[120px] mix-blend-overlay"
-         />
-         <motion.div 
-           animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 0] }}
-           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-blue-300/30 rounded-full blur-[100px] mix-blend-overlay"
-         />
-      </div>
+    <>
+      {/* Inject Global Glitch CSS if crashed */}
+      <GlobalChaosStyles active={isCrashed} />
 
-      <AnimatedModals {...modalProps} />
-
-      {/* --- THE IPHONE COMFORT CARD --- */}
-      <motion.div
-        variants={cardVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative flex w-full max-w-[960px] h-[580px] rounded-[48px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] overflow-hidden z-10"
-      >
-        
-        {/* LEFT PANEL: The "Vision Pro" Glass Look */}
-        <div className="hidden md:flex flex-col justify-between w-[45%] h-full relative overflow-hidden group">
-          {/* Real Glass Stack */}
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl backdrop-saturate-150" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
-          
-          {/* Subtle Border Gradient for 3D Edge effect */}
-          <div className="absolute inset-0 border-r border-white/20" />
-
-          <div className="relative z-10 flex flex-col justify-between h-full p-12 text-white">
-            
-            {/* Logo Pill */}
-            <motion.div variants={itemVariants} className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/25 rounded-[14px] flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
-                <img 
-                  src={logoSrc} 
-                  alt="SSI Logo" 
-                  className="w-7 h-7 object-contain drop-shadow-sm"
-                  onError={(e) => (e.currentTarget.style.display = 'none')} 
-                />
-              </div>
-              <span className="text-lg font-semibold tracking-tight text-white/90">SSI Studios</span>
-            </motion.div>
-
-            {/* Typography Section */}
-            <div className="mb-6">
-              <motion.div variants={itemVariants} className="mb-6">
-                <p className="text-blue-100 text-base font-medium mb-2 tracking-wide opacity-80">Welcome Back</p>
-                <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter drop-shadow-sm mb-4">
-                  SSI Studios
-                </h1>
-                
-                {/* The "Pill" Badge */}
-                <motion.div 
-                  variants={itemVariants}
-                  className="inline-flex items-center px-4 py-1.5 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full shadow-lg"
-                >
-                  <span className="text-white text-[11px] font-bold tracking-widest uppercase opacity-90">
-                    Team Creative Operations
-                  </span>
-                </motion.div>
-              </motion.div>
+      {!isLoginPage ? (
+        <div className={`flex relative z-10 min-h-screen ${themeBg}`}>
+          <Sidebar forceActive={forceActive} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+          <main className="flex-1 overflow-y-auto transition-all duration-300 p-4 lg:p-8 relative">
+            <div className="flex items-center justify-between mb-6 lg:hidden">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+                {pathname === "/dashboard" ? "" : "SSI Studios"}
+              </h1>
+              <button
+                onClick={toggleSidebar}
+                className="p-2 text-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
+              >
+                <AnimatedHamburgerIcon isOpen={isSidebarOpen} size={28} />
+              </button>
             </div>
-          </div>
+            {children}
+          </main>
         </div>
+      ) : (
+        <main className="min-h-screen w-full flex flex-col items-center justify-center relative z-10 p-0 m-0">
+            {children}
+        </main>
+      )}
+    </>
+  );
+}
 
-        {/* RIGHT PANEL: The "iOS Settings" Comfort Look */}
-        <div className="w-full md:w-[55%] h-full bg-white/90 backdrop-blur-xl flex flex-col justify-center px-14 py-10 relative">
-          
-          <div className="w-full max-w-[360px] mx-auto">
-            {/* Mobile Header */}
-            <div className="md:hidden mb-10 text-center">
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">SSI Studios</h2>
-              <p className="text-slate-500 text-xs font-semibold uppercase mt-2 tracking-widest">Creative Ops</p>
-            </div>
-
-            <AnimatePresence>
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }} 
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="mb-6 p-4 bg-red-50/80 backdrop-blur-md border border-red-100 text-red-600 text-sm font-medium rounded-2xl text-center shadow-sm"
-                >
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form onSubmit={handleLogin} className="space-y-7">
-              
-              {/* Login Input Group */}
-              <motion.div variants={itemVariants} className="space-y-2.5">
-                <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Login ID</label>
-                <div className="relative group">
-                   <input
-                    type="text"
-                    placeholder="Enter Mail ID / SSI - 000"
-                    className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 
-                               focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    disabled={isLoading || showTick || showWelcome}
-                  />
-                </div>
-              </motion.div>
-
-              {/* Password Input Group */}
-              <motion.div variants={itemVariants} className="space-y-2.5">
-                <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Password</label>
-                <div className="relative group">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 pr-14
-                               focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading || showTick || showWelcome}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007AFF] transition-colors p-1"
-                  >
-                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
-                  </button>
-                </div>
-              </motion.div>
-
-              {/* Footer Actions */}
-              <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pl-2">
-                <button 
-                  type="button"
-                  onClick={() => setShowRequestModal(true)}
-                  className="text-sm font-medium text-slate-400 hover:text-[#007AFF] transition-colors"
-                >
-                  Forgot Password?
-                </button>
-
-                {/* The "Haptic" Button */}
-                <motion.button
-                  whileHover={{ scale: 1.08, boxShadow: "0px 10px 25px -5px rgba(0, 122, 255, 0.4)" }}
-                  whileTap={{ scale: 0.92 }}
-                  transition={iosSpring}
-                  type="submit"
-                  disabled={isLoading || showTick || showWelcome}
-                  className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white 
-                             shadow-lg shadow-blue-500/30 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
-                >
-                  {/* Subtle Shine Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  {isLoading ? (
-                    <div className="w-6 h-6 border-[2.5px] border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <ArrowRight size={26} strokeWidth={2.5} className="relative z-10" />
-                  )}
-                </motion.button>
-              </motion.div>
-
-            </form>
-          </div>
-        </div>
-
-      </motion.div>
-
-      <RequestModal {...requestModalProps} />
-    </div>
+// ✅ Correct Default Export
+export default function ClientRootLayout({ children }: { children: ReactNode }) {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <UsageProvider>
+          <AppLayout>{children}</AppLayout>
+        </UsageProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
