@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, ArrowRight } from "lucide-react"; // Using Lucide icons to match the new design
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { Eye, EyeOff, ArrowRight } from "lucide-react"; 
 import { useAuth } from "@/contexts/AuthContext"; 
 import RequestModal from "@/components/login/RequestModal";
 import AnimatedModals from "@/components/login/AnimatedModals";
@@ -10,7 +10,7 @@ import AnimatedModals from "@/components/login/AnimatedModals";
 export default function LoginLayout() {
   const { login } = useAuth();
 
-  // --- STATE MANAGEMENT (From Old Code) ---
+  // --- STATE ---
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +19,7 @@ export default function LoginLayout() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- Request Modal State ---
+  // --- Modal State ---
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestName, setRequestName] = useState("");
   const [requestPhone, setRequestPhone] = useState("");
@@ -31,11 +31,42 @@ export default function LoginLayout() {
   const MAX_FILE_SIZE_MB = 10;
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
   
-  // LOGO PATH: Ensure this file exists at /public/logos/ssilogo.png
   const logoSrc = "/logos/ssilogo.png";
 
-  // --- HANDLERS (From Old Code) ---
+  // --- IOS-STYLE ANIMATION PHYSICS ---
+  const iosSpring = {
+    type: "spring" as const, // <--- FIXED: Added 'as const' here
+    stiffness: 300,
+    damping: 30,
+    mass: 1.2
+  };
 
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.92, y: 20 },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1] as const,
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 15, filter: "blur(5px)" },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      filter: "blur(0px)",
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  };
+
+  // --- HANDLERS ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -49,26 +80,21 @@ export default function LoginLayout() {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Login failed.");
 
-      if (!res.ok) throw new Error(data.message || "Login failed. Please try again.");
-
-      // Success Animation Sequence
       setTimeout(() => {
         setIsLoading(false);
         setShowTick(true);
-
         setTimeout(() => {
           setShowTick(false);
           setShowWelcome(true);
-
           setTimeout(() => {
             setShowWelcome(false);
-            login(data.user); // Final login action
+            login(data.user); 
           }, 2000);
         }, 1000);
       }, 1500);
     } catch (err: any) {
-      console.error("API Error Response:", err);
       setError(err.message);
       setIsLoading(false);
     }
@@ -90,7 +116,6 @@ export default function LoginLayout() {
     setRequestError("");
     setIsRequestLoading(true);
 
-    // Basic validation
     if (!requestName || !requestPhone) {
       setRequestError("Full Name and Phone Number are required.");
       setIsRequestLoading(false);
@@ -113,7 +138,7 @@ export default function LoginLayout() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Failed to submit request. Please try again.");
+      if (!res.ok) throw new Error(data.message || "Failed to submit request.");
 
       alert("Your access request has been submitted successfully!");
       setShowRequestModal(false);
@@ -130,10 +155,7 @@ export default function LoginLayout() {
     }
   };
 
-  // Props for Modals
   const modalProps = { isLoading, showTick, showWelcome, username };
-  
-  // Props for RequestModal
   const requestModalProps = {
     showRequestModal, setShowRequestModal, requestName, setRequestName,
     requestPhone, setRequestPhone, requestIDFile, setRequestIDFile,
@@ -143,109 +165,129 @@ export default function LoginLayout() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#5B86E5] to-[#36D1DC] p-4 font-sans antialiased relative">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 font-sans antialiased relative overflow-hidden">
       
-      {/* Include the Animated Modals (Success/Welcome) */}
+      {/* IOS DYNAMIC WALLPAPER BACKGROUND */}
+      <div className="absolute inset-0 z-0">
+         <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] via-[#5856D6] to-[#AF52DE] opacity-90" />
+         <motion.div 
+           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
+           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-white/20 rounded-full blur-[120px] mix-blend-overlay"
+         />
+         <motion.div 
+           animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 0] }}
+           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-blue-300/30 rounded-full blur-[100px] mix-blend-overlay"
+         />
+      </div>
+
       <AnimatedModals {...modalProps} />
 
-      {/* Main Card Container - Fixed Aspect Ratio & Rounded Corners */}
+      {/* --- THE IPHONE COMFORT CARD --- */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative flex w-full max-w-[950px] h-[550px] bg-white rounded-[40px] shadow-2xl overflow-hidden"
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative flex w-full max-w-[960px] h-[580px] rounded-[48px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] overflow-hidden z-10"
       >
         
-        {/* LEFT SIDE: Glass/Gradient Panel */}
-        <div className="hidden md:flex flex-col justify-between w-[45%] h-full relative overflow-hidden">
+        {/* LEFT PANEL: The "Vision Pro" Glass Look */}
+        <div className="hidden md:flex flex-col justify-between w-[45%] h-full relative overflow-hidden group">
+          {/* Real Glass Stack */}
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl backdrop-saturate-150" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
           
-          {/* Background Gradient matching the reference */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#6baaff] to-[#4facfe]" />
-          
-          {/* Glass Overlay */}
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
+          {/* Subtle Border Gradient for 3D Edge effect */}
+          <div className="absolute inset-0 border-r border-white/20" />
 
-          {/* Decorative faint circle in background */}
-          <div className="absolute -top-20 -left-20 w-80 h-80 border-[40px] border-white/10 rounded-full blur-sm" />
-
-          {/* Content Wrapper */}
-          <div className="relative z-10 flex flex-col justify-between h-full p-10 text-white">
+          <div className="relative z-10 flex flex-col justify-between h-full p-12 text-white">
             
-            {/* Header / Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20">
+            {/* Logo Pill */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/25 rounded-[14px] flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
                 <img 
                   src={logoSrc} 
                   alt="SSI Logo" 
-                  className="w-6 h-6 object-contain"
+                  className="w-7 h-7 object-contain drop-shadow-sm"
                   onError={(e) => (e.currentTarget.style.display = 'none')} 
                 />
               </div>
-              <span className="text-xl font-bold tracking-wide drop-shadow-sm">SSI Studios</span>
-            </div>
+              <span className="text-lg font-semibold tracking-tight text-white/90">SSI Studios</span>
+            </motion.div>
 
-            {/* Bottom Welcome Text */}
-            <div className="mb-4">
-              <p className="text-blue-50 text-sm font-medium mb-1 opacity-90">Welcome to,</p>
-              <h1 className="text-4xl font-bold leading-tight drop-shadow-md mb-2">
-                SSI Studios
-              </h1>
-              <p className="text-blue-100 text-xs font-light tracking-wide opacity-80 uppercase">
-                Team Creative Operations
-              </p>
+            {/* Typography Section */}
+            <div className="mb-6">
+              <motion.div variants={itemVariants} className="mb-6">
+                <p className="text-blue-100 text-base font-medium mb-2 tracking-wide opacity-80">Welcome Back</p>
+                <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter drop-shadow-sm mb-4">
+                  SSI Studios
+                </h1>
+                
+                {/* The "Pill" Badge */}
+                <motion.div 
+                  variants={itemVariants}
+                  className="inline-flex items-center px-4 py-1.5 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full shadow-lg"
+                >
+                  <span className="text-white text-[11px] font-bold tracking-widest uppercase opacity-90">
+                    Team Creative Operations
+                  </span>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT SIDE: Clean White Form */}
-        <div className="w-full md:w-[55%] h-full bg-white flex flex-col justify-center px-12 py-10 relative">
+        {/* RIGHT PANEL: The "iOS Settings" Comfort Look */}
+        <div className="w-full md:w-[55%] h-full bg-white/90 backdrop-blur-xl flex flex-col justify-center px-14 py-10 relative">
           
-          <div className="w-full max-w-[380px] mx-auto">
-            {/* Mobile Header (Only visible on small screens) */}
-            <div className="md:hidden mb-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-800">SSI Studios</h2>
-              <p className="text-gray-500 text-xs uppercase mt-1">Team Creative Operations</p>
+          <div className="w-full max-w-[360px] mx-auto">
+            {/* Mobile Header */}
+            <div className="md:hidden mb-10 text-center">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">SSI Studios</h2>
+              <p className="text-slate-500 text-xs font-semibold uppercase mt-2 tracking-widest">Creative Ops</p>
             </div>
 
-            {/* Error Message Display */}
             <AnimatePresence>
               {error && (
                 <motion.div 
-                  initial={{ opacity: 0, y: -10 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-xl text-center"
+                  initial={{ opacity: 0, scale: 0.9 }} 
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="mb-6 p-4 bg-red-50/80 backdrop-blur-md border border-red-100 text-red-600 text-sm font-medium rounded-2xl text-center shadow-sm"
                 >
                   {error}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-7">
               
-              {/* Login ID Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 ml-1">Login ID</label>
-                <input
-                  type="text"
-                  placeholder="Enter Mail ID / SSI - 000"
-                  className="w-full bg-[#F3F4F6] text-gray-700 placeholder-gray-400 border-none rounded-2xl py-4 px-5 
-                             focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all duration-200 text-sm outline-none"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isLoading || showTick || showWelcome}
-                />
-              </div>
+              {/* Login Input Group */}
+              <motion.div variants={itemVariants} className="space-y-2.5">
+                <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Login ID</label>
+                <div className="relative group">
+                   <input
+                    type="text"
+                    placeholder="Enter Mail ID / SSI - 000"
+                    className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 
+                               focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading || showTick || showWelcome}
+                  />
+                </div>
+              </motion.div>
 
-              {/* Password Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 ml-1">Password</label>
-                <div className="relative">
+              {/* Password Input Group */}
+              <motion.div variants={itemVariants} className="space-y-2.5">
+                <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Password</label>
+                <div className="relative group">
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
-                    className="w-full bg-[#F3F4F6] text-gray-700 placeholder-gray-400 border-none rounded-2xl py-4 px-5 pr-12
-                               focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all duration-200 text-sm outline-none"
+                    className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 pr-14
+                               focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading || showTick || showWelcome}
@@ -253,40 +295,43 @@ export default function LoginLayout() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007AFF] transition-colors p-1"
                   >
-                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                   </button>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Action Area */}
-              <div className="flex items-center justify-between pt-8">
-                {/* Forgot Password Link - Triggers Request Modal */}
+              {/* Footer Actions */}
+              <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pl-2">
                 <button 
                   type="button"
                   onClick={() => setShowRequestModal(true)}
-                  className="text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                  className="text-sm font-medium text-slate-400 hover:text-[#007AFF] transition-colors"
                 >
                   Forgot Password?
                 </button>
 
-                {/* Circular Submit Button */}
+                {/* The "Haptic" Button */}
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.08, boxShadow: "0px 10px 25px -5px rgba(0, 122, 255, 0.4)" }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={iosSpring}
                   type="submit"
                   disabled={isLoading || showTick || showWelcome}
-                  className="w-14 h-14 bg-[#4facfe] hover:bg-[#3b9eff] rounded-full flex items-center justify-center text-white 
-                             shadow-[0_8px_20px_rgba(79,172,254,0.4)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white 
+                             shadow-lg shadow-blue-500/30 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
                 >
+                  {/* Subtle Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-[2.5px] border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <ArrowRight size={24} strokeWidth={2.5} />
+                    <ArrowRight size={26} strokeWidth={2.5} className="relative z-10" />
                   )}
                 </motion.button>
-              </div>
+              </motion.div>
 
             </form>
           </div>
@@ -294,7 +339,6 @@ export default function LoginLayout() {
 
       </motion.div>
 
-      {/* Request Access Modal */}
       <RequestModal {...requestModalProps} />
     </div>
   );
