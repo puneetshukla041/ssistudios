@@ -35,13 +35,12 @@ export default function LoginLayout() {
 
   // --- IOS-STYLE ANIMATION PHYSICS ---
   const iosSpring = {
-    type: "spring",
+    type: "spring" as const, // <--- FIXED: Added 'as const' here
     stiffness: 300,
     damping: 30,
     mass: 1.2
   };
 
-  // ✅ FIX: Added 'Variants' type and 'as const' to the ease array
   const cardVariants: Variants = {
     hidden: { opacity: 0, scale: 0.92, y: 20 },
     visible: { 
@@ -50,7 +49,7 @@ export default function LoginLayout() {
       y: 0,
       transition: { 
         duration: 0.8,
-        ease: [0.16, 1, 0.3, 1] as const, // <--- FIXED HERE
+        ease: [0.16, 1, 0.3, 1] as const,
         when: "beforeChildren",
         staggerChildren: 0.1
       }
