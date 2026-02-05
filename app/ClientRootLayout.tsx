@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ThemeProvider, useTheme } from "@/contexts/ThemeContext"; 
+import { ThemeProvider } from "@/contexts/ThemeContext"; 
 import { UsageProvider } from "@/contexts/UsageContext"; 
 import { ReactNode, useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -182,7 +182,11 @@ function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
       ) : (
-        <main className="min-h-screen flex flex-col items-center justify-center relative z-10 px-4 bg-white">{children}</main>
+        // ✅ FIXED: Removed 'bg-white' and 'px-4'. Added 'w-full' and 'p-0'.
+        // This allows the Login page (which has its own gradient) to fill the screen edge-to-edge.
+        <main className="min-h-screen w-full flex flex-col items-center justify-center relative z-10 p-0 m-0">
+            {children}
+        </main>
       )}
     </>
   );
