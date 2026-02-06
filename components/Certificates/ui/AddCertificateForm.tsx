@@ -3,12 +3,12 @@ import { initialNewCertificateState, ICertificateClient } from '../utils/constan
 import { doiToDateInput, dateInputToDoi, getTodayDoi } from '../utils/helpers';
 import { generateCertificatePDF } from '../utils/pdfGenerator';
 import {
-    Tag, User, Hospital, Calendar, Save, Loader2, X, ChevronDown, Check, Sparkles, Download, RefreshCw, FileText
+    Tag, User, Hospital, Calendar, Save, Loader2, X, ChevronDown, Check, Sparkles, Download, RefreshCw, FileText, BadgeCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
-// Interface definitions
+// --- PROPS INTERFACE ---
 interface AddCertificateFormProps {
     newCertificateData: Omit<ICertificateClient, '_id'>;
     isAdding: boolean;
@@ -19,7 +19,7 @@ interface AddCertificateFormProps {
     setNewCertificateData: React.Dispatch<React.SetStateAction<Omit<ICertificateClient, '_id'>>>;
 }
 
-// Reusable Input Field Component with Apple-style styling
+// --- REUSABLE COMPONENT: APPLE STYLE INPUT ---
 const InputField = ({
     label, icon: Icon, placeholder, value, onChange, type = 'text', onFocus, onBlur, autoComplete
 }: {
@@ -27,13 +27,13 @@ const InputField = ({
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, type?: string,
     onFocus?: () => void, onBlur?: () => void, autoComplete?: string
 }) => (
-    <div className="space-y-2 group w-full">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 flex items-center gap-1.5 group-focus-within:text-indigo-500 transition-colors duration-300">
+    <div className="space-y-1.5 w-full">
+        <label className="text-[13px] font-medium text-slate-700 ml-1 flex items-center gap-1.5">
             {label}
         </label>
-        <div className="relative isolate">
-            <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center pointer-events-none z-10">
-                <Icon className="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors duration-300" />
+        <div className="relative group">
+            <div className="absolute inset-y-0 left-0 w-10 flex items-center justify-center pointer-events-none z-10 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300">
+                <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
             </div>
             <input
                 type={type}
@@ -43,12 +43,13 @@ const InputField = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 autoComplete={autoComplete}
-                className="block w-full rounded-[18px] border border-slate-200/80 bg-slate-50/50 py-3.5 pl-11 pr-4 text-[15px] font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 shadow-sm transition-all duration-300 ease-out hover:border-slate-300/80 hover:bg-slate-50"
+                className="block w-full rounded-[14px] border border-slate-200 bg-white/50 py-3 pl-10 pr-4 text-[14px] font-medium text-slate-900 placeholder:text-slate-400/80 focus:bg-white focus:border-indigo-500/40 focus:ring-4 focus:ring-indigo-500/10 shadow-sm transition-all duration-200 outline-none"
             />
         </div>
     </div>
 );
 
+// --- MAIN COMPONENT ---
 const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
     newCertificateData, isAdding, uniqueHospitals = [], handleNewCertChange,
     handleAddCertificate, setIsAddFormVisible, setNewCertificateData,
@@ -59,14 +60,14 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-    // Auto-fetch Today's Date on Mount
+    // Initial Setup
     useEffect(() => {
         if (!newCertificateData.doi) {
             handleNewCertChange('doi', getTodayDoi());
         }
     }, []);
 
-    // Close suggestions on click outside
+    // Click Outside Handler
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -87,8 +88,7 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
     const filteredHospitals = uniqueHospitals.filter(hospital => {
         if (!hospital) return false;
         const searchTerm = newCertificateData.hospital || '';
-        if (searchTerm.trim() === '') return true;
-        return hospital.toLowerCase().includes(searchTerm.toLowerCase());
+        return searchTerm.trim() === '' ? true : hospital.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const selectHospital = (hospital: string) => {
@@ -98,9 +98,7 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
 
     const handleSubmit = async () => {
         const success = await handleAddCertificate();
-        if (success) {
-            setView('success');
-        }
+        if (success) setView('success');
     };
 
     const handleReset = () => {
@@ -111,10 +109,8 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
     const handleDownload = async (template: 'certificate1.pdf' | 'certificate2.pdf') => {
         setIsGeneratingPdf(true);
         try {
-            // Mock ID for new cert since it might not be in the list yet
             const certForPdf = { ...newCertificateData, _id: 'new-temp' } as ICertificateClient;
-
-            // @ts-ignore - assuming util function signature matches
+            // @ts-ignore
             const result = await generateCertificatePDF(
                 certForPdf,
                 (msg, isErr) => console.log(msg),
@@ -142,23 +138,24 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 font-sans tracking-tight antialiased">
-            {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 font-sans antialiased tracking-tight">
+            
+            {/* Darkened Backdrop with Blur */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsAddFormVisible(false)}
-                className="absolute inset-0 bg-slate-900/30 backdrop-blur-md transition-opacity"
+                className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
             />
 
-            {/* Modal Content */}
+            {/* Modal Container */}
             <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                initial={{ scale: 0.96, opacity: 0, y: 15 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ type: "spring", duration: 0.5, bounce: 0.25 }}
-                className="relative w-full max-w-2xl bg-white/90 rounded-[32px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] ring-1 ring-white/60 overflow-hidden flex flex-col max-h-[90vh]"
+                exit={{ scale: 0.96, opacity: 0, y: 15 }}
+                transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
+                className="relative w-full max-w-xl bg-white/80 backdrop-blur-2xl rounded-[28px] shadow-2xl border border-white/40 overflow-hidden flex flex-col max-h-[90vh]"
             >
                 <AnimatePresence mode="wait">
                     {view === 'form' ? (
@@ -166,84 +163,76 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                             key="form"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="flex flex-col h-full bg-white/80 backdrop-blur-xl"
+                            exit={{ opacity: 0, filter: 'blur(4px)' }}
+                            className="flex flex-col h-full"
                         >
                             {/* Header */}
-                            <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white/60 backdrop-blur-md sticky top-0 z-20 flex justify-between items-center">
-                                <div className="flex gap-4 items-center">
-                                    <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
-                                        <Sparkles className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
-                                            Issue Certificate
-                                        </h2>
-                                        <p className="text-xs md:text-sm text-slate-500 font-medium">
-                                            Enter details to generate a new record.
-                                        </p>
-                                    </div>
+                            <div className="px-6 py-5 border-b border-slate-200/50 bg-white/50 backdrop-blur-xl sticky top-0 z-20 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-[17px] font-semibold text-slate-900">
+                                        New Certificate
+                                    </h2>
+                                    <p className="text-[13px] text-slate-500">
+                                        Enter recipient details below.
+                                    </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setIsAddFormVisible(false)}
-                                    className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100/80 transition-all duration-200 cursor-pointer active:scale-90"
+                                    className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-black/5 transition-all duration-200 cursor-pointer active:scale-95"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-5 h-5" strokeWidth={2} />
                                 </button>
                             </div>
 
-                            {/* Form Body - Scrollable */}
-                            <div className="px-6 md:px-8 pt-6 md:pt-8 pb-40 overflow-y-auto custom-scrollbar flex-1">
-                                <div className="space-y-6 md:space-y-8">
-                                    {/* Section 1: Identity */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                            {/* Scrollable Form Content */}
+                            <div className="px-6 pt-6 pb-32 overflow-y-auto custom-scrollbar flex-1">
+                                <div className="space-y-6">
+                                    
+                                    {/* Row 1 */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <InputField
                                             label="Certificate ID"
                                             icon={Tag}
-                                            placeholder="CERT-202X-XXXX"
+                                            placeholder="e.g. CERT-001"
                                             value={newCertificateData.certificateNo}
                                             onChange={(e) => handleNewCertChange('certificateNo', e.target.value)}
                                         />
                                         <InputField
                                             label="Recipient Name"
                                             icon={User}
-                                            placeholder="Dr. John Doe"
+                                            placeholder="Full Name"
                                             value={newCertificateData.name}
                                             onChange={(e) => handleNewCertChange('name', e.target.value)}
                                         />
                                     </div>
 
-                                    {/* Section 2: Details */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                                        {/* Hospital Dropdown */}
+                                    {/* Row 2 */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Hospital Autocomplete */}
                                         <div className="relative z-50" ref={wrapperRef}>
                                             <InputField
-                                                label="Institution / Hospital"
+                                                label="Institution"
                                                 icon={Hospital}
-                                                placeholder="Search or type hospital..."
+                                                placeholder="Hospital Name"
                                                 value={newCertificateData.hospital}
                                                 onChange={handleHospitalChange}
                                                 onFocus={() => setShowSuggestions(true)}
                                                 autoComplete="off"
                                             />
-                                            <div className="absolute right-4 top-[38px] pointer-events-none text-slate-400">
-                                                <ChevronDown className="w-4 h-4 opacity-50" />
+                                            <div className="absolute right-3 top-[34px] pointer-events-none text-slate-400">
+                                                <ChevronDown className="w-4 h-4 opacity-60" />
                                             </div>
 
                                             <AnimatePresence>
                                                 {showSuggestions && filteredHospitals.length > 0 && (
                                                     <motion.div
-                                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                                        initial={{ opacity: 0, y: 4, scale: 0.98 }}
                                                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                                                        transition={{ duration: 0.15 }}
-                                                        className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-[20px] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.12)] border border-white/60 z-50 overflow-hidden max-h-60 overflow-y-auto ring-1 ring-black/5"
+                                                        exit={{ opacity: 0, y: 4 }}
+                                                        className="absolute top-full left-0 right-0 mt-1.5 bg-white/90 backdrop-blur-xl rounded-[16px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200/60 z-50 overflow-hidden max-h-56 overflow-y-auto"
                                                     >
-                                                        <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Institutions</span>
-                                                        </div>
-                                                        <div className="p-1.5 space-y-0.5">
+                                                        <div className="p-1">
                                                             {filteredHospitals.map((hospital, idx) => (
                                                                 <button
                                                                     key={idx}
@@ -251,15 +240,15 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                                                                     onMouseDown={(e) => e.preventDefault()}
                                                                     onClick={() => selectHospital(hospital)}
                                                                     className={clsx(
-                                                                        "w-full text-left px-3.5 py-2.5 rounded-[14px] text-[13px] transition-all duration-200 flex items-center justify-between group cursor-pointer",
+                                                                        "w-full text-left px-3.5 py-2.5 rounded-[12px] text-[13px] transition-all duration-200 flex items-center justify-between group cursor-pointer",
                                                                         newCertificateData.hospital === hospital
-                                                                            ? 'bg-indigo-50 text-indigo-700 font-bold'
-                                                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                                                                            ? 'bg-indigo-500 text-white font-medium shadow-md shadow-indigo-500/20'
+                                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                                                     )}
                                                                 >
                                                                     <span className="truncate">{hospital}</span>
                                                                     {newCertificateData.hospital === hospital && (
-                                                                        <Check className="w-4 h-4 text-indigo-600" />
+                                                                        <Check className="w-3.5 h-3.5 text-white" />
                                                                     )}
                                                                 </button>
                                                             ))}
@@ -270,7 +259,7 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                                         </div>
 
                                         <InputField
-                                            label="Date of Issue"
+                                            label="Issue Date"
                                             icon={Calendar}
                                             type="date"
                                             placeholder="Select date"
@@ -282,14 +271,14 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                             </div>
 
                             {/* Footer Actions */}
-                            <div className="px-6 md:px-8 py-5 bg-white/80 border-t border-slate-100 flex items-center justify-end gap-3 sticky bottom-0 z-20 backdrop-blur-xl">
+                            <div className="px-6 py-4 bg-white/60 border-t border-slate-200/50 flex items-center justify-end gap-3 sticky bottom-0 z-20 backdrop-blur-md">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setIsAddFormVisible(false);
                                         setNewCertificateData(initialNewCertificateState);
                                     }}
-                                    className="px-6 py-3 text-[13px] font-semibold text-slate-600 hover:text-slate-900 bg-transparent hover:bg-slate-100 rounded-[16px] transition-all active:scale-[0.96] disabled:opacity-50 cursor-pointer"
+                                    className="px-5 py-2.5 text-[13px] font-medium text-slate-600 hover:text-slate-900 bg-transparent hover:bg-slate-100 rounded-xl transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                                     disabled={isAdding}
                                 >
                                     Cancel
@@ -299,7 +288,7 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                                     type="button"
                                     onClick={handleSubmit}
                                     disabled={isAdding}
-                                    className="px-8 py-3 text-[13px] font-bold text-white bg-[#1d1d1f] hover:bg-black rounded-[16px] shadow-lg shadow-black/10 transition-all transform active:scale-[0.96] flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                                    className="px-6 py-2.5 text-[13px] font-semibold text-white bg-[#0071e3] hover:bg-[#0077ED] rounded-xl shadow-lg shadow-blue-500/20 transition-all transform active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                                 >
                                     {isAdding ? (
                                         <>
@@ -308,8 +297,7 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                                         </>
                                     ) : (
                                         <>
-                                            <Save className="w-4 h-4" />
-                                            <span>Save Certificate</span>
+                                            <span>Save Record</span>
                                         </>
                                     )}
                                 </button>
@@ -322,40 +310,30 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex flex-col items-center justify-center p-8 md:p-12 min-h-[500px] text-center bg-white/90 backdrop-blur-xl"
+                            className="flex flex-col items-center justify-center p-8 min-h-[450px] text-center bg-white/40 backdrop-blur-sm"
                         >
-                            <div className="relative mb-8">
-                                <div className="absolute inset-0 bg-emerald-100 rounded-full blur-2xl opacity-60 animate-pulse"></div>
-                                <div className="relative w-24 h-24 bg-gradient-to-br from-emerald-50 to-white rounded-full flex items-center justify-center ring-1 ring-emerald-100 shadow-[0_8px_30px_rgba(16,185,129,0.15)]">
-                                    <motion.div
-                                        initial={{ scale: 0, rotate: -45 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        transition={{ type: "spring", stiffness: 200, damping: 10, delay: 0.1 }}
-                                    >
-                                        <Check className="w-12 h-12 text-emerald-500" strokeWidth={3} />
-                                    </motion.div>
-                                </div>
+                            <div className="w-20 h-20 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/30 mb-6">
+                                <BadgeCheck className="w-10 h-10 text-white" strokeWidth={2} />
                             </div>
 
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Certificate Created!</h3>
-                            <p className="text-slate-500 mb-10 max-w-sm mx-auto leading-relaxed text-[15px]">
-                                The certificate for <span className="font-bold text-slate-800">{newCertificateData.name}</span> has been successfully archived.
+                            <h3 className="text-[20px] font-bold text-slate-900 mb-2">Record Added</h3>
+                            <p className="text-[14px] text-slate-500 mb-8 max-w-xs leading-relaxed">
+                                The certificate for <span className="font-semibold text-slate-800">{newCertificateData.name}</span> has been securely saved.
                             </p>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mb-10">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-sm mb-8">
                                 <button
                                     type="button"
                                     onClick={() => handleDownload('certificate1.pdf')}
                                     disabled={isGeneratingPdf}
-                                    className="group relative flex flex-col items-center p-5 bg-white border border-slate-200/60 rounded-[24px] hover:border-indigo-500/30 hover:ring-2 hover:ring-indigo-500/10 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+                                    className="group relative flex items-center p-3 bg-white border border-slate-200/60 rounded-2xl hover:border-indigo-500/30 hover:ring-2 hover:ring-indigo-500/10 hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.98]"
                                 >
-                                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-100 transition-all duration-300">
-                                        {isGeneratingPdf ? <Loader2 className="w-6 h-6 animate-spin text-indigo-600" /> : <FileText className="w-6 h-6 text-indigo-600" />}
+                                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mr-3 group-hover:bg-indigo-100 transition-colors">
+                                        {isGeneratingPdf ? <Loader2 className="w-5 h-5 animate-spin text-indigo-600" /> : <FileText className="w-5 h-5 text-indigo-600" />}
                                     </div>
-                                    <span className="text-sm font-bold text-slate-800 group-hover:text-indigo-700">Proctorship PDF</span>
-                                    <span className="text-[11px] text-slate-400 mt-1 font-medium">Formal Verification</span>
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-1 group-hover:translate-y-0">
-                                        <Download className="w-4 h-4 text-indigo-500" />
+                                    <div className="text-left">
+                                        <div className="text-[13px] font-semibold text-slate-800">Standard</div>
+                                        <div className="text-[11px] text-slate-400">PDF Format</div>
                                     </div>
                                 </button>
 
@@ -363,34 +341,33 @@ const AddCertificateForm: React.FC<AddCertificateFormProps> = ({
                                     type="button"
                                     onClick={() => handleDownload('certificate2.pdf')}
                                     disabled={isGeneratingPdf}
-                                    className="group relative flex flex-col items-center p-5 bg-white border border-slate-200/60 rounded-[24px] hover:border-teal-500/30 hover:ring-2 hover:ring-teal-500/10 hover:shadow-xl hover:shadow-teal-500/5 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+                                    className="group relative flex items-center p-3 bg-white border border-slate-200/60 rounded-2xl hover:border-teal-500/30 hover:ring-2 hover:ring-teal-500/10 hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.98]"
                                 >
-                                    <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-teal-100 transition-all duration-300">
-                                        {isGeneratingPdf ? <Loader2 className="w-6 h-6 animate-spin text-teal-600" /> : <FileText className="w-6 h-6 text-teal-600" />}
+                                    <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center mr-3 group-hover:bg-teal-100 transition-colors">
+                                        {isGeneratingPdf ? <Loader2 className="w-5 h-5 animate-spin text-teal-600" /> : <FileText className="w-5 h-5 text-teal-600" />}
                                     </div>
-                                    <span className="text-sm font-bold text-slate-800 group-hover:text-teal-700">Training PDF</span>
-                                    <span className="text-[11px] text-slate-400 mt-1 font-medium">Course Completion</span>
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-1 group-hover:translate-y-0">
-                                        <Download className="w-4 h-4 text-teal-500" />
+                                    <div className="text-left">
+                                        <div className="text-[13px] font-semibold text-slate-800">Training</div>
+                                        <div className="text-[11px] text-slate-400">PDF Format</div>
                                     </div>
                                 </button>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                            <div className="flex gap-3 w-full max-w-xs">
                                 <button
                                     type="button"
                                     onClick={() => setIsAddFormVisible(false)}
-                                    className="flex-1 py-3.5 text-[13px] font-bold text-slate-600 bg-white border border-slate-200 rounded-[18px] hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer active:scale-[0.96] shadow-sm"
+                                    className="flex-1 py-3 text-[13px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-[16px] hover:bg-slate-50 transition-all cursor-pointer active:scale-95"
                                 >
-                                    Close Window
+                                    Close
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleReset}
-                                    className="flex-1 py-3.5 text-[13px] font-bold text-white bg-slate-900 rounded-[18px] hover:bg-black transition-all cursor-pointer active:scale-[0.96] shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2"
+                                    className="flex-1 py-3 text-[13px] font-semibold text-white bg-slate-900 rounded-[16px] hover:bg-black transition-all cursor-pointer active:scale-95 shadow-lg shadow-black/10 flex items-center justify-center gap-2"
                                 >
-                                    <RefreshCw className="w-4 h-4" />
-                                    Add Another
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    Add New
                                 </button>
                             </div>
                         </motion.div>
