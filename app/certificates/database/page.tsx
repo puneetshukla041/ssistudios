@@ -65,7 +65,7 @@ const VerticalStatCard = ({
     <div className="flex items-start justify-between">
       <div>
         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-        <div className="text-[28px] font-bold text-slate-800 tracking-tight leading-tight">
+        <div className="text-[26px] font-bold text-slate-800 tracking-tight leading-tight">
           <AnimatedCounter value={value} />
         </div>
         <p className="text-[11px] font-medium text-slate-400 mt-0.5">{subtext}</p>
@@ -313,12 +313,7 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* FIX APPLIED HERE:
-          1. Removed `mx-auto` so it doesn't try to center.
-          2. Added `lg:pl-72` (approx 290px) padding-left to push content past your existing sidebar.
-          3. Added `max-w-[1920px]` to allow content to stretch further right on big screens.
-      */}
-      <main className="w-full max-w-[1920px] px-6 py-8 relative z-10 flex flex-col lg:flex-row gap-8 lg:pl-72">
+      <main className="w-full max-w-[1920px] px-4 md:px-6 py-8 relative z-10 flex flex-col lg:flex-row gap-6 lg:pl-60 transition-all duration-500">
         
         {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
         <div className="flex-1 min-w-0 flex flex-col gap-6">
@@ -371,7 +366,6 @@ const CertificateDatabasePage: React.FC = () => {
             {/* Actions Bar */}
             <div className="w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-                    {/* New Batch Actions */}
                     <AnimatePresence mode='wait'>
                         {newBatchIds.length > 0 && isBatchLoaded && (
                             <motion.div
@@ -488,7 +482,7 @@ const CertificateDatabasePage: React.FC = () => {
         </div>
 
         {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
-        <aside className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4">
+        <aside className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4 transition-all duration-500">
             <div className="sticky top-6 flex flex-col gap-4">
                 
                 {/* 1. Stat Cards */}
@@ -533,14 +527,14 @@ const CertificateDatabasePage: React.FC = () => {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...appleSpring, delay: 0.3 }}
-                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm"
+                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm overflow-hidden"
                 >
                     <div className="rounded-[20px] overflow-hidden bg-white/60 p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <FiPieChart className="text-slate-400 w-4 h-4" />
                             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Distribution</h3>
                         </div>
-                        <div className="h-[250px] w-full flex items-center justify-center">
+                        <div className="h-[240px] w-full flex items-center justify-center">
                             <HospitalPieChart
                                 uniqueHospitals={uniqueHospitals}
                                 totalRecords={totalRecords}
@@ -550,7 +544,7 @@ const CertificateDatabasePage: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* 3. Analytics Summary (Optional) */}
+                {/* 3. Analytics Summary */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -558,17 +552,15 @@ const CertificateDatabasePage: React.FC = () => {
                     className="p-5 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-[24px] text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden"
                 >
                     <div className="relative z-10">
-                        <h3 className="font-bold text-lg mb-1">Analytics</h3>
-                        <p className="text-white/80 text-xs leading-relaxed mb-4">
-                            Real-time insights. Check breakdown above.
+                        <h3 className="font-bold text-lg mb-1 leading-tight">Analytics</h3>
+                        <p className="text-white/80 text-[11px] leading-relaxed mb-4">
+                            Real-time insights available above.
                         </p>
                         <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                             <FiTrendingUp className="w-4 h-4" />
                         </div>
                     </div>
-                    {/* Decorative circles */}
                     <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-[-10%] left-[-10%] w-24 h-24 bg-blue-400/20 rounded-full blur-xl" />
                 </motion.div>
             </div>
         </aside>
