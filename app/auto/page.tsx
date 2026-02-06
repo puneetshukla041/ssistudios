@@ -60,7 +60,7 @@ export default function BulkInvitationPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
 
-  // --- 1. SMART EXCEL ALGORITHM ---
+  // --- 1. EXCEL PROCESSING ALGORITHM ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -77,21 +77,26 @@ export default function BulkInvitationPage() {
         const rawData = XLSX.utils.sheet_to_json(ws)
 
         const processedData: InvitationData[] = rawData.map((row: any, index: number) => {
-          // FUZZY MATCHING LOGIC
+          // FUZZY MATCHING: Finds columns even if headers are slightly different
           const keys = Object.keys(row)
           
+          // 1. Find Name Column
           const nameKey = keys.find(k => /name|doctor|participant/i.test(k)) || keys[0]
+          
+          // 2. Find Hospital / Org Column
           const hospitalKey = keys.find(k => /hospital|society|organization|org/i.test(k)) || keys[1]
+          
+          // 3. Find Email Column (We store this, but don't print it on PDF)
           const emailKey = keys.find(k => /email|mail|e-mail/i.test(k)) || keys[2]
 
           return {
             id: `row-${index}-${Date.now()}`,
             name: toTitleCase(row[nameKey]),         
             hospital: toTitleCase(row[hospitalKey]), 
-            email: String(row[emailKey] || ''),      
+            email: String(row[emailKey] || ''), // Stored for DB/Preview only
             status: 'pending' as const 
           }
-        }).filter(item => item.name)
+        }).filter(item => item.name) // Remove empty rows
 
         setData(processedData)
       } catch (error) {
@@ -104,12 +109,14 @@ export default function BulkInvitationPage() {
     reader.readAsBinaryString(file)
   }
 
-  // --- 2. GENERATE SINGLE PDF ---
+  // --- 2. GENERATE PDF (Uses ONLY Name & Hospital) ---
   const generatePdfBlob = async (name: string, hospital: string): Promise<Uint8Array> => {
+    // 1. Load Template
     const existingPdfBytes = await fetch('/invitation/Invitation.pdf').then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
 
+    // 2. Load Fonts
     const fontBytes = await fetch('https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2').then(res => res.arrayBuffer())
     const poppinsFont = await pdfDoc.embedFont(fontBytes)
 
@@ -120,6 +127,7 @@ export default function BulkInvitationPage() {
     const nameY = pageHeight - NAME_MARGIN_TOP
     const hospitalY = nameY - 15 
 
+    // 3. Draw NAME
     if (name) {
       firstPage.drawText(name, { 
           x: NAME_MARGIN_LEFT, 
@@ -130,6 +138,7 @@ export default function BulkInvitationPage() {
       })
     }
 
+    // 4. Draw HOSPITAL (We do NOT draw Email here)
     if (hospital) {
       firstPage.drawText(hospital, { 
           x: HOSPITAL_MARGIN_LEFT, 
@@ -143,11 +152,13 @@ export default function BulkInvitationPage() {
     return await pdfDoc.save()
   }
 
-  // --- 3. DOWNLOAD SINGLE ITEM ---
+  // --- 3. DOWNLOAD SINGLE PDF ---
   const handleDownloadSingle = async (item: InvitationData) => {
     try {
+      // NOTE: We only pass name and hospital to the generator
       const pdfBytes = await generatePdfBlob(item.name, item.hospital)
-      // FIX: Cast pdfBytes to any to solve strict Type error
+      
+      // Fix for TypeScript strictness on Blob
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
       downloadFile(blob, `Invitation_${item.name.replace(/\s+/g, '_')}.pdf`)
     } catch (error) {
@@ -165,6 +176,7 @@ export default function BulkInvitationPage() {
       const folder = zip.folder("Invitations")
       
       for (const item of data) {
+        // NOTE: We only pass name and hospital here too
         const pdfBytes = await generatePdfBlob(item.name, item.hospital)
         folder?.file(`Invitation_${item.name.replace(/\s+/g, '_')}.pdf`, pdfBytes)
       }
@@ -178,11 +190,12 @@ export default function BulkInvitationPage() {
     }
   }
 
-  // --- 5. MOCK DATABASE UPLOAD ---
+  // --- 5. MOCK DATABASE UPLOAD (Sends ALL data including Email) ---
   const handleUploadToDB = async () => {
     if (data.length === 0) return
     setUploadStatus('uploading')
 
+    // In a real app, this sends { name, hospital, email } to MongoDB
     setTimeout(() => {
         const updatedData = data.map(item => ({ ...item, status: 'uploaded' as const }))
         setData(updatedData)
@@ -199,7 +212,7 @@ export default function BulkInvitationPage() {
   return (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F5F5F7] font-sans overflow-hidden lg:pl-[88px]">
       
-      {/* --- SIDEBAR: CONTROLS --- */}
+      {/* --- SIDEBAR --- */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -216,7 +229,6 @@ export default function BulkInvitationPage() {
         </div>
 
         <div className="space-y-4 flex-1">
-            {/* FILE UPLOAD BUTTON */}
             <div className="relative group">
                 <input 
                     type="file" 
@@ -233,7 +245,7 @@ export default function BulkInvitationPage() {
                 </div>
             </div>
 
-            {/* STATS CARD */}
+            {/* STATS */}
             {data.length > 0 && (
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                     <div className="flex items-center justify-between mb-2">
@@ -273,10 +285,8 @@ export default function BulkInvitationPage() {
         </div>
       </motion.div>
 
-      {/* --- MAIN TABLE AREA --- */}
+      {/* --- PREVIEW TABLE (Shows Email, but PDF ignores it) --- */}
       <div className="flex-1 h-full flex flex-col overflow-hidden relative">
-        
-        {/* HEADER */}
         <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-8 justify-between shrink-0">
             <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <LuFileText className="text-slate-400" /> Data Preview
@@ -286,7 +296,6 @@ export default function BulkInvitationPage() {
             </div>
         </div>
 
-        {/* TABLE CONTENT */}
         <div className="flex-1 overflow-auto p-8">
             {data.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4">
