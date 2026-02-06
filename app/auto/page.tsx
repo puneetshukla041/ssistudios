@@ -116,7 +116,7 @@ export default function BulkInvitationPage() {
                     name: toTitleCase(nameVal),         
                     hospital: hospitalKey ? toTitleCase(row[hospitalKey]) : '', 
                     email: emailKey ? String(row[emailKey] || '') : '',      
-                    status: 'uploaded' // Changed from 'pending' to 'uploaded'
+                    status: 'uploaded' 
                 };
             }).filter((item): item is InvitationData => item !== null); 
 
@@ -140,35 +140,52 @@ export default function BulkInvitationPage() {
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
 
-    const fontBytes = await fetch('https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2').then(res => res.arrayBuffer())
-    const poppinsFont = await pdfDoc.embedFont(fontBytes)
+    // --- UPDATED FONT LOADING LOGIC ---
+    // Fetching from your local public/fonts folder
+    const fontBytes = await fetch('/fonts/Poppins-Regular.ttf').then(res => res.arrayBuffer())
+    const customFont = await pdfDoc.embedFont(fontBytes)
 
     const pages = pdfDoc.getPages()
     const firstPage = pages[0]
     const { height: pageHeight } = firstPage.getSize()
 
+    // --- COORDINATE CALCULATIONS ---
     const nameY = pageHeight - NAME_MARGIN_TOP
     const hospitalY = nameY - 15 
+    const secondNameY = hospitalY - 15 
 
+    // 1. First Name
     if (name) {
       firstPage.drawText(name, { 
           x: NAME_MARGIN_LEFT, 
           y: nameY, 
           size: FONT_SIZE, 
-          font: poppinsFont, 
+          font: customFont, // Using the local font
           color: TEXT_COLOR 
       })
     }
 
+    // 2. Hospital Name
     if (hospital) {
       firstPage.drawText(hospital, { 
           x: HOSPITAL_MARGIN_LEFT, 
           y: hospitalY, 
           size: FONT_SIZE, 
-          font: poppinsFont, 
+          font: customFont, // Using the local font
           color: TEXT_COLOR 
       })
     }
+
+    // 3. Second Name (Copy below hospital)
+    if (name) {
+        firstPage.drawText(name, { 
+            x: NAME_MARGIN_LEFT, 
+            y: secondNameY,      
+            size: FONT_SIZE, 
+            font: customFont, // Using the local font
+            color: TEXT_COLOR 
+        })
+      }
 
     return await pdfDoc.save()
   }
@@ -398,7 +415,6 @@ export default function BulkInvitationPage() {
                             {filteredData.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-3">
-                                        {/* Always show Synced as requested */}
                                         <span className="flex items-center gap-1.5 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md w-fit">
                                             <LuCheck size={12} /> Synced
                                         </span>
