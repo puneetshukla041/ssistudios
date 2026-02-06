@@ -291,7 +291,7 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden">
+    <div className="h-screen w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden flex flex-col">
         
       {/* Background Ambience */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
@@ -313,87 +313,75 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* LAYOUT FIX:
-          - lg:pl-32: Reduced left padding further (approx 128px)
-          - max-w-[1920px]: Allows content to stretch nicely on larger screens
-          - gap-4: Keeps spacing tight
-      */}
-      <main className="w-full max-w-[1920px] px-4 md:px-6 py-6 relative z-10 flex flex-col lg:flex-row gap-4 lg:pl-32 transition-all duration-500">
+      {/* CHANGE 1: Reduced py-2 to py-1.5 and gap-2 to gap-1.5 for ultra-compactness */}
+      <main className="w-full max-w-[1920px] px-4 md:px-6 py-1.5 relative z-10 flex flex-col lg:flex-row gap-2 lg:pl-32 transition-all duration-500 h-full overflow-hidden">
         
         {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
-        <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5 h-full">
             
-            {/* Header */}
-            <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="space-y-1">
-                <motion.h1 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-[28px] font-bold tracking-tight text-slate-900"
-                >
-                  Database
-                </motion.h1>
-                <motion.p 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-[13px] text-slate-500 font-medium tracking-wide"
-                >
-                  Manage all digital certifications
-                </motion.p>
-              </div>
-
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative w-full md:w-[380px] group"
-              >
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[22px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
-                <div className="relative bg-white/80 backdrop-blur-xl rounded-[22px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                      <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
+            {/* HEADER - Compacted to save vertical space */}
+            {/* CHANGE 2: Reduced p-2 to p-1.5, smaller rounding */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1.5 bg-white/40 backdrop-blur-xl p-1.5 rounded-[18px] border border-white/60 shadow-sm shrink-0">
+                {/* 1. Title Area */}
+                <div className="px-2 shrink-0 flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <motion.h1 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-[18px] font-bold tracking-tight text-slate-900 leading-none"
+                        >
+                            Database
+                        </motion.h1>
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-[10px] text-slate-500 font-medium tracking-wide mt-0.5"
+                        >
+                            Central Registry
+                        </motion.p>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Search by Name, ID, or Hospital..."
-                      value={inputQuery}
-                      onChange={(e) => setInputQuery(e.target.value)}
-                      className="
-                        block w-full bg-transparent py-3 pl-10 pr-4
-                        text-[14px] font-semibold text-slate-800 placeholder:text-slate-400/80
-                        focus:outline-none rounded-[22px]
-                      "
-                    />
                 </div>
-              </motion.div>
-            </header>
 
-            {/* Actions Bar */}
-            <div className="w-full">
-                <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+                {/* 2. Actions Row (Search + Buttons) */}
+                <div className="flex flex-wrap items-center gap-1.5 w-full xl:w-auto xl:justify-end">
+                    
+                    {/* Search Bar - Height Reduced to h-9 (36px) */}
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative w-full sm:w-[220px] group"
+                    >
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                            <FiSearch className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={inputQuery}
+                            onChange={(e) => setInputQuery(e.target.value)}
+                            className="block w-full bg-white/50 border border-transparent focus:border-blue-200/50 py-1.5 pl-9 pr-3 text-[12px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none rounded-[14px] focus:bg-white transition-all h-9"
+                        />
+                    </motion.div>
+
+                    {/* Batch Actions (Conditional) */}
                     <AnimatePresence mode='wait'>
                         {newBatchIds.length > 0 && isBatchLoaded && (
                             <motion.div
                                 key="new-batch-actions"
-                                initial={{ opacity: 0, scale: 0.8, width: 50 }}
-                                animate={{ opacity: 1, scale: 1, width: "auto" }}
-                                exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                                transition={appleSpring}
-                                className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white/90 backdrop-blur-xl border border-indigo-100/50 rounded-[20px] shadow-[0_8px_30px_rgb(99,102,241,0.15)] overflow-hidden"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="flex items-center gap-1 p-0.5 bg-white border border-indigo-100/50 rounded-[14px] shadow-sm h-9"
                             >
-                                <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider px-3 hidden lg:inline-block">
-                                    Batch Ready
-                                </span>
-                                
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
                                     disabled={isBulkGeneratingV2}
-                                    className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold rounded-[14px] hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
+                                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-indigo-500 text-white rounded-[12px]"
+                                    title="Training"
                                 >
-                                    {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
-                                    <span>Training</span>
+                                    {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> : <FiDownload className="w-3.5 h-3.5" />}
                                 </motion.button>
                                 
                                 <motion.button
@@ -401,74 +389,66 @@ const CertificateDatabasePage: React.FC = () => {
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
                                     disabled={isBulkGeneratingV1}
-                                    className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[14px] hover:bg-indigo-50 transition-colors"
+                                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-indigo-50 text-indigo-600 rounded-[12px]"
+                                    title="Proctoring"
                                 >
-                                    {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
-                                    <span>Proctoring</span>
+                                    {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> : <FiDownload className="w-3.5 h-3.5" />}
                                 </motion.button>
 
                                 <motion.button 
-                                    whileHover={{ scale: 1.2, rotate: 90 }}
-                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.1 }}
                                     onClick={handleClearBatch}
-                                    className="cursor-pointer ml-1 p-2 text-slate-400 hover:text-red-500 bg-transparent rounded-full transition-colors"
+                                    className="cursor-pointer w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500"
                                 >
-                                    <FiX className="w-4 h-4" />
+                                    <FiX className="w-3.5 h-3.5" />
                                 </motion.button>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <div className="w-full sm:w-auto">
-                        <UploadButton
-                            onUploadSuccess={handleUploadSuccess}
-                            onUploadError={handleUploadError}
-                        />
+                    {/* Action Buttons Group - Height Reduced to h-9 */}
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-9 flex items-center">
+                            {/* Note: Ensure UploadButton can handle container height or is styled to fit h-9 internally if needed, otherwise it might overflow slightly */}
+                            <UploadButton
+                                onUploadSuccess={handleUploadSuccess}
+                                onUploadError={handleUploadError}
+                            />
+                        </div>
+
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className={`cursor-pointer flex items-center gap-2 px-3 h-9 rounded-[14px] text-[11px] font-bold border transition-all duration-300 ${isRefreshing ? 'bg-slate-100 text-slate-400 border-transparent' : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] shadow-sm'}`}
+                        >
+                            <FiRefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <span className="hidden sm:inline">Sync</span>
+                        </motion.button>
+
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsHelpCardVisible(true)}
+                            className="cursor-pointer flex items-center gap-2 px-3 h-9 rounded-[14px] text-[11px] font-bold border border-transparent bg-[#1d1d1f] text-white shadow-lg shadow-black/10 hover:bg-black transition-all duration-300"
+                        >
+                            <FiHelpCircle className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Guide</span>
+                        </motion.button>
                     </div>
-
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleRefresh}
-                        disabled={isRefreshing}
-                        className={`
-                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 py-3 
-                            rounded-[18px] text-[13px] font-bold border transition-all duration-300
-                            ${isRefreshing 
-                            ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
-                            : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] hover:border-[#007AFF]/20 shadow-sm hover:shadow-md'
-                            }
-                        `}
-                    >
-                        <FiRefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        <span>Sync</span>
-                    </motion.button>
-
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setIsHelpCardVisible(true)}
-                        className="
-                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 py-3 
-                            rounded-[18px] text-[13px] font-bold border border-transparent
-                            bg-[#1d1d1f] text-white shadow-xl shadow-black/10 hover:bg-black hover:shadow-2xl
-                            transition-all duration-300
-                        "
-                    >
-                        <FiHelpCircle className="w-4 h-4" />
-                        <span>Guide</span>
-                    </motion.button>
                 </div>
             </div>
 
-            {/* Data Table Section - Compacted Height */}
+            {/* Data Table Section - Maximized Space */}
             <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...appleSpring, delay: 0.2 }}
-                className="rounded-[32px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[480px] flex-1 p-1.5"
+                // CHANGE 3: Reduced p-1 to p-0.5, smaller rounding to save corners
+                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden flex-1 p-0.5 min-h-0"
             >
-                <div className="rounded-[28px] overflow-hidden bg-white/40 h-full">
+                <div className="rounded-[22px] overflow-hidden bg-white/40 h-full relative">
                     <CertificateTable
                         refreshKey={refreshKey}
                         onRefresh={handleTableDataUpdate as any} 
@@ -487,42 +467,41 @@ const CertificateDatabasePage: React.FC = () => {
         </div>
 
         {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
-        {/* Reduced width from 320px to 260px for compact view */}
-        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto no-scrollbar pb-4 h-full">
-            <div className="flex flex-col gap-3">
+        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto no-scrollbar pb-2 h-full shrink-0">
+            <div className="flex flex-col gap-2">
                 
-                {/* 1. Stat Cards */}
+                {/* 1. Stat Cards - UPDATED TEXT */}
                 <VerticalStatCard 
-                    label="Records" 
+                    label="Registry" 
                     value={dbTotalRecords} 
-                    subtext="System Wide"
+                    subtext="Verified Entries"
                     icon={FiDatabase}
                     colorClass="bg-emerald-500 text-emerald-600"
                     delay={0.1}
                 />
                 
                 <VerticalStatCard 
-                    label="Hospitals" 
+                    label="Institutions" 
                     value={uniqueHospitals.length} 
-                    subtext="Active Partners"
+                    subtext="Partner Network"
                     icon={FiGrid}
                     colorClass="bg-blue-500 text-blue-600"
                     delay={0.15}
                 />
 
                 <VerticalStatCard 
-                    label="Doctors" 
+                    label="Practitioners" 
                     value={doctorsCount} 
-                    subtext="Certified"
+                    subtext="Board Certified"
                     icon={FiUserCheck}
                     colorClass="bg-violet-500 text-violet-600"
                     delay={0.2}
                 />
 
                 <VerticalStatCard 
-                    label="Staff" 
+                    label="Personnel" 
                     value={staffCount} 
-                    subtext="Registered"
+                    subtext="System Directory"
                     icon={FiUsers}
                     colorClass="bg-orange-500 text-orange-600"
                     delay={0.25}
@@ -538,9 +517,10 @@ const CertificateDatabasePage: React.FC = () => {
                     <div className="rounded-[20px] overflow-hidden bg-white/60 p-3">
                         <div className="flex items-center gap-2 mb-1">
                             <FiPieChart className="text-slate-400 w-3.5 h-3.5" />
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Distribution</h3>
+                            {/* UPDATED TEXT */}
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Topology</h3>
                         </div>
-                        <div className="h-[220px] w-full flex items-center justify-center">
+                        <div className="h-[200px] w-full flex items-center justify-center">
                             <HospitalPieChart
                                 uniqueHospitals={uniqueHospitals}
                                 totalRecords={totalRecords}
@@ -550,25 +530,25 @@ const CertificateDatabasePage: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* 3. Analytics Summary (Compact) */}
+                {/* 3. Analytics Summary (Compact & UPDATED TEXT) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...appleSpring, delay: 0.35 }}
-                    className="p-4 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-[20px] text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden"
+                    // Darker gradient for "Pro" look
+                    className="p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-[20px] text-white shadow-lg shadow-black/10 relative overflow-hidden"
                 >
                     <div className="relative z-10">
-                        <h3 className="font-bold text-base mb-0.5">Analytics</h3>
-                        <p className="text-white/80 text-[10px] leading-relaxed mb-3">
-                            Real-time insights active.
+                        {/* UPDATED TEXT */}
+                        <h3 className="font-bold text-base mb-0.5">Intelligence</h3>
+                        <p className="text-white/60 text-[10px] leading-relaxed mb-3 font-medium">
+                            Automated verification and pattern analysis active.
                         </p>
-                        <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <FiTrendingUp className="w-3.5 h-3.5" />
+                        <div className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/10">
+                            <FiTrendingUp className="w-3.5 h-3.5 text-blue-400" />
                         </div>
                     </div>
-                    {/* Decorative circles */}
-                    <div className="absolute top-[-20%] right-[-20%] w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-[-10%] left-[-10%] w-16 h-16 bg-blue-400/20 rounded-full blur-xl" />
+                    <div className="absolute top-[-20%] right-[-20%] w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
                 </motion.div>
             </div>
         </aside>
