@@ -25,9 +25,9 @@ const NAME_MARGIN_LEFT = 72
 const NAME_MARGIN_TOP = 133    
 const HOSPITAL_MARGIN_LEFT = 72 
 
-// --- SECOND NAME CONFIGURATION (NEW) ---
-const SECOND_NAME_MARGIN_LEFT = 98  // Change this to move Second Name Left/Right
-const SECOND_NAME_MARGIN_TOP = 238  // Change this to move Second Name Up/Down (Distance from top)
+// --- SECOND NAME CONFIGURATION ---
+const SECOND_NAME_MARGIN_LEFT = 98  
+const SECOND_NAME_MARGIN_TOP = 238  
 
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
@@ -146,7 +146,6 @@ export default function BulkInvitationPage() {
     pdfDoc.registerFontkit(fontkit)
 
     // --- UPDATED FONT LOADING LOGIC ---
-    // Fetching from your local public/fonts folder
     const fontBytes = await fetch('/fonts/Poppins-Regular.ttf').then(res => res.arrayBuffer())
     const customFont = await pdfDoc.embedFont(fontBytes)
 
@@ -161,7 +160,7 @@ export default function BulkInvitationPage() {
     // Calculate second name Y based on its own top margin
     const secondNameY = pageHeight - SECOND_NAME_MARGIN_TOP 
 
-    // 1. First Name
+    // 1. First Name (No Comma)
     if (name) {
       firstPage.drawText(name, { 
           x: NAME_MARGIN_LEFT, 
@@ -183,11 +182,11 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // 3. Second Name (Using separate margin constants)
+    // 3. Second Name (WITH COMMA)
     if (name) {
-        firstPage.drawText(name, { 
-            x: SECOND_NAME_MARGIN_LEFT,  // Uses separate Left Margin
-            y: secondNameY,              // Uses separate Top Margin
+        firstPage.drawText(`${name},`, {  // <--- Added comma here
+            x: SECOND_NAME_MARGIN_LEFT, 
+            y: secondNameY,           
             size: FONT_SIZE, 
             font: customFont, 
             color: TEXT_COLOR 
