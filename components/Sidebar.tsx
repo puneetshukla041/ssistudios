@@ -22,7 +22,7 @@ import {
   LuChevronRight,
   LuSmartphone,
   LuMonitor,
-  LuX, // Added Close Icon for Mobile
+  LuX,
 } from 'react-icons/lu'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,7 +43,8 @@ type MenuItem = {
   name: string
   icon: React.ElementType
   path?: string
-  children?: { name: string; path: string }[]
+  // UPDATE 1: Added 'badge' optional property to children
+  children?: { name: string; path: string; badge?: string }[]
   onClick?: () => void
   mobileOnly?: boolean
   requiredAccess?: keyof UserAccess | string; 
@@ -59,6 +60,12 @@ const menu: MenuItem[] = [
     children: [
       { name: 'Database', path: '/certificates/database' },
       { name: 'Analysis', path: '/certificates/analysis' },
+      // UPDATE 2: Added Invitation Letter with Badge
+      { 
+        name: 'Invitation Letter', 
+        path: '/invitation', 
+        badge: 'NEW' 
+      },
     ],
   },
   { name: 'Bg Remover', icon: LuEraser, path: "/bgremover", requiredAccess: 'bgRemover' },
@@ -114,7 +121,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
-    if (window.innerWidth < 1024) { // Only lock on mobile/tablet
+    if (window.innerWidth < 1024) { 
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
   }, [isOpen]);
@@ -136,14 +143,11 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     return false
   }
 
-  // --- RENDER CONTENT FUNCTION (Reusable for Mobile & Desktop) ---
+  // --- RENDER CONTENT FUNCTION ---
   const renderSidebarContent = (isMobile: boolean, isDesktopHovered = false) => (
     <aside
       className={`flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
-        /* Responsive Widths */
         ${isMobile ? 'w-full h-full' : isDesktopHovered ? 'w-[260px] h-[100dvh]' : 'w-[88px] h-[100dvh]'}
-        
-        /* THEME & GLASSMORPHISM */
         bg-[#F5F5F7]/95 
         backdrop-blur-3xl 
         border-r border-slate-200/60
@@ -199,7 +203,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           const hasAccess = !item.requiredAccess || ((user?.access as any)?.[item.requiredAccess] ?? false);
           const isDeveloping = item.isUnderDevelopment || (!hasAccess && item.name !== 'Developer');
           
-          // Show Logout in nav only on mobile, otherwise footer
           if (item.mobileOnly && !isMobile) return null
 
           const Icon = item.icon
@@ -209,7 +212,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           return (
             <motion.div key={item.name} variants={menuItemVariants}>
               <motion.button
-                /* Physics */
                 whileHover={!isDeveloping ? { scale: 1.02, backgroundColor: active ? '' : 'rgba(255,255,255,0.7)' } : {}}
                 whileTap={!isDeveloping ? { scale: 0.96 } : {}}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -271,14 +273,21 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                             if (isOpen) toggleSidebar();
                           }
                         }}
-                        className={`block w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold
+                        // UPDATE 3: Changed to flex items-center justify-between to handle badge
+                        className={`flex items-center justify-between w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold
                           ${pathname.startsWith(child.path) 
                              ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.03)]' 
                              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
                           }
                         `}
                       >
-                        {child.name}
+                        <span>{child.name}</span>
+                        {/* UPDATE 3.1: Render Badge if present */}
+                        {child.badge && (
+                          <span className="ml-2 bg-indigo-100 text-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wide">
+                            {child.badge}
+                          </span>
+                        )}
                       </motion.button>
                     ))}
                   </div>
@@ -289,8 +298,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         })}
       </motion.nav>
 
-      {/* --- FOOTER (Hidden on mobile nav to save space, usually) --- */}
-      {/* Only show "Ecosystem" on Desktop. Mobile handles Logout in the list above. */}
+      {/* --- FOOTER --- */}
       {!isMobile && (
         <motion.div 
             className={`px-4 py-5 border-t border-slate-200/60 w-full mt-auto flex flex-col gap-4 shrink-0 transition-all duration-300 ${isDesktopHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}
@@ -335,7 +343,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
       )}
 
       {/* --- MOBILE SAFE AREA SPACER --- */}
-      {/* Ensures content isn't hidden behind iPhone home bar */}
       {isMobile && <div className="h-safe-bottom shrink-0 w-full" style={{ height: 'env(safe-area-inset-bottom)' }} />}
     </aside>
   )
@@ -344,7 +351,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     <>
       <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
       
-      {/* --- DESKTOP VIEW (Hidden on small screens) --- */}
+      {/* --- DESKTOP VIEW --- */}
       <div 
         className="hidden lg:block fixed top-0 left-0 h-[100dvh] z-30" 
         onMouseEnter={() => setIsHovered(true)} 
@@ -353,22 +360,20 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         {renderSidebarContent(false, isHovered)}
       </div>
 
-      {/* --- MOBILE VIEW (Overlay) --- */}
+      {/* --- MOBILE VIEW --- */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-40 lg:hidden" // lg:hidden ensures this never shows on desktop
+            className="fixed inset-0 z-40 lg:hidden"
           >
-            {/* Backdrop */}
             <div 
                 className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" 
                 onClick={toggleSidebar} 
             />
             
-            {/* Slide-in Panel */}
             <motion.div 
                 initial={{ x: '-100%' }} 
                 animate={{ x: '0%' }} 
