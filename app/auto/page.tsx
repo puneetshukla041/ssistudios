@@ -24,6 +24,11 @@ import {
 const NAME_MARGIN_LEFT = 72 
 const NAME_MARGIN_TOP = 133    
 const HOSPITAL_MARGIN_LEFT = 72 
+
+// --- SECOND NAME CONFIGURATION (NEW) ---
+const SECOND_NAME_MARGIN_LEFT = 98  // Change this to move Second Name Left/Right
+const SECOND_NAME_MARGIN_TOP = 238  // Change this to move Second Name Up/Down (Distance from top)
+
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
 
@@ -152,7 +157,9 @@ export default function BulkInvitationPage() {
     // --- COORDINATE CALCULATIONS ---
     const nameY = pageHeight - NAME_MARGIN_TOP
     const hospitalY = nameY - 15 
-    const secondNameY = hospitalY - 15 
+    
+    // Calculate second name Y based on its own top margin
+    const secondNameY = pageHeight - SECOND_NAME_MARGIN_TOP 
 
     // 1. First Name
     if (name) {
@@ -160,7 +167,7 @@ export default function BulkInvitationPage() {
           x: NAME_MARGIN_LEFT, 
           y: nameY, 
           size: FONT_SIZE, 
-          font: customFont, // Using the local font
+          font: customFont, 
           color: TEXT_COLOR 
       })
     }
@@ -171,18 +178,18 @@ export default function BulkInvitationPage() {
           x: HOSPITAL_MARGIN_LEFT, 
           y: hospitalY, 
           size: FONT_SIZE, 
-          font: customFont, // Using the local font
+          font: customFont, 
           color: TEXT_COLOR 
       })
     }
 
-    // 3. Second Name (Copy below hospital)
+    // 3. Second Name (Using separate margin constants)
     if (name) {
         firstPage.drawText(name, { 
-            x: NAME_MARGIN_LEFT, 
-            y: secondNameY,      
+            x: SECOND_NAME_MARGIN_LEFT,  // Uses separate Left Margin
+            y: secondNameY,              // Uses separate Top Margin
             size: FONT_SIZE, 
-            font: customFont, // Using the local font
+            font: customFont, 
             color: TEXT_COLOR 
         })
       }
