@@ -35,7 +35,7 @@ export default function LoginLayout() {
 
   // --- IOS-STYLE ANIMATION PHYSICS ---
   const iosSpring = {
-    type: "spring" as const, // <--- FIXED: Added 'as const' here
+    type: "spring" as const,
     stiffness: 300,
     damping: 30,
     mass: 1.2
@@ -295,7 +295,7 @@ export default function LoginLayout() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007AFF] transition-colors p-1"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007AFF] transition-colors p-1 cursor-pointer"
                   >
                     {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                   </button>
@@ -307,7 +307,7 @@ export default function LoginLayout() {
                 <button 
                   type="button"
                   onClick={() => setShowRequestModal(true)}
-                  className="text-sm font-medium text-slate-400 hover:text-[#007AFF] transition-colors"
+                  className="text-sm font-medium text-slate-400 hover:text-[#007AFF] transition-colors cursor-pointer"
                 >
                   Forgot Password?
                 </button>
