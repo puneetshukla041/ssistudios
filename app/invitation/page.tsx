@@ -6,15 +6,21 @@ import fontkit from '@pdf-lib/fontkit'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LuDownload, LuRotateCcw, LuLoader, LuType, LuBuilding, LuFileText } from 'react-icons/lu'
 
-// --- COORDINATES BASED ON YOUR IMAGE ---
-// x: Distance from left edge (pts)
-// y: Distance from bottom edge (pts). 
-// In professional letters, address blocks are roughly 70-75% up from the bottom.
-const TEXT_X_ALIGN = 82   // Aligns with the "Dr." in your image
-const DOCTOR_Y = 605      // Position for Dr. [Full Name]
-const HOSPITAL_Y = 590    // Position for [Hospital / Institution Name]
+// --- CONSTANTS ---
+const HOSPITAL_Y = 450 
+const NAME_MARGIN_LEFT = 89   
+const NAME_MARGIN_TOP = 133    
+
 const FONT_SIZE = 10
-const TEXT_COLOR = rgb(0.1, 0.1, 0.1) // Near black for professional print
+const TEXT_COLOR = rgb(0, 0, 0)
+
+// --- HELPER FUNCTION: TITLE CASE ---
+const toTitleCase = (str: string) => {
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  );
+}
 
 export default function InvitationPage() {
   const [doctorName, setDoctorName] = useState('')
@@ -42,26 +48,32 @@ export default function InvitationPage() {
 
       const pages = pdfDoc.getPages()
       const firstPage = pages[0]
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize()
 
-      // Draw Doctor Name (Dr. + Input)
+      // --- DRAW DOCTOR NAME (TOP LEFT) ---
       if (doctorName) {
-        firstPage.drawText(`Dr. ${doctorName}`, { 
-          x: TEXT_X_ALIGN, 
-          y: DOCTOR_Y, 
-          size: FONT_SIZE, 
-          font: poppinsFont, 
-          color: TEXT_COLOR 
+        const nameX = NAME_MARGIN_LEFT
+        const nameY = pageHeight - NAME_MARGIN_TOP
+
+        firstPage.drawText(doctorName, { 
+            x: nameX, 
+            y: nameY, 
+            size: FONT_SIZE, 
+            font: poppinsFont, 
+            color: TEXT_COLOR 
         })
       }
 
-      // Draw Hospital Name
+      // --- DRAW HOSPITAL NAME (CENTERED) ---
       if (hospitalName) {
+        const textWidth = poppinsFont.widthOfTextAtSize(hospitalName, FONT_SIZE)
+        const centerX = (pageWidth - textWidth) / 2
         firstPage.drawText(hospitalName, { 
-          x: TEXT_X_ALIGN, 
-          y: HOSPITAL_Y, 
-          size: FONT_SIZE, 
-          font: poppinsFont, 
-          color: TEXT_COLOR 
+            x: centerX, 
+            y: HOSPITAL_Y, 
+            size: FONT_SIZE, 
+            font: poppinsFont, 
+            color: TEXT_COLOR 
         })
       }
 
@@ -80,7 +92,7 @@ export default function InvitationPage() {
     if (pdfUrl) {
       const link = document.createElement('a')
       link.href = pdfUrl
-      link.download = `Invitation_${doctorName || 'Faculty'}.pdf`
+      link.download = `Invitation_${doctorName || 'Guest'}.pdf`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -90,6 +102,25 @@ export default function InvitationPage() {
   const handleReset = () => {
     setDoctorName('')
     setHospitalName('')
+  }
+
+  // --- HANDLERS FOR INPUTS ---
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Automatically convert input to Title Case
+    const val = e.target.value
+    // We only capitalize the first letter if the user is typing, 
+    // but to force it properly we can use the helper on every change
+    // or simply apply it to the visual value. 
+    // Here is a simple implementation that capitalizes words as you type:
+    
+    // Note: A strict force-capitalization on every keystroke can sometimes feel buggy 
+    // if editing the middle of a word, but for a name field it is usually acceptable.
+    // If you prefer it only on blur, let me know.
+    
+    // For now, we update state directly, but we can apply capitalization logic:
+    // This simple regex capitalizes the first letter of every word.
+    const capitalized = val.replace(/\b\w/g, char => char.toUpperCase());
+    setDoctorName(capitalized);
   }
 
   return (
@@ -107,22 +138,22 @@ export default function InvitationPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Invitation Studio</h1>
           <p className="text-[13px] text-slate-500 font-medium mt-2 leading-relaxed">
-            Personalize the faculty invitation for SMRSC 2026.
+            Generate professional invitation letters with instant live preview.
           </p>
         </div>
 
         <div className="space-y-6 flex-1">
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-              Faculty Name
+              Doctor Name
             </label>
             <div className="relative group">
                 <LuType className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                 <input
                   type="text"
                   value={doctorName}
-                  onChange={(e) => setDoctorName(e.target.value)}
-                  placeholder="Full Name"
+                  onChange={handleNameChange} // Used the new handler here
+                  placeholder="Enter name..."
                   className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all font-medium text-sm cursor-text"
                 />
             </div>
@@ -130,7 +161,7 @@ export default function InvitationPage() {
 
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-              Institution
+              Hospital / Organization
             </label>
             <div className="relative group">
                 <LuBuilding className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
@@ -138,7 +169,7 @@ export default function InvitationPage() {
                   type="text"
                   value={hospitalName}
                   onChange={(e) => setHospitalName(e.target.value)}
-                  placeholder="Hospital / Institution"
+                  placeholder="Enter organization..."
                   className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all font-medium text-sm cursor-text"
                 />
             </div>
@@ -163,8 +194,10 @@ export default function InvitationPage() {
         </div>
       </motion.div>
 
-      {/* --- PREVIEW AREA --- */}
+      {/* --- PREVIEW AREA: CLEAN WHITE CANVAS --- */}
       <div className="flex-1 h-full bg-[#F5F5F7] flex flex-col relative">
+        
+        {/* Top Floating Status */}
         <div className="absolute top-6 left-0 right-0 flex justify-center z-30 pointer-events-none">
             <AnimatePresence>
             {isGenerating && (
@@ -180,6 +213,7 @@ export default function InvitationPage() {
             </AnimatePresence>
         </div>
 
+        {/* The PDF Viewer */}
         <div className="flex-1 p-6 lg:p-12 flex items-center justify-center">
             <motion.div 
             initial={{ opacity: 0, scale: 0.99 }}
@@ -195,12 +229,13 @@ export default function InvitationPage() {
             ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-white text-slate-300">
                 <LuLoader className="animate-spin w-8 h-8 mb-3 text-slate-200" />
-                <p className="text-sm font-medium">Loading SMRSC 2026 Template...</p>
+                <p className="text-sm font-medium">Preparing document...</p>
                 </div>
             )}
             </motion.div>
         </div>
       </div>
+
     </div>
   )
 }
