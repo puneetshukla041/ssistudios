@@ -313,14 +313,13 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* CHANGE 1: Reduced py-2 to py-1.5 and gap-2 to gap-1.5 for ultra-compactness */}
+      {/* Main Layout */}
       <main className="w-full max-w-[1920px] px-4 md:px-6 py-1.5 relative z-10 flex flex-col lg:flex-row gap-2 lg:pl-32 transition-all duration-500 h-full overflow-hidden">
         
         {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
         <div className="flex-1 min-w-0 flex flex-col gap-1.5 h-full">
             
-            {/* HEADER - Compacted to save vertical space */}
-            {/* CHANGE 2: Reduced p-2 to p-1.5, smaller rounding */}
+            {/* HEADER */}
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1.5 bg-white/40 backdrop-blur-xl p-1.5 rounded-[18px] border border-white/60 shadow-sm shrink-0">
                 {/* 1. Title Area */}
                 <div className="px-2 shrink-0 flex items-center gap-3">
@@ -345,7 +344,7 @@ const CertificateDatabasePage: React.FC = () => {
                 {/* 2. Actions Row (Search + Buttons) */}
                 <div className="flex flex-wrap items-center gap-1.5 w-full xl:w-auto xl:justify-end">
                     
-                    {/* Search Bar - Height Reduced to h-9 (36px) */}
+                    {/* Search Bar */}
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -363,7 +362,7 @@ const CertificateDatabasePage: React.FC = () => {
                         />
                     </motion.div>
 
-                    {/* Batch Actions (Conditional) */}
+                    {/* Batch Actions */}
                     <AnimatePresence mode='wait'>
                         {newBatchIds.length > 0 && isBatchLoaded && (
                             <motion.div
@@ -406,10 +405,9 @@ const CertificateDatabasePage: React.FC = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Action Buttons Group - Height Reduced to h-9 */}
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-1.5">
                         <div className="h-9 flex items-center">
-                            {/* Note: Ensure UploadButton can handle container height or is styled to fit h-9 internally if needed, otherwise it might overflow slightly */}
                             <UploadButton
                                 onUploadSuccess={handleUploadSuccess}
                                 onUploadError={handleUploadError}
@@ -440,27 +438,30 @@ const CertificateDatabasePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Data Table Section - Maximized Space */}
+            {/* Data Table Section - RESPONSIVE FIX */}
             <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...appleSpring, delay: 0.2 }}
-                // CHANGE 3: Reduced p-1 to p-0.5, smaller rounding to save corners
-                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden flex-1 p-0.5 min-h-0"
+                // FIX: Added 'flex flex-col' and kept 'min-h-0' to handle flex shrinking
+                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden flex-1 p-0.5 min-h-0 flex flex-col"
             >
-                <div className="rounded-[22px] overflow-hidden bg-white/40 h-full relative">
-                    <CertificateTable
-                        refreshKey={refreshKey}
-                        onRefresh={handleTableDataUpdate as any} 
-                        onAlert={handleAlert}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery} 
-                        hospitalFilter={hospitalFilter}
-                        setHospitalFilter={setHospitalFilter}
-                        isAddFormVisible={isAddFormVisible}
-                        setIsAddFormVisible={setIsAddFormVisible}
-                        uniqueHospitals={uniqueHospitals} 
-                    />
+                {/* FIX: Changed overflow-hidden to overflow-y-auto so the table scrolls internally if it doesn't fit */}
+                <div className="rounded-[22px] bg-white/40 h-full relative flex flex-col overflow-hidden">
+                    <div className="flex-1 w-full h-full overflow-y-auto">
+                        <CertificateTable
+                            refreshKey={refreshKey}
+                            onRefresh={handleTableDataUpdate as any} 
+                            onAlert={handleAlert}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery} 
+                            hospitalFilter={hospitalFilter}
+                            setHospitalFilter={setHospitalFilter}
+                            isAddFormVisible={isAddFormVisible}
+                            setIsAddFormVisible={setIsAddFormVisible}
+                            uniqueHospitals={uniqueHospitals} 
+                        />
+                    </div>
                 </div>
             </motion.div>
 
@@ -470,7 +471,7 @@ const CertificateDatabasePage: React.FC = () => {
         <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto no-scrollbar pb-2 h-full shrink-0">
             <div className="flex flex-col gap-2">
                 
-                {/* 1. Stat Cards - UPDATED TEXT */}
+                {/* 1. Stat Cards */}
                 <VerticalStatCard 
                     label="Registry" 
                     value={dbTotalRecords} 
@@ -507,7 +508,7 @@ const CertificateDatabasePage: React.FC = () => {
                     delay={0.25}
                 />
 
-                {/* 2. Graph - Compacted */}
+                {/* 2. Graph */}
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -517,7 +518,6 @@ const CertificateDatabasePage: React.FC = () => {
                     <div className="rounded-[20px] overflow-hidden bg-white/60 p-3">
                         <div className="flex items-center gap-2 mb-1">
                             <FiPieChart className="text-slate-400 w-3.5 h-3.5" />
-                            {/* UPDATED TEXT */}
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Topology</h3>
                         </div>
                         <div className="h-[200px] w-full flex items-center justify-center">
@@ -530,16 +530,14 @@ const CertificateDatabasePage: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* 3. Analytics Summary (Compact & UPDATED TEXT) */}
+                {/* 3. Analytics Summary */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...appleSpring, delay: 0.35 }}
-                    // Darker gradient for "Pro" look
                     className="p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-[20px] text-white shadow-lg shadow-black/10 relative overflow-hidden"
                 >
                     <div className="relative z-10">
-                        {/* UPDATED TEXT */}
                         <h3 className="font-bold text-base mb-0.5">Intelligence</h3>
                         <p className="text-white/60 text-[10px] leading-relaxed mb-3 font-medium">
                             Automated verification and pattern analysis active.
