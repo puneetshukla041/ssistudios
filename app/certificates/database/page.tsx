@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image'; 
-import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX, FiDatabase } from 'react-icons/fi';
+import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX, FiDatabase, FiTrendingUp, FiPieChart } from 'react-icons/fi';
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
 
 // --- IMPORTS ---
@@ -20,12 +20,11 @@ import {
 } from '@/components/Certificates/utils/constants';
 
 // --- PRO-MOTION PHYSICS (Apple Style) ---
-// FIXED: Added 'as const' to ensure type compatibility with Framer Motion
 const appleSpring = {
   type: "spring",
   stiffness: 250,
   damping: 25,
-  mass: 0.6, // Lightweight feel
+  mass: 0.6,
   restDelta: 0.001
 } as const;
 
@@ -40,6 +39,43 @@ const AnimatedCounter = ({ value }: { value: number }) => {
 
   return <motion.span className="tabular-nums tracking-tight">{display}</motion.span>;
 };
+
+// --- COMPONENT: VERTICAL STAT CARD ---
+const VerticalStatCard = ({ 
+  label, 
+  value, 
+  subtext, 
+  icon: Icon, 
+  colorClass, 
+  delay 
+}: { 
+  label: string, 
+  value: number, 
+  subtext: string, 
+  icon: any, 
+  colorClass: string,
+  delay: number
+}) => (
+  <motion.div 
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ ...appleSpring, delay }}
+    className="group relative p-4 bg-white/60 backdrop-blur-2xl rounded-[24px] border border-white/60 shadow-sm hover:shadow-md transition-all duration-300"
+  >
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+        <div className="text-[28px] font-bold text-slate-800 tracking-tight leading-tight">
+          <AnimatedCounter value={value} />
+        </div>
+        <p className="text-[11px] font-medium text-slate-400 mt-0.5">{subtext}</p>
+      </div>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClass} bg-opacity-10 shadow-sm`}>
+        <Icon className={`w-5 h-5 ${colorClass.replace('bg-', 'text-')}`} />
+      </div>
+    </div>
+  </motion.div>
+);
 
 const CertificateDatabasePage: React.FC = () => {
   // --- Global State ---
@@ -99,7 +135,7 @@ const CertificateDatabasePage: React.FC = () => {
 
   // --- Debounce ---
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => setSearchQuery(inputQuery), 400); // Faster debounce for snappier feel
+    const delayDebounceFn = setTimeout(() => setSearchQuery(inputQuery), 400); 
     return () => clearTimeout(delayDebounceFn);
   }, [inputQuery]);
 
@@ -255,9 +291,9 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full w-full bg-[#F5F5F7] text-slate-900 font-quicksand selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden">
+    <div className="min-h-full w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden">
         
-      {/* Background Ambience (Optional: subtle blobs for depth) */}
+      {/* Background Ambience */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 blur-[120px] rounded-full pointer-events-none" />
 
@@ -277,298 +313,267 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto w-full max-w-[1600px] px-6 py-10 space-y-10 relative z-10">
+      {/* FIX APPLIED HERE:
+          1. Removed `mx-auto` so it doesn't try to center.
+          2. Added `lg:pl-72` (approx 290px) padding-left to push content past your existing sidebar.
+          3. Added `max-w-[1920px]` to allow content to stretch further right on big screens.
+      */}
+      <main className="w-full max-w-[1920px] px-6 py-8 relative z-10 flex flex-col lg:flex-row gap-8 lg:pl-72">
         
-        {/* --- STUDIO HEADER --- */}
-        <header className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-1 pl-1">
-            <motion.h1 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[34px] font-bold tracking-tight text-slate-900"
-            >
-              Database
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[14px] text-slate-500 font-medium tracking-wide"
-            >
-              Manage all digital certifications
-            </motion.p>
-          </div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full lg:w-[480px] group"
-          >
-            {/* Spotlight Glow Effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[26px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
+        {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6">
             
-            <div className="relative bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
-                  <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by Name, ID, or Hospital..."
-                  value={inputQuery}
-                  onChange={(e) => setInputQuery(e.target.value)}
-                  className="
-                    block w-full bg-transparent py-4 pl-14 pr-6
-                    text-[15px] font-semibold text-slate-800 placeholder:text-slate-400/80
-                    focus:outline-none rounded-[24px]
-                  "
-                />
-            </div>
-          </motion.div>
-        </header>
+            {/* Header */}
+            <header className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-1">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-[32px] font-bold tracking-tight text-slate-900"
+                >
+                  Database
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-[14px] text-slate-500 font-medium tracking-wide"
+                >
+                  Manage all digital certifications
+                </motion.p>
+              </div>
 
-        {/* --- STATS WIDGETS --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* 1. TOTAL RECORDS */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={appleSpring}
-            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
-               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <div className="relative w-6 h-6 invert brightness-0 opacity-90">
-                     <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
-                  </div>
-               </div>
-            </div>
-            <div className="mt-2">
-                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-emerald-600 transition-colors">Records</p>
-                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
-                    <AnimatedCounter value={dbTotalRecords} />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative w-full md:w-[420px] group"
+              >
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[26px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
+                <div className="relative bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                      <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search by Name, ID, or Hospital..."
+                      value={inputQuery}
+                      onChange={(e) => setInputQuery(e.target.value)}
+                      className="
+                        block w-full bg-transparent py-3.5 pl-14 pr-6
+                        text-[15px] font-semibold text-slate-800 placeholder:text-slate-400/80
+                        focus:outline-none rounded-[24px]
+                      "
+                    />
                 </div>
-                <div className="text-[12px] font-medium text-slate-400 mt-1 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    System Wide
-                </div>
-            </div>
-          </motion.div>
+              </motion.div>
+            </header>
 
-          {/* 2. HOSPITALS */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={{ ...appleSpring, delay: 0.05 }}
-            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
-               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <FiGrid className="w-6 h-6 text-white" />
-               </div>
-            </div>
-            <div className="mt-2">
-                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-blue-600 transition-colors">Hospitals</p>
-                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
-                    <AnimatedCounter value={uniqueHospitals.length} />
-                </div>
-                <div className="text-[12px] font-medium text-slate-400 mt-1">Active Partners</div>
-            </div>
-          </motion.div>
+            {/* Actions Bar */}
+            <div className="w-full">
+                <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+                    {/* New Batch Actions */}
+                    <AnimatePresence mode='wait'>
+                        {newBatchIds.length > 0 && isBatchLoaded && (
+                            <motion.div
+                                key="new-batch-actions"
+                                initial={{ opacity: 0, scale: 0.8, width: 50 }}
+                                animate={{ opacity: 1, scale: 1, width: "auto" }}
+                                exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                                transition={appleSpring}
+                                className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white/90 backdrop-blur-xl border border-indigo-100/50 rounded-[20px] shadow-[0_8px_30px_rgb(99,102,241,0.15)] overflow-hidden"
+                            >
+                                <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider px-3 hidden lg:inline-block">
+                                    Batch Ready
+                                </span>
+                                
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
+                                    disabled={isBulkGeneratingV2}
+                                    className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold rounded-[14px] hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
+                                >
+                                    {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
+                                    <span>Training</span>
+                                </motion.button>
+                                
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
+                                    disabled={isBulkGeneratingV1}
+                                    className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[14px] hover:bg-indigo-50 transition-colors"
+                                >
+                                    {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
+                                    <span>Proctoring</span>
+                                </motion.button>
 
-          {/* 3. DOCTORS */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={{ ...appleSpring, delay: 0.1 }}
-            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
-               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                  <FiUserCheck className="w-6 h-6 text-white" />
-               </div>
-            </div>
-            <div className="mt-2">
-                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-violet-600 transition-colors">Doctors</p>
-                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
-                    <AnimatedCounter value={doctorsCount} />
-                </div>
-                <div className="text-[12px] font-medium text-slate-400 mt-1">Certified</div>
-            </div>
-          </motion.div>
+                                <motion.button 
+                                    whileHover={{ scale: 1.2, rotate: 90 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={handleClearBatch}
+                                    className="cursor-pointer ml-1 p-2 text-slate-400 hover:text-red-500 bg-transparent rounded-full transition-colors"
+                                >
+                                    <FiX className="w-4 h-4" />
+                                </motion.button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-          {/* 4. STAFF */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={{ ...appleSpring, delay: 0.15 }}
-            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
-               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                  <FiUsers className="w-6 h-6 text-white" />
-               </div>
-            </div>
-            <div className="mt-2">
-                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-orange-500 transition-colors">Staff</p>
-                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
-                    <AnimatedCounter value={staffCount} />
+                    <div className="w-full sm:w-auto">
+                        <UploadButton
+                            onUploadSuccess={handleUploadSuccess}
+                            onUploadError={handleUploadError}
+                        />
+                    </div>
+
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className={`
+                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
+                            rounded-[20px] text-[13px] font-bold border transition-all duration-300
+                            ${isRefreshing 
+                            ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
+                            : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] hover:border-[#007AFF]/20 shadow-sm hover:shadow-md'
+                            }
+                        `}
+                    >
+                        <FiRefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span>Sync</span>
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsHelpCardVisible(true)}
+                        className="
+                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
+                            rounded-[20px] text-[13px] font-bold border border-transparent
+                            bg-[#1d1d1f] text-white shadow-xl shadow-black/10 hover:bg-black hover:shadow-2xl
+                            transition-all duration-300
+                        "
+                    >
+                        <FiHelpCircle className="w-4 h-4" />
+                        <span>Guide</span>
+                    </motion.button>
                 </div>
-                <div className="text-[12px] font-medium text-slate-400 mt-1">Registered</div>
             </div>
-          </motion.div>
+
+            {/* Data Table Section */}
+            <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...appleSpring, delay: 0.2 }}
+                className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[500px] flex-1 p-2"
+            >
+                <div className="rounded-[30px] overflow-hidden bg-white/40 h-full">
+                    <CertificateTable
+                        refreshKey={refreshKey}
+                        onRefresh={handleTableDataUpdate as any} 
+                        onAlert={handleAlert}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery} 
+                        hospitalFilter={hospitalFilter}
+                        setHospitalFilter={setHospitalFilter}
+                        isAddFormVisible={isAddFormVisible}
+                        setIsAddFormVisible={setIsAddFormVisible}
+                        uniqueHospitals={uniqueHospitals} 
+                    />
+                </div>
+            </motion.div>
+
         </div>
 
-        {/* --- CONTROL CENTER / ACTIONS --- */}
-        <div className="flex flex-col gap-4 pb-2 z-20 relative">
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+        {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
+        <aside className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4">
+            <div className="sticky top-6 flex flex-col gap-4">
                 
-                {/* ✅ NEW BATCH ACTIONS - Dynamic Island Expand Animation */}
-                <AnimatePresence mode='wait'>
-                    {newBatchIds.length > 0 && isBatchLoaded && (
-                        <motion.div
-                            key="new-batch-actions"
-                            initial={{ opacity: 0, scale: 0.8, width: 50 }}
-                            animate={{ opacity: 1, scale: 1, width: "auto" }}
-                            exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                            transition={appleSpring}
-                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white/90 backdrop-blur-xl border border-indigo-100/50 rounded-[20px] shadow-[0_8px_30px_rgb(99,102,241,0.15)] overflow-hidden"
-                        >
-                            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider px-3 hidden lg:inline-block">
-                                Batch Ready
-                            </span>
-                            
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
-                                disabled={isBulkGeneratingV2}
-                                className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold rounded-[14px] hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
-                            >
-                                {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
-                                <span>Training</span>
-                            </motion.button>
-                            
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
-                                disabled={isBulkGeneratingV1}
-                                className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[14px] hover:bg-indigo-50 transition-colors"
-                            >
-                                {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
-                                <span>Proctoring</span>
-                            </motion.button>
-
-                            <motion.button 
-                                whileHover={{ scale: 1.2, rotate: 90 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={handleClearBatch}
-                                className="cursor-pointer ml-1 p-2 text-slate-400 hover:text-red-500 bg-transparent rounded-full transition-colors"
-                            >
-                                <FiX className="w-4 h-4" />
-                            </motion.button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <div className="w-full sm:w-auto">
-                    <UploadButton
-                        onUploadSuccess={handleUploadSuccess}
-                        onUploadError={handleUploadError}
-                    />
-                </div>
-
-                <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className={`
-                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
-                        rounded-[20px] text-[13px] font-bold border transition-all duration-300
-                        ${isRefreshing 
-                        ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
-                        : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] hover:border-[#007AFF]/20 shadow-sm hover:shadow-md'
-                        }
-                    `}
-                >
-                    <FiRefreshCw 
-                        className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
-                    />
-                    <span>Sync</span>
-                </motion.button>
-
-                <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsHelpCardVisible(true)}
-                    className="
-                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
-                        rounded-[20px] text-[13px] font-bold border border-transparent
-                        bg-[#1d1d1f] text-white shadow-xl shadow-black/10 hover:bg-black hover:shadow-2xl
-                        transition-all duration-300
-                    "
-                >
-                    <FiHelpCircle className="w-4 h-4" />
-                    <span>Guide</span>
-                </motion.button>
-            </div>
-        </div>
-
-        {/* --- CONTENT AREA: Charts & Table --- */}
-        <div className="grid grid-cols-1 gap-8 pb-10">
-          
-          {/* Analytics Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...appleSpring, delay: 0.2 }}
-            className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden p-2"
-          >
-            <div className="rounded-[30px] overflow-hidden bg-white/40">
-                <HospitalPieChart
-                uniqueHospitals={uniqueHospitals}
-                totalRecords={totalRecords}
-                certificates={certificateData} 
+                {/* 1. Stat Cards */}
+                <VerticalStatCard 
+                    label="Records" 
+                    value={dbTotalRecords} 
+                    subtext="System Wide"
+                    icon={FiDatabase}
+                    colorClass="bg-emerald-500 text-emerald-600"
+                    delay={0.1}
                 />
-            </div>
-          </motion.div>
-          
-          {/* Data Table Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...appleSpring, delay: 0.3 }}
-            className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[500px] p-2"
-          >
-             <div className="rounded-[30px] overflow-hidden bg-white/40 h-full">
-                <CertificateTable
-                refreshKey={refreshKey}
-                onRefresh={handleTableDataUpdate as any} 
-                onAlert={handleAlert}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery} 
-                hospitalFilter={hospitalFilter}
-                setHospitalFilter={setHospitalFilter}
-                isAddFormVisible={isAddFormVisible}
-                setIsAddFormVisible={setIsAddFormVisible}
-                uniqueHospitals={uniqueHospitals} 
+                
+                <VerticalStatCard 
+                    label="Hospitals" 
+                    value={uniqueHospitals.length} 
+                    subtext="Active Partners"
+                    icon={FiGrid}
+                    colorClass="bg-blue-500 text-blue-600"
+                    delay={0.15}
                 />
+
+                <VerticalStatCard 
+                    label="Doctors" 
+                    value={doctorsCount} 
+                    subtext="Certified"
+                    icon={FiUserCheck}
+                    colorClass="bg-violet-500 text-violet-600"
+                    delay={0.2}
+                />
+
+                <VerticalStatCard 
+                    label="Staff" 
+                    value={staffCount} 
+                    subtext="Registered"
+                    icon={FiUsers}
+                    colorClass="bg-orange-500 text-orange-600"
+                    delay={0.25}
+                />
+
+                {/* 2. Graph */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...appleSpring, delay: 0.3 }}
+                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm"
+                >
+                    <div className="rounded-[20px] overflow-hidden bg-white/60 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <FiPieChart className="text-slate-400 w-4 h-4" />
+                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Distribution</h3>
+                        </div>
+                        <div className="h-[250px] w-full flex items-center justify-center">
+                            <HospitalPieChart
+                                uniqueHospitals={uniqueHospitals}
+                                totalRecords={totalRecords}
+                                certificates={certificateData} 
+                            />
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* 3. Analytics Summary (Optional) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...appleSpring, delay: 0.35 }}
+                    className="p-5 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-[24px] text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden"
+                >
+                    <div className="relative z-10">
+                        <h3 className="font-bold text-lg mb-1">Analytics</h3>
+                        <p className="text-white/80 text-xs leading-relaxed mb-4">
+                            Real-time insights. Check breakdown above.
+                        </p>
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <FiTrendingUp className="w-4 h-4" />
+                        </div>
+                    </div>
+                    {/* Decorative circles */}
+                    <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                    <div className="absolute bottom-[-10%] left-[-10%] w-24 h-24 bg-blue-400/20 rounded-full blur-xl" />
+                </motion.div>
             </div>
-          </motion.div>
-        </div>
+        </aside>
+
       </main>
-
-      <style>{`
-        .font-quicksand {
-          font-family: 'Quicksand', sans-serif;
-        }
-      `}</style>
     </div>
   );
 };

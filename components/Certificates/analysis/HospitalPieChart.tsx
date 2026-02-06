@@ -13,7 +13,7 @@ interface HospitalData {
 
 interface HospitalPieChartProps {
     uniqueHospitals: string[];
-    totalRecords: number; // This contains the true total from your DB
+    totalRecords: number; 
     certificates: ICertificateClient[];
 }
 
@@ -28,23 +28,27 @@ const CHART_COLORS = [
 const CustomTooltip = ({ active, payload, totalRecords }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
-        // Calculate percentage based on the TRUE total records, not just the visible page
+        // Calculate percentage based on the TRUE total records
         const percentage = totalRecords > 0 
             ? ((data.value / totalRecords) * 100).toFixed(1) 
             : 0;
 
         return (
-            <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/50 p-3 rounded-xl shadow-2xl text-xs">
-                <div className="flex items-center gap-2 mb-1">
+            <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/50 p-3 rounded-xl shadow-2xl text-xs z-50">
+                <div className="flex items-center gap-2 mb-1.5">
                     <div 
-                        className="w-2 h-2 rounded-full" 
+                        className="w-2 h-2 rounded-full ring-2 ring-white/10" 
                         style={{ backgroundColor: data.color }}
                     />
-                    <span className="font-semibold text-slate-200">{data.name}</span>
+                    <span className="font-semibold text-slate-100 max-w-[150px] truncate">{data.name}</span>
                 </div>
-                <div className="flex items-center justify-between gap-4 text-slate-400">
-                    <span>Records: <b className="text-white">{data.value}</b></span>
-                    <span>Share: <b className="text-white">{percentage}%</b></span>
+                <div className="flex items-center justify-between gap-6 text-slate-400">
+                    <span className="font-medium">Certificates</span>
+                    <span className="font-bold text-white">{data.value}</span>
+                </div>
+                <div className="flex items-center justify-between gap-6 text-slate-400 mt-0.5">
+                    <span className="font-medium">Share</span>
+                    <span className="font-bold text-white">{percentage}%</span>
                 </div>
             </div>
         );
@@ -53,15 +57,14 @@ const CustomTooltip = ({ active, payload, totalRecords }: any) => {
 };
 
 const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center h-full py-10 text-slate-400">
-        <div className="w-24 h-24 rounded-full border-4 border-slate-100 border-dashed flex items-center justify-center mb-3">
-            <PieChartIcon className="w-8 h-8 opacity-50" />
+    <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400">
+        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-3 shadow-inner">
+            <PieChartIcon className="w-8 h-8 opacity-40 text-slate-500" />
         </div>
-        <p className="text-sm font-medium">No data to display</p>
+        <p className="text-sm font-medium">No distribution data</p>
     </div>
 );
 
-// ✅ Added totalRecords to destructuring
 const HospitalPieChart: React.FC<HospitalPieChartProps> = ({ uniqueHospitals, certificates, totalRecords }) => {
 
     // 1. Calculate Data
@@ -88,32 +91,29 @@ const HospitalPieChart: React.FC<HospitalPieChartProps> = ({ uniqueHospitals, ce
         return { pieData: data, visibleTotal: total };
     }, [uniqueHospitals, certificates]);
 
-    // ✅ If totalRecords is passed as 0 (e.g. while loading), fallback to visible total
+    // Use totalRecords for accurate global percentage, fallback to visible total if needed
     const displayTotal = totalRecords || visibleTotal;
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full animate-in fade-in duration-700">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[24px] border border-white/60 shadow-sm overflow-hidden flex flex-col h-full w-full">
             
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-indigo-500" />
+                    <h3 className="text-[13px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-indigo-500" />
                         Distribution Analysis
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        Breakdown of certificates issued by institution.
-                    </p>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="p-6 flex-1">
+            <div className="p-5 flex-1 flex flex-col justify-center">
                 {pieData.length > 0 ? (
-                    <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="flex flex-col items-center gap-6">
                         
                         {/* CHART SECTION (Donut) */}
-                        <div className="relative w-full md:w-1/2 h-64 flex-shrink-0">
+                        <div className="relative w-48 h-48 flex-shrink-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -122,10 +122,10 @@ const HospitalPieChart: React.FC<HospitalPieChartProps> = ({ uniqueHospitals, ce
                                         nameKey="name"
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={85}
+                                        innerRadius={55}
+                                        outerRadius={75}
                                         paddingAngle={4}
-                                        cornerRadius={4}
+                                        cornerRadius={5}
                                         stroke="none"
                                     >
                                         {pieData.map((entry, index) => (
@@ -137,50 +137,45 @@ const HospitalPieChart: React.FC<HospitalPieChartProps> = ({ uniqueHospitals, ce
                                         ))}
                                     </Pie>
                                     <Tooltip 
-                                        // ✅ Use displayTotal for accurate percentage calculation
                                         content={<CustomTooltip totalRecords={displayTotal} />} 
                                         cursor={{ fill: 'transparent' }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
                             
-                            {/* Central Label for Donut */}
+                            {/* Central Label */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-3xl font-bold text-slate-800 tracking-tight">
-                                    {/* ✅ SHOWING TOTAL RECORDS (DB COUNT), NOT PAGE COUNT */}
+                                <span className="text-2xl font-bold text-slate-800 tracking-tight leading-none">
                                     {displayTotal}
                                 </span>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                                    Total
-                                </span>
+                                <span className="text-[10px] font-semibold text-slate-400 mt-0.5">Total</span>
                             </div>
                         </div>
 
                         {/* LEGEND / STATS SECTION */}
-                        <div className="w-full md:w-1/2 flex flex-col gap-4 max-h-72 overflow-y-auto custom-scrollbar pr-2">
+                        <div className="w-full flex flex-col gap-3 max-h-64 overflow-y-auto custom-scrollbar px-1">
                             {pieData.map((item) => {
-                                // Calculate percentage based on displayTotal (DB Count)
                                 const percent = ((item.value / displayTotal) * 100).toFixed(1);
                                 return (
-                                    <div key={item.name} className="group flex flex-col gap-1.5">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center gap-2">
+                                    <div key={item.name} className="flex flex-col gap-1.5 group">
+                                        <div className="flex items-center justify-between text-[13px]">
+                                            <div className="flex items-center gap-2 min-w-0">
                                                 <span 
-                                                    className="w-2.5 h-2.5 rounded-full shadow-sm"
+                                                    className="w-2 h-2 rounded-full shadow-sm flex-shrink-0"
                                                     style={{ backgroundColor: item.color }} 
                                                 />
-                                                <span className="font-medium text-slate-700 truncate max-w-[140px]" title={item.name}>
+                                                <span className="font-medium text-slate-600 truncate" title={item.name}>
                                                     {item.name}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 flex-shrink-0">
                                                 <span className="font-semibold text-slate-900">{item.value}</span>
-                                                <span className="text-xs text-slate-400 w-10 text-right">{percent}%</span>
+                                                <span className="text-[11px] text-slate-400 w-9 text-right tabular-nums">{percent}%</span>
                                             </div>
                                         </div>
                                         
                                         {/* Visual Progress Bar */}
-                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all duration-1000 ease-out"
                                                 style={{ 
