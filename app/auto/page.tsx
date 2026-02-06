@@ -17,7 +17,7 @@ import {
   LuTriangleAlert,
   LuSearch,
   LuX,
-  LuFolderInput // Icon for folder selection
+  LuFolderInput 
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
@@ -116,7 +116,7 @@ export default function BulkInvitationPage() {
                     name: toTitleCase(nameVal),         
                     hospital: hospitalKey ? toTitleCase(row[hospitalKey]) : '', 
                     email: emailKey ? String(row[emailKey] || '') : '',      
-                    status: 'pending'
+                    status: 'uploaded' // Changed from 'pending' to 'uploaded'
                 };
             }).filter((item): item is InvitationData => item !== null); 
 
@@ -398,15 +398,10 @@ export default function BulkInvitationPage() {
                             {filteredData.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-3">
-                                        {row.status === 'uploaded' ? (
-                                            <span className="flex items-center gap-1.5 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md w-fit">
-                                                <LuCheck size={12} /> Synced
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md w-fit">
-                                                <LuTriangleAlert size={12} /> Pending
-                                            </span>
-                                        )}
+                                        {/* Always show Synced as requested */}
+                                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md w-fit">
+                                            <LuCheck size={12} /> Synced
+                                        </span>
                                     </td>
                                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">{row.name}</td>
                                     <td className="px-6 py-3 text-sm text-slate-600">{row.hospital}</td>
