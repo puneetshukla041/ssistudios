@@ -19,13 +19,15 @@ const fontBody = Inter({
   display: 'swap',
 });
 
-// --- DYNAMIC ISLAND PHYSICS ---
-// High stiffness for snap, sufficient damping to prevent wobbling
-const dynamicIslandSpring = {
+// --- SLOW DYNAMIC ISLAND PHYSICS ---
+// mass: 1.5 adds weight (slower start/end)
+// stiffness: 80 makes the movement gentle
+// damping: 20 prevents excessive bouncing
+const dynamicIslandSlowSpring = {
   type: "spring" as const,
-  stiffness: 340,
-  damping: 30,
-  mass: 1
+  stiffness: 80, 
+  damping: 20,
+  mass: 1.5,
 };
 
 // --- Helper Functions ---
@@ -63,7 +65,7 @@ const WavingAnimeCharacter = () => {
       style={{ top: "-22px", left: "10px", zIndex: 10 }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.6 }} // Delayed appearance
+      transition={{ type: "spring", damping: 12, stiffness: 100, delay: 1.2 }} // Delayed further for the slow open
     >
       <motion.svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
         <motion.rect x="20" y="28" width="60" height="8" rx="4" fill="#1e293b" />
@@ -91,7 +93,6 @@ export default function UserHeader() {
   const displayName = capitalizeFirstLetter(user?.username || "Guest");
   const [showTooltip, setShowTooltip] = useState(false);
   
-  // Time State
   const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -120,47 +121,44 @@ export default function UserHeader() {
   if (!mounted) return null;
 
   return (
-    // The outer container ensures centering
     <div className={`w-full max-w-[1200px] mx-auto mb-8 px-4 flex justify-center ${fontBody.className}`}>
       
-      {/* --- DYNAMIC ISLAND CONTAINER --- */}
       <motion.div
         layout
         initial={{ 
-            width: "140px",   // Start small (pill shape)
-            height: "48px",   // Short height
-            borderRadius: "50px", // Full rounded pill
+            width: "100px",
+            height: "40px",
+            borderRadius: "50px",
             opacity: 0,
-            y: -20
+            y: -40,
+            filter: "blur(10px)"
         }}
         animate={{ 
-            width: "100%",    // Expand to full container width
-            height: "auto",   // Expand to fit content
-            borderRadius: "36px", // Slightly less rounded corners
+            width: "100%",
+            height: "auto",
+            borderRadius: "36px",
             opacity: 1,
-            y: 0
+            y: 0,
+            filter: "blur(0px)"
         }}
-        transition={dynamicIslandSpring}
+        transition={dynamicIslandSlowSpring}
         className="relative bg-white/70 backdrop-blur-[40px] backdrop-saturate-[180%] border border-white/50 ring-1 ring-black/5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] overflow-hidden"
       >
         
-        {/* Glass Sheen */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent pointer-events-none" />
 
-        {/* Content Container - Fades in slightly after expansion starts */}
+        {/* Inner Content - Fades in slowly after the expansion is well underway */}
         <motion.div 
             className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 p-6 sm:p-8"
-            initial={{ opacity: 0, filter: "blur(5px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            transition={{ delay: 0.15, duration: 0.4 }} // Wait for expansion to start
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 1.2, ease: "easeOut" }} 
         >
           
-          {/* LEFT: Greeting Section */}
           <div className="flex items-center gap-5 w-full md:w-auto">
-            {/* Avatar */}
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="hidden sm:flex w-14 h-14 flex-shrink-0 rounded-[18px] bg-gradient-to-b from-white to-slate-100 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] items-center justify-center text-slate-700 font-bold text-xl cursor-pointer"
+              className="hidden sm:flex w-14 h-14 flex-shrink-0 rounded-[18px] bg-gradient-to-b from-white to-slate-50 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] items-center justify-center text-slate-700 font-bold text-xl cursor-pointer"
             >
               {displayName.charAt(0)}
             </motion.div>
@@ -185,10 +183,8 @@ export default function UserHeader() {
             </div>
           </div>
 
-          {/* RIGHT: Time & Actions */}
           <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
             
-            {/* 1. Date & Time Pill */}
             <div className="hidden md:flex flex-col items-end mr-1">
                  <div className="flex items-center gap-2.5 px-3.5 py-2 bg-white/50 border border-white/60 rounded-xl shadow-sm backdrop-blur-md whitespace-nowrap">
                     <Clock size={15} className="text-slate-500" />
@@ -202,7 +198,6 @@ export default function UserHeader() {
                  </div>
             </div>
 
-            {/* 2. Operational Status */}
             <motion.div
               whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.9)", scale: 1.02 }}
               className="relative hidden sm:flex items-center gap-2 px-3 py-2 bg-white/40 border border-white/60 rounded-xl cursor-pointer transition-all shadow-sm"
@@ -229,7 +224,6 @@ export default function UserHeader() {
               </AnimatePresence>
             </motion.div>
 
-            {/* 3. New Project Button */}
             <motion.button 
                 whileHover={{ scale: 1.02, backgroundColor: "#0f172a" }}
                 whileTap={{ scale: 0.98 }}
