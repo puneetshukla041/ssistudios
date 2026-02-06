@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image'; 
-import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX } from 'react-icons/fi';
+import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX, FiDatabase } from 'react-icons/fi';
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
 
 // --- IMPORTS ---
@@ -19,25 +19,26 @@ import {
   initialNewCertificateState 
 } from '@/components/Certificates/utils/constants';
 
-// --- IOS ANIMATION PHYSICS ---
-const iosSpring = {
-  type: "spring" as const,
-  stiffness: 350,
-  damping: 30,
-  mass: 0.8
-};
+// --- PRO-MOTION PHYSICS (Apple Style) ---
+// FIXED: Added 'as const' to ensure type compatibility with Framer Motion
+const appleSpring = {
+  type: "spring",
+  stiffness: 250,
+  damping: 25,
+  mass: 0.6, // Lightweight feel
+  restDelta: 0.001
+} as const;
 
-// --- COMPONENT: SMOOTH ANIMATED NUMBER ---
-// Uses spring physics to interpolate numbers smoothly (0 -> 1000)
-const AnimatedNumber = ({ value }: { value: number }) => {
-  const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
-  const display = useTransform(spring, (current) => Math.round(current).toLocaleString());
+// --- COMPONENT: INTELLIGENT NUMBER COUNTER ---
+const AnimatedCounter = ({ value }: { value: number }) => {
+  const spring = useSpring(0, { stiffness: 150, damping: 20, mass: 0.8 });
+  const display = useTransform(spring, (current) => Math.floor(current).toLocaleString());
 
   useEffect(() => {
     spring.set(value);
   }, [value, spring]);
 
-  return <motion.span>{display}</motion.span>;
+  return <motion.span className="tabular-nums tracking-tight">{display}</motion.span>;
 };
 
 const CertificateDatabasePage: React.FC = () => {
@@ -84,27 +85,25 @@ const CertificateDatabasePage: React.FC = () => {
   // --- Stats State ---
   const [doctorsCount, setDoctorsCount] = useState(0);
   const [staffCount, setStaffCount] = useState(0);
-  const [dbTotalRecords, setDbTotalRecords] = useState(0); // For stats
+  const [dbTotalRecords, setDbTotalRecords] = useState(0);
 
-  // --- Search & UI State ---
+  // --- UI State ---
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [hospitalFilter, setHospitalFilter] = useState('');
   const [isHelpCardVisible, setIsHelpCardVisible] = useState(false); 
   const [dummyLoading, setDummyLoading] = useState(false);
-
-  // --- ADD FORM STATE ---
   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newCertificateData, setNewCertificateData] = useState<Omit<ICertificateClient, '_id'>>(initialNewCertificateState);
 
   // --- Debounce ---
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => setSearchQuery(inputQuery), 500);
+    const delayDebounceFn = setTimeout(() => setSearchQuery(inputQuery), 400); // Faster debounce for snappier feel
     return () => clearTimeout(delayDebounceFn);
   }, [inputQuery]);
 
-  // --- Fetch Global Stats ---
+  // --- Fetch Stats ---
   useEffect(() => {
     const fetchGlobalStats = async () => {
       try {
@@ -122,7 +121,7 @@ const CertificateDatabasePage: React.FC = () => {
     fetchGlobalStats();
   }, [refreshKey]);
 
-  // --- Alerts & Refresh Logic ---
+  // --- Logic ---
   const handleAlert = useCallback((message: string, isError: boolean) => {
        if (isError) console.error("Alert (ERROR):", message);
        else console.log("Alert (INFO):", message);
@@ -135,12 +134,11 @@ const CertificateDatabasePage: React.FC = () => {
 
   useEffect(() => {
     if (isRefreshing) {
-      const timeout = setTimeout(() => setIsRefreshing(false), 2000); 
+      const timeout = setTimeout(() => setIsRefreshing(false), 1500); 
       return () => clearTimeout(timeout);
     }
   }, [isRefreshing]);
 
-  // --- Fetch Export ---
   const fetchCertificatesForExportPageSide = useCallback(async (isBulkPdfExport = false, idsToFetch: string[] = []) => {
       try {
           const params = new URLSearchParams({ all: 'true' });
@@ -156,7 +154,6 @@ const CertificateDatabasePage: React.FC = () => {
       }
   }, []);
 
-  // --- Actions Hook Setup ---
   const [dummySelectedIds, setDummySelectedIds] = useState<string[]>([]);
     
   const deleteCertificate = useCallback(async (id: string): Promise<boolean> => {
@@ -205,7 +202,6 @@ const CertificateDatabasePage: React.FC = () => {
     setIsLoading: setDummyLoading,
   });
 
-  // --- Handlers ---
   const handleUploadSuccess = useCallback((message: string, uploadedIds?: string[]) => {
     handleAlert(message, false);
     handleRefresh();
@@ -259,8 +255,12 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full w-full bg-[#F2F2F7] text-slate-800 font-quicksand selection:bg-[#007AFF]/20 selection:text-[#007AFF]">
+    <div className="min-h-full w-full bg-[#F5F5F7] text-slate-900 font-quicksand selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden">
         
+      {/* Background Ambience (Optional: subtle blobs for depth) */}
+      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 blur-[120px] rounded-full pointer-events-none" />
+
       <AnimatePresence>
         {isHelpCardVisible && <HelpCard onClose={() => setIsHelpCardVisible(false)} />}
         
@@ -277,160 +277,153 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto w-full max-w-[1600px] px-6 py-8 space-y-8">
+      <main className="mx-auto w-full max-w-[1600px] px-6 py-10 space-y-10 relative z-10">
         
-        {/* --- HEADER SECTION --- */}
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        {/* --- STUDIO HEADER --- */}
+        <header className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1 pl-1">
             <motion.h1 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[34px] font-bold tracking-tight text-slate-900"
             >
-              Certificate Database
+              Database
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-[13px] text-slate-500 font-semibold tracking-wide uppercase opacity-80"
+              className="text-[14px] text-slate-500 font-medium tracking-wide"
             >
-              Centralized Repository
+              Manage all digital certifications
             </motion.p>
           </div>
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full lg:w-[420px] group"
+            className="relative w-full lg:w-[480px] group"
           >
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-              <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors" />
+            {/* Spotlight Glow Effect */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[26px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
+            
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                  <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by Name, ID, or Hospital..."
+                  value={inputQuery}
+                  onChange={(e) => setInputQuery(e.target.value)}
+                  className="
+                    block w-full bg-transparent py-4 pl-14 pr-6
+                    text-[15px] font-semibold text-slate-800 placeholder:text-slate-400/80
+                    focus:outline-none rounded-[24px]
+                  "
+                />
             </div>
-            <input
-              type="text"
-              placeholder="Search records..."
-              value={inputQuery}
-              onChange={(e) => setInputQuery(e.target.value)}
-              className="
-                block w-full rounded-[24px] border-none bg-white py-4 pl-12 pr-4 
-                text-[15px] font-medium text-slate-700 placeholder:text-slate-400 
-                focus:ring-4 focus:ring-[#007AFF]/10 focus:bg-white
-                shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgb(0,0,0,0.05)]
-                transition-all duration-300
-              "
-            />
           </motion.div>
         </header>
 
-        {/* --- DASHBOARD STATS GRID (WIDGET STYLE) --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* --- STATS WIDGETS --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
-          {/* 1. TOTAL CERTIFICATES */}
+          {/* 1. TOTAL RECORDS */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1)" }}
-            transition={iosSpring}
-            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-sm border border-white/50 cursor-default group"
+            whileHover={{ y: -4, scale: 1.01 }}
+            transition={appleSpring}
+            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
           >
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-emerald-500 transition-colors">
-                  Total Records
-                </p>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[36px] font-bold text-slate-800 tracking-tight">
-                  <AnimatedNumber value={dbTotalRecords} />
-                </span>
-              </div>
-            </div>
-            {/* Widget Icon Container */}
-            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-tr from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-500/20 flex items-center justify-center p-0.5 transform group-hover:scale-110 transition-transform duration-500">
-               <div className="relative w-9 h-9 opacity-95 invert brightness-0">
-                  <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
+            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <div className="relative w-6 h-6 invert brightness-0 opacity-90">
+                     <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
+                  </div>
                </div>
             </div>
-          </motion.div>
-
-          {/* 2. TOTAL HOSPITALS */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1)" }}
-            transition={{ ...iosSpring, delay: 0.1 }}
-            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-sm border border-white/50 cursor-default group"
-          >
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-500 transition-colors">
-                  Hospitals
-                </p>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[36px] font-bold text-slate-800 tracking-tight">
-                  <AnimatedNumber value={uniqueHospitals.length} />
-                </span>
-              </div>
-            </div>
-            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-tr from-blue-400 to-blue-500 shadow-lg shadow-blue-500/20 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                <FiGrid className="w-8 h-8 text-white" />
+            <div className="mt-2">
+                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-emerald-600 transition-colors">Records</p>
+                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
+                    <AnimatedCounter value={dbTotalRecords} />
+                </div>
+                <div className="text-[12px] font-medium text-slate-400 mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    System Wide
+                </div>
             </div>
           </motion.div>
 
-          {/* 3. TOTAL DOCTORS */}
+          {/* 2. HOSPITALS */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1)" }}
-            transition={{ ...iosSpring, delay: 0.2 }}
-            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-sm border border-white/50 cursor-default group"
+            whileHover={{ y: -4, scale: 1.01 }}
+            transition={{ ...appleSpring, delay: 0.05 }}
+            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
           >
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-violet-500 transition-colors">
-                  Doctors
-                </p>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[36px] font-bold text-slate-800 tracking-tight">
-                  <AnimatedNumber value={doctorsCount} />
-                </span>
-              </div>
+            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <FiGrid className="w-6 h-6 text-white" />
+               </div>
             </div>
-            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-tr from-violet-400 to-violet-500 shadow-lg shadow-violet-500/20 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                <FiUserCheck className="w-8 h-8 text-white" />
+            <div className="mt-2">
+                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-blue-600 transition-colors">Hospitals</p>
+                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
+                    <AnimatedCounter value={uniqueHospitals.length} />
+                </div>
+                <div className="text-[12px] font-medium text-slate-400 mt-1">Active Partners</div>
             </div>
           </motion.div>
 
-          {/* 4. TOTAL STAFF */}
+          {/* 3. DOCTORS */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1)" }}
-            transition={{ ...iosSpring, delay: 0.3 }}
-            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-sm border border-white/50 cursor-default group"
+            whileHover={{ y: -4, scale: 1.01 }}
+            transition={{ ...appleSpring, delay: 0.1 }}
+            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
           >
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-amber-500 transition-colors">
-                  Staff
-                </p>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[36px] font-bold text-slate-800 tracking-tight">
-                  <AnimatedNumber value={staffCount} />
-                </span>
-              </div>
+            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                  <FiUserCheck className="w-6 h-6 text-white" />
+               </div>
             </div>
-            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-tr from-amber-400 to-amber-500 shadow-lg shadow-amber-500/20 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                <FiUsers className="w-8 h-8 text-white" />
+            <div className="mt-2">
+                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-violet-600 transition-colors">Doctors</p>
+                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
+                    <AnimatedCounter value={doctorsCount} />
+                </div>
+                <div className="text-[12px] font-medium text-slate-400 mt-1">Certified</div>
+            </div>
+          </motion.div>
+
+          {/* 4. STAFF */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -4, scale: 1.01 }}
+            transition={{ ...appleSpring, delay: 0.15 }}
+            className="relative p-6 bg-white/60 backdrop-blur-2xl backdrop-saturate-150 rounded-[32px] border border-white/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] cursor-default group overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                  <FiUsers className="w-6 h-6 text-white" />
+               </div>
+            </div>
+            <div className="mt-2">
+                <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-orange-500 transition-colors">Staff</p>
+                <div className="text-[42px] font-bold text-slate-800 tracking-tighter leading-tight">
+                    <AnimatedCounter value={staffCount} />
+                </div>
+                <div className="text-[12px] font-medium text-slate-400 mt-1">Registered</div>
             </div>
           </motion.div>
         </div>
 
-        {/* --- ACTION TOOLBAR --- */}
+        {/* --- CONTROL CENTER / ACTIONS --- */}
         <div className="flex flex-col gap-4 pb-2 z-20 relative">
             <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 
@@ -442,10 +435,10 @@ const CertificateDatabasePage: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.8, width: 50 }}
                             animate={{ opacity: 1, scale: 1, width: "auto" }}
                             exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                            transition={iosSpring}
-                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white/80 backdrop-blur-xl border border-indigo-100 rounded-[24px] shadow-lg shadow-indigo-100/50 overflow-hidden"
+                            transition={appleSpring}
+                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white/90 backdrop-blur-xl border border-indigo-100/50 rounded-[20px] shadow-[0_8px_30px_rgb(99,102,241,0.15)] overflow-hidden"
                         >
-                            <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider px-3 hidden lg:inline-block">
+                            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider px-3 hidden lg:inline-block">
                                 Batch Ready
                             </span>
                             
@@ -454,7 +447,7 @@ const CertificateDatabasePage: React.FC = () => {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
                                 disabled={isBulkGeneratingV2}
-                                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-xs font-bold rounded-[18px] hover:shadow-lg hover:shadow-indigo-500/30 transition-all"
+                                className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold rounded-[14px] hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
                             >
                                 {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
                                 <span>Training</span>
@@ -465,7 +458,7 @@ const CertificateDatabasePage: React.FC = () => {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
                                 disabled={isBulkGeneratingV1}
-                                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[18px] hover:bg-indigo-100 transition-colors"
+                                className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[14px] hover:bg-indigo-50 transition-colors"
                             >
                                 {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
                                 <span>Proctoring</span>
@@ -475,7 +468,7 @@ const CertificateDatabasePage: React.FC = () => {
                                 whileHover={{ scale: 1.2, rotate: 90 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={handleClearBatch}
-                                className="cursor-pointer ml-1 p-2 text-slate-300 hover:text-red-500 bg-transparent rounded-full transition-colors"
+                                className="cursor-pointer ml-1 p-2 text-slate-400 hover:text-red-500 bg-transparent rounded-full transition-colors"
                             >
                                 <FiX className="w-4 h-4" />
                             </motion.button>
@@ -492,15 +485,15 @@ const CertificateDatabasePage: React.FC = () => {
 
                 <motion.button
                     whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleRefresh}
                     disabled={isRefreshing}
                     className={`
-                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 
-                        rounded-[20px] text-sm font-bold border transition-all duration-300
+                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
+                        rounded-[20px] text-[13px] font-bold border transition-all duration-300
                         ${isRefreshing 
-                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
-                        : 'bg-white text-slate-600 border-slate-200 hover:text-[#007AFF] hover:border-[#007AFF]/30 shadow-sm hover:shadow-md'
+                        ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
+                        : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] hover:border-[#007AFF]/20 shadow-sm hover:shadow-md'
                         }
                     `}
                 >
@@ -512,12 +505,12 @@ const CertificateDatabasePage: React.FC = () => {
 
                 <motion.button
                     whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setIsHelpCardVisible(true)}
                     className="
-                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 
-                        rounded-[20px] text-sm font-bold border border-transparent
-                        bg-[#1C1C1E] text-white shadow-xl shadow-black/10 hover:bg-black
+                        cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
+                        rounded-[20px] text-[13px] font-bold border border-transparent
+                        bg-[#1d1d1f] text-white shadow-xl shadow-black/10 hover:bg-black hover:shadow-2xl
                         transition-all duration-300
                     "
                 >
@@ -528,41 +521,45 @@ const CertificateDatabasePage: React.FC = () => {
         </div>
 
         {/* --- CONTENT AREA: Charts & Table --- */}
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 gap-8 pb-10">
           
           {/* Analytics Section */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-[32px] border border-white/60 bg-white/60 backdrop-blur-2xl shadow-[0_20px_40px_-10px_rgb(0,0,0,0.05)] overflow-hidden p-1.5"
+            transition={{ ...appleSpring, delay: 0.2 }}
+            className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden p-2"
           >
-            <HospitalPieChart
-              uniqueHospitals={uniqueHospitals}
-              totalRecords={totalRecords}
-              certificates={certificateData} 
-            />
+            <div className="rounded-[30px] overflow-hidden bg-white/40">
+                <HospitalPieChart
+                uniqueHospitals={uniqueHospitals}
+                totalRecords={totalRecords}
+                certificates={certificateData} 
+                />
+            </div>
           </motion.div>
           
           {/* Data Table Section */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="rounded-[32px] border border-white/60 bg-white/60 backdrop-blur-2xl shadow-[0_20px_40px_-10px_rgb(0,0,0,0.05)] overflow-hidden min-h-[500px] p-1.5"
+            transition={{ ...appleSpring, delay: 0.3 }}
+            className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[500px] p-2"
           >
-            <CertificateTable
-              refreshKey={refreshKey}
-              onRefresh={handleTableDataUpdate as any} 
-              onAlert={handleAlert}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery} 
-              hospitalFilter={hospitalFilter}
-              setHospitalFilter={setHospitalFilter}
-              isAddFormVisible={isAddFormVisible}
-              setIsAddFormVisible={setIsAddFormVisible}
-              uniqueHospitals={uniqueHospitals} 
-            />
+             <div className="rounded-[30px] overflow-hidden bg-white/40 h-full">
+                <CertificateTable
+                refreshKey={refreshKey}
+                onRefresh={handleTableDataUpdate as any} 
+                onAlert={handleAlert}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery} 
+                hospitalFilter={hospitalFilter}
+                setHospitalFilter={setHospitalFilter}
+                isAddFormVisible={isAddFormVisible}
+                setIsAddFormVisible={setIsAddFormVisible}
+                uniqueHospitals={uniqueHospitals} 
+                />
+            </div>
           </motion.div>
         </div>
       </main>

@@ -8,7 +8,7 @@ import {
     Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
 
 // Import Hooks and Utils
 import { useCertificateData } from './hooks/useCertificateData';
@@ -24,25 +24,39 @@ import MailComposer from './ui/MailComposer';
 import FloatingNotification from './ui/FloatingNotification';
 import SuccessAnimation from './ui/SuccessAnimation'; 
 
-// --- Components ---
+// --- IOS PHYSICS ---
+// FIXED: Added 'as const' to ensure strict typing for Framer Motion
+const iosSpring = {
+    type: "spring",
+    stiffness: 350,
+    damping: 30,
+    mass: 0.8
+} as const;
 
-// 1. Modern Skeleton Loader
+// --- COMPONENT: ANIMATED NUMBER (For Pagination) ---
+const AnimatedNumber = ({ value }: { value: number }) => {
+    const spring = useSpring(0, { stiffness: 200, damping: 20 });
+    const display = useTransform(spring, (current) => Math.round(current).toLocaleString());
+  
+    useEffect(() => {
+      spring.set(value);
+    }, [value, spring]);
+  
+    return <motion.span>{display}</motion.span>;
+};
+
+// --- COMPONENT: MODERN SKELETON LOADER ---
 const SkeletonLoader = () => (
     <div className="w-full space-y-6">
-        <div className="h-16 bg-slate-100/50 rounded-2xl border border-slate-200/60 animate-pulse" />
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="h-12 bg-slate-50 border-b border-slate-100" />
-            <div className="divide-y divide-slate-50">
+        {/* Action Bar Skeleton */}
+        <div className="h-16 bg-white/50 rounded-[24px] border border-white/40 animate-pulse shadow-sm" />
+        
+        {/* Table Skeleton */}
+        <div className="bg-white/60 backdrop-blur-xl rounded-[32px] shadow-sm border border-white/50 overflow-hidden p-2">
+            <div className="h-14 bg-white/40 rounded-[24px] mb-2" />
+            <div className="space-y-2">
                 {Array(6).fill(0).map((_, i) => (
-                    <div key={i} className="h-20 flex items-center px-6 gap-6 animate-pulse">
-                        <div className="w-5 h-5 rounded bg-slate-200" />
-                        <div className="w-10 h-10 rounded-full bg-slate-200" />
-                        <div className="space-y-2 flex-1">
-                            <div className="w-1/4 h-4 rounded bg-slate-200" />
-                            <div className="w-1/6 h-3 rounded bg-slate-100" />
-                        </div>
-                        <div className="w-24 h-8 rounded-lg bg-slate-100" />
-                    </div>
+                    <div key={i} className="h-20 bg-white/30 rounded-[20px] animate-pulse" />
                 ))}
             </div>
         </div>
@@ -72,10 +86,10 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
     uniqueHospitals: _propUniqueHospitals 
 }) => {
     
-    // ✅ State for Certificate Type Mode (External/Internal/Others)
+    // ✅ State for Certificate Type Mode
     const [certTypeMode, setCertTypeMode] = useState('internal');
 
-    // --- Notification State Management ---
+    // --- Notification State ---
     const [notification, setNotification] = useState<NotificationState | null>(null);
 
     const showNotification = useCallback((message: string, type: NotificationType) => {
@@ -109,7 +123,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         fetchCertificates,
         fetchCertificatesForExport,
         deleteCertificate,
-        updateCertificate, // <--- Destructured here
+        updateCertificate,
         setCurrentPage,
         setSelectedIds,
         requestSort,
@@ -161,7 +175,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         fetchCertificates,
         fetchCertificatesForExport,
         deleteCertificate,
-        updateCertificate, // <--- Passed here
+        updateCertificate,
         showNotification, 
         onAlert: pdfOnAlert, 
         setIsLoading,
@@ -187,7 +201,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         }
     }, [flashId, setFlashId]);
 
-    // ✅ Bulk Mail Handlers (Placeholders)
+    // ✅ Bulk Mail Handlers
     const handleBulkMail_V1 = () => showNotification("Bulk Mail (Proctorship) feature coming soon!", "info");
     const handleBulkMail_V2 = () => showNotification("Bulk Mail (Training) feature coming soon!", "info");
     const handleBulkMail_V3 = () => showNotification("Bulk Mail (100+) feature coming soon!", "info");
@@ -200,7 +214,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
     }
 
     return (
-        <div className="relative flex flex-col gap-6 font-sans">
+        <div className="relative flex flex-col gap-6 font-quicksand">
             
             {/* Global Overlays */}
             <FloatingNotification 
@@ -215,11 +229,11 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 message={successMessage} 
             />
             
-            {/* Action Bar */}
+            {/* Action Bar (Sliding In) */}
             <motion.div 
-                initial={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={iosSpring}
             >
                 <QuickActionBar
                     isAddFormVisible={isAddFormVisible}
@@ -249,41 +263,55 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 />
             </motion.div>
 
-            {/* Main Content Area */}
+            {/* Main Content Area (Glass Card) */}
             <motion.div 
-                className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-grow relative"
-                initial={{ opacity: 0, scale: 0.99 }}
+                className="bg-white/60 backdrop-blur-2xl rounded-[32px] shadow-[0_20px_40px_-10px_rgb(0,0,0,0.05)] border border-white/50 overflow-hidden flex flex-col flex-grow relative"
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
+                transition={{ delay: 0.1, ...iosSpring }}
             >
-                {isAnyActionLoading && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-50 flex items-center justify-center">
-                        <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3">
-                            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-                            <span className="text-sm font-medium text-slate-700">Processing request...</span>
-                        </div>
-                    </div>
-                )}
+                {/* Processing Overlay */}
+                <AnimatePresence>
+                    {isAnyActionLoading && (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-white/40 backdrop-blur-md z-50 flex items-center justify-center"
+                        >
+                            <motion.div 
+                                initial={{ scale: 0.9, y: 10 }}
+                                animate={{ scale: 1, y: 0 }}
+                                className="bg-white/90 p-5 rounded-[24px] shadow-2xl border border-white/60 flex items-center gap-4"
+                            >
+                                <Loader2 className="w-6 h-6 text-[#007AFF] animate-spin" />
+                                <span className="text-[15px] font-semibold text-slate-800">Processing request...</span>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {sortedCertificates.length === 0 ? (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center py-24 px-4 text-center"
+                        className="flex flex-col items-center justify-center py-28 px-4 text-center"
                     >
-                        <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 ring-[12px] ring-slate-50/50">
-                            <Inbox className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
+                        <div className="w-28 h-28 bg-gradient-to-tr from-slate-100 to-white rounded-full flex items-center justify-center mb-6 shadow-inner ring-[1px] ring-slate-200">
+                            <Inbox className="w-12 h-12 text-slate-300" strokeWidth={1.5} />
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-900 mb-2">No certificates found</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mb-8 leading-relaxed">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">No records found</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto mb-8 leading-relaxed text-sm">
                             We couldn't find any records matching your active filters. Try adjusting your search query or add a new entry.
                         </p>
-                        <button 
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => setIsAddFormVisible(true)}
-                            className="group relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer active:scale-95"
+                            className="group relative inline-flex items-center justify-center px-8 py-3 text-sm font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-full shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
                         >
                             <span>Add New Certificate</span>
-                        </button>
+                        </motion.button>
                     </motion.div>
                 ) : (
                     <>
@@ -296,7 +324,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                                     requestSort={requestSort}
                                     handleSelectAll={handleSelectAll}
                                 />
-                                <tbody className="divide-y divide-slate-100/80 bg-white">
+                                <tbody className="divide-y divide-slate-100/50 bg-white/40">
                                     {sortedCertificates.map((cert, index) => ( 
                                         <TableRow
                                             key={cert._id}
@@ -327,19 +355,23 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                         </div>
 
                         {/* --- Modern Floating Pagination --- */}
-                        <div className="border-t border-slate-100 bg-slate-50/40 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="text-xs text-slate-500 font-medium tracking-wide">
-                                Showing <span className="text-slate-900 font-bold">{((currentPage - 1) * PAGE_LIMIT) + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(currentPage * PAGE_LIMIT, totalItems)}</span> of <span className="text-slate-900 font-bold">{totalItems}</span> results
+                        <div className="border-t border-white/50 bg-white/40 backdrop-blur-sm p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="text-[13px] text-slate-500 font-medium tracking-wide flex items-center gap-1">
+                                Showing <span className="text-slate-900 font-bold"><AnimatedNumber value={((currentPage - 1) * PAGE_LIMIT) + 1} /></span> 
+                                to <span className="text-slate-900 font-bold"><AnimatedNumber value={Math.min(currentPage * PAGE_LIMIT, totalItems)} /></span> 
+                                of <span className="text-slate-900 font-bold"><AnimatedNumber value={totalItems} /></span> results
                             </div>
                             
-                            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-sm border border-slate-200/80">
-                                <button
+                            <div className="flex items-center gap-1.5 p-1 bg-white/80 rounded-[16px] shadow-sm border border-slate-200/50">
+                                <motion.button
+                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.1, backgroundColor: "#F1F5F9" }}
                                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                     disabled={currentPage === 1}
-                                    className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all cursor-pointer active:scale-95"
+                                    className="p-2 rounded-[12px] text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:scale-100 transition-colors cursor-pointer"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                </button>
+                                </motion.button>
                                 
                                 <div className="flex items-center gap-1 px-2">
                                     {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -347,30 +379,33 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                                         .map((page, index, array) => (
                                             <React.Fragment key={page}>
                                                 {index > 0 && array[index - 1] !== page - 1 && (
-                                                    <span className="text-xs text-slate-400 px-1 select-none">...</span>
+                                                    <span className="text-[10px] text-slate-300 px-1 select-none">•••</span>
                                                 )}
-                                                <button
+                                                <motion.button
+                                                    whileTap={{ scale: 0.9 }}
                                                     onClick={() => setCurrentPage(page)}
                                                     className={clsx(
-                                                        "w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95",
+                                                        "w-8 h-8 flex items-center justify-center rounded-[10px] text-[13px] font-bold transition-all cursor-pointer",
                                                         page === currentPage
-                                                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105"
-                                                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                            ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                                                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                                                     )}
                                                 >
                                                     {page}
-                                                </button>
+                                                </motion.button>
                                             </React.Fragment>
                                     ))}
                                 </div>
 
-                                <button
+                                <motion.button
+                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.1, backgroundColor: "#F1F5F9" }}
                                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                     disabled={currentPage === totalPages || totalPages === 0}
-                                    className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all cursor-pointer active:scale-95"
+                                    className="p-2 rounded-[12px] text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:scale-100 transition-colors cursor-pointer"
                                 >
                                     <ChevronRight className="w-4 h-4" />
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </>
