@@ -19,7 +19,7 @@ import {
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
-const NAME_MARGIN_LEFT = 89 
+const NAME_MARGIN_LEFT = 72 
 const NAME_MARGIN_TOP = 133    
 const HOSPITAL_MARGIN_LEFT = 72 
 const FONT_SIZE = 10
@@ -31,6 +31,7 @@ interface InvitationData {
   name: string;
   hospital: string;
   email: string;
+  sourceSheet: string;
   status: 'pending' | 'uploaded' | 'generated' | 'error';
 }
 
@@ -49,7 +50,7 @@ const downloadFile = (blob: Blob, fileName: string) => {
 // --- HELPER: TITLE CASE ---
 const toTitleCase = (str: any) => {
   if (str === null || str === undefined || str === '') return '';
-  return String(str).replace(
+  return String(str).trim().replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
   );
@@ -60,7 +61,7 @@ export default function BulkInvitationPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
 
-  // --- 1. EXCEL PROCESSING ALGORITHM ---
+  // --- 1. ADVANCED EXCEL ALGORITHM (MULTI-SHEET) ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -72,33 +73,49 @@ export default function BulkInvitationPage() {
       try {
         const bstr = evt.target?.result
         const wb = XLSX.read(bstr, { type: 'binary' })
-        const wsname = wb.SheetNames[0]
-        const ws = wb.Sheets[wsname]
-        const rawData = XLSX.utils.sheet_to_json(ws)
+        
+        let allExtractedData: InvitationData[] = [];
 
-        const processedData: InvitationData[] = rawData.map((row: any, index: number) => {
-          // FUZZY MATCHING: Finds columns even if headers are slightly different
-          const keys = Object.keys(row)
-          
-          // 1. Find Name Column
-          const nameKey = keys.find(k => /name|doctor|participant/i.test(k)) || keys[0]
-          
-          // 2. Find Hospital / Org Column
-          const hospitalKey = keys.find(k => /hospital|society|organization|org/i.test(k)) || keys[1]
-          
-          // 3. Find Email Column (We store this, but don't print it on PDF)
-          const emailKey = keys.find(k => /email|mail|e-mail/i.test(k)) || keys[2]
+        // LOOP THROUGH ALL SHEETS
+        wb.SheetNames.forEach(sheetName => {
+            const ws = wb.Sheets[sheetName];
+            const rawData = XLSX.utils.sheet_to_json(ws);
 
-          return {
-            id: `row-${index}-${Date.now()}`,
-            name: toTitleCase(row[nameKey]),         
-            hospital: toTitleCase(row[hospitalKey]), 
-            email: String(row[emailKey] || ''), // Stored for DB/Preview only
-            status: 'pending' as const 
-          }
-        }).filter(item => item.name) // Remove empty rows
+            if (!rawData || rawData.length === 0) return;
 
-        setData(processedData)
+            // Analyze the headers of the first row to find our target columns
+            const firstRow = rawData[0] as any;
+            const keys = Object.keys(firstRow);
+
+            // REGEX MATCHING
+            const nameKey = keys.find(k => /name|doctor|participant|faculty/i.test(k));
+            const hospitalKey = keys.find(k => /hospital|society|org|institute|clinic/i.test(k));
+            const emailKey = keys.find(k => /email|e-mail|mail/i.test(k));
+
+            if (!nameKey) return; 
+
+            // FIX: Added explicit return type ': InvitationData | null' to map
+            const sheetData = rawData.map((row: any, index: number): InvitationData | null => {
+                const nameVal = row[nameKey];
+                
+                if (!nameVal) return null;
+
+                return {
+                    id: `${sheetName}-${index}-${Date.now()}`,
+                    sourceSheet: sheetName,
+                    name: toTitleCase(nameVal),         
+                    hospital: hospitalKey ? toTitleCase(row[hospitalKey]) : '', 
+                    email: emailKey ? String(row[emailKey] || '') : '',      
+                    status: 'pending'
+                };
+            }).filter((item): item is InvitationData => item !== null); 
+
+            allExtractedData = [...allExtractedData, ...sheetData];
+        });
+
+        console.log(`Extracted ${allExtractedData.length} records from ${wb.SheetNames.length} sheets.`);
+        setData(allExtractedData);
+
       } catch (error) {
         console.error("Error parsing excel:", error)
         alert("Failed to parse Excel file.")
@@ -109,14 +126,12 @@ export default function BulkInvitationPage() {
     reader.readAsBinaryString(file)
   }
 
-  // --- 2. GENERATE PDF (Uses ONLY Name & Hospital) ---
+  // --- 2. GENERATE PDF ---
   const generatePdfBlob = async (name: string, hospital: string): Promise<Uint8Array> => {
-    // 1. Load Template
     const existingPdfBytes = await fetch('/invitation/Invitation.pdf').then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
 
-    // 2. Load Fonts
     const fontBytes = await fetch('https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2').then(res => res.arrayBuffer())
     const poppinsFont = await pdfDoc.embedFont(fontBytes)
 
@@ -127,7 +142,6 @@ export default function BulkInvitationPage() {
     const nameY = pageHeight - NAME_MARGIN_TOP
     const hospitalY = nameY - 15 
 
-    // 3. Draw NAME
     if (name) {
       firstPage.drawText(name, { 
           x: NAME_MARGIN_LEFT, 
@@ -138,7 +152,6 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // 4. Draw HOSPITAL (We do NOT draw Email here)
     if (hospital) {
       firstPage.drawText(hospital, { 
           x: HOSPITAL_MARGIN_LEFT, 
@@ -152,15 +165,12 @@ export default function BulkInvitationPage() {
     return await pdfDoc.save()
   }
 
-  // --- 3. DOWNLOAD SINGLE PDF ---
+  // --- 3. DOWNLOAD SINGLE ITEM ---
   const handleDownloadSingle = async (item: InvitationData) => {
     try {
-      // NOTE: We only pass name and hospital to the generator
       const pdfBytes = await generatePdfBlob(item.name, item.hospital)
-      
-      // Fix for TypeScript strictness on Blob
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
-      downloadFile(blob, `Invitation_${item.name.replace(/\s+/g, '_')}.pdf`)
+      downloadFile(blob, `Invitation_${item.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
     } catch (error) {
       console.error("Error generating PDF", error)
     }
@@ -176,9 +186,9 @@ export default function BulkInvitationPage() {
       const folder = zip.folder("Invitations")
       
       for (const item of data) {
-        // NOTE: We only pass name and hospital here too
         const pdfBytes = await generatePdfBlob(item.name, item.hospital)
-        folder?.file(`Invitation_${item.name.replace(/\s+/g, '_')}.pdf`, pdfBytes)
+        const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '_');
+        folder?.file(`Invitation_${safeName}.pdf`, pdfBytes)
       }
 
       const content = await zip.generateAsync({ type: "blob" })
@@ -190,12 +200,11 @@ export default function BulkInvitationPage() {
     }
   }
 
-  // --- 5. MOCK DATABASE UPLOAD (Sends ALL data including Email) ---
+  // --- 5. MOCK DATABASE UPLOAD ---
   const handleUploadToDB = async () => {
     if (data.length === 0) return
     setUploadStatus('uploading')
 
-    // In a real app, this sends { name, hospital, email } to MongoDB
     setTimeout(() => {
         const updatedData = data.map(item => ({ ...item, status: 'uploaded' as const }))
         setData(updatedData)
@@ -245,14 +254,17 @@ export default function BulkInvitationPage() {
                 </div>
             </div>
 
-            {/* STATS */}
+            {/* STATS CARD */}
             {data.length > 0 && (
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Records Found</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Records</span>
                         <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Ready</span>
                     </div>
                     <div className="text-3xl font-bold text-slate-800">{data.length}</div>
+                    <div className="text-[10px] text-slate-400 mt-1 font-medium">
+                        Extracted from all sheets
+                    </div>
                 </div>
             )}
         </div>
@@ -285,14 +297,14 @@ export default function BulkInvitationPage() {
         </div>
       </motion.div>
 
-      {/* --- PREVIEW TABLE (Shows Email, but PDF ignores it) --- */}
+      {/* --- PREVIEW TABLE --- */}
       <div className="flex-1 h-full flex flex-col overflow-hidden relative">
         <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-8 justify-between shrink-0">
             <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <LuFileText className="text-slate-400" /> Data Preview
             </h2>
             <div className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                Columns Detected: Name, Hospital, Email
+                Columns: Name, Hospital, Email
             </div>
         </div>
 
@@ -311,6 +323,7 @@ export default function BulkInvitationPage() {
                                 <th className="px-6 py-4">Name</th>
                                 <th className="px-6 py-4">Hospital / Org</th>
                                 <th className="px-6 py-4">Email ID</th>
+                                <th className="px-6 py-4">Source Sheet</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -331,6 +344,7 @@ export default function BulkInvitationPage() {
                                     <td className="px-6 py-3 text-sm font-semibold text-slate-700">{row.name}</td>
                                     <td className="px-6 py-3 text-sm text-slate-600">{row.hospital}</td>
                                     <td className="px-6 py-3 text-sm text-slate-500 font-mono">{row.email}</td>
+                                    <td className="px-6 py-3 text-[10px] text-slate-400 uppercase font-bold tracking-wider">{row.sourceSheet}</td>
                                     <td className="px-6 py-3 text-right">
                                         <button 
                                             onClick={() => handleDownloadSingle(row)}
