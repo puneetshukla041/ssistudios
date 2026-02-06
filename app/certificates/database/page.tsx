@@ -60,18 +60,18 @@ const VerticalStatCard = ({
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ ...appleSpring, delay }}
-    className="group relative p-4 bg-white/60 backdrop-blur-2xl rounded-[24px] border border-white/60 shadow-sm hover:shadow-md transition-all duration-300"
+    className="group relative p-3 bg-white/60 backdrop-blur-2xl rounded-[20px] border border-white/60 shadow-sm hover:shadow-md transition-all duration-300 cursor-default"
   >
     <div className="flex items-start justify-between">
       <div>
-        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-        <div className="text-[26px] font-bold text-slate-800 tracking-tight leading-tight">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+        <div className="text-[24px] font-bold text-slate-800 tracking-tight leading-tight">
           <AnimatedCounter value={value} />
         </div>
-        <p className="text-[11px] font-medium text-slate-400 mt-0.5">{subtext}</p>
+        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{subtext}</p>
       </div>
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClass} bg-opacity-10 shadow-sm`}>
-        <Icon className={`w-5 h-5 ${colorClass.replace('bg-', 'text-')}`} />
+      <div className={`w-9 h-9 rounded-[14px] flex items-center justify-center ${colorClass} bg-opacity-10 shadow-sm`}>
+        <Icon className={`w-4 h-4 ${colorClass.replace('bg-', 'text-')}`} />
       </div>
     </div>
   </motion.div>
@@ -313,18 +313,23 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <main className="w-full max-w-[1920px] px-4 md:px-6 py-8 relative z-10 flex flex-col lg:flex-row gap-6 lg:pl-60 transition-all duration-500">
+      {/* LAYOUT FIX:
+          - lg:pl-32: Reduced left padding further (approx 128px)
+          - max-w-[1920px]: Allows content to stretch nicely on larger screens
+          - gap-4: Keeps spacing tight
+      */}
+      <main className="w-full max-w-[1920px] px-4 md:px-6 py-6 relative z-10 flex flex-col lg:flex-row gap-4 lg:pl-32 transition-all duration-500">
         
         {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
-        <div className="flex-1 min-w-0 flex flex-col gap-6">
+        <div className="flex-1 min-w-0 flex flex-col gap-5">
             
             {/* Header */}
-            <header className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="space-y-1">
                 <motion.h1 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-[32px] font-bold tracking-tight text-slate-900"
+                  className="text-[28px] font-bold tracking-tight text-slate-900"
                 >
                   Database
                 </motion.h1>
@@ -332,7 +337,7 @@ const CertificateDatabasePage: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="text-[14px] text-slate-500 font-medium tracking-wide"
+                  className="text-[13px] text-slate-500 font-medium tracking-wide"
                 >
                   Manage all digital certifications
                 </motion.p>
@@ -341,12 +346,12 @@ const CertificateDatabasePage: React.FC = () => {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="relative w-full md:w-[420px] group"
+                className="relative w-full md:w-[380px] group"
               >
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[26px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
-                <div className="relative bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
-                      <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-[22px] opacity-0 group-focus-within:opacity-20 transition duration-500 blur-md" />
+                <div className="relative bg-white/80 backdrop-blur-xl rounded-[22px] shadow-sm border border-white/60 transition-all duration-300 group-focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] group-focus-within:bg-white/90">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                      <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
                     </div>
                     <input
                       type="text"
@@ -354,9 +359,9 @@ const CertificateDatabasePage: React.FC = () => {
                       value={inputQuery}
                       onChange={(e) => setInputQuery(e.target.value)}
                       className="
-                        block w-full bg-transparent py-3.5 pl-14 pr-6
-                        text-[15px] font-semibold text-slate-800 placeholder:text-slate-400/80
-                        focus:outline-none rounded-[24px]
+                        block w-full bg-transparent py-3 pl-10 pr-4
+                        text-[14px] font-semibold text-slate-800 placeholder:text-slate-400/80
+                        focus:outline-none rounded-[22px]
                       "
                     />
                 </div>
@@ -427,8 +432,8 @@ const CertificateDatabasePage: React.FC = () => {
                         onClick={handleRefresh}
                         disabled={isRefreshing}
                         className={`
-                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
-                            rounded-[20px] text-[13px] font-bold border transition-all duration-300
+                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 py-3 
+                            rounded-[18px] text-[13px] font-bold border transition-all duration-300
                             ${isRefreshing 
                             ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
                             : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] hover:border-[#007AFF]/20 shadow-sm hover:shadow-md'
@@ -444,8 +449,8 @@ const CertificateDatabasePage: React.FC = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsHelpCardVisible(true)}
                         className="
-                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 
-                            rounded-[20px] text-[13px] font-bold border border-transparent
+                            cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 py-3 
+                            rounded-[18px] text-[13px] font-bold border border-transparent
                             bg-[#1d1d1f] text-white shadow-xl shadow-black/10 hover:bg-black hover:shadow-2xl
                             transition-all duration-300
                         "
@@ -456,14 +461,14 @@ const CertificateDatabasePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Data Table Section */}
+            {/* Data Table Section - Compacted Height */}
             <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...appleSpring, delay: 0.2 }}
-                className="rounded-[36px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[500px] flex-1 p-2"
+                className="rounded-[32px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden min-h-[480px] flex-1 p-1.5"
             >
-                <div className="rounded-[30px] overflow-hidden bg-white/40 h-full">
+                <div className="rounded-[28px] overflow-hidden bg-white/40 h-full">
                     <CertificateTable
                         refreshKey={refreshKey}
                         onRefresh={handleTableDataUpdate as any} 
@@ -482,8 +487,9 @@ const CertificateDatabasePage: React.FC = () => {
         </div>
 
         {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
-        <aside className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4 transition-all duration-500">
-            <div className="sticky top-6 flex flex-col gap-4">
+        {/* Reduced width from 320px to 260px for compact view */}
+        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto no-scrollbar pb-4 h-full">
+            <div className="flex flex-col gap-3">
                 
                 {/* 1. Stat Cards */}
                 <VerticalStatCard 
@@ -522,19 +528,19 @@ const CertificateDatabasePage: React.FC = () => {
                     delay={0.25}
                 />
 
-                {/* 2. Graph */}
+                {/* 2. Graph - Compacted */}
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...appleSpring, delay: 0.3 }}
-                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm overflow-hidden"
+                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm"
                 >
-                    <div className="rounded-[20px] overflow-hidden bg-white/60 p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <FiPieChart className="text-slate-400 w-4 h-4" />
-                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Distribution</h3>
+                    <div className="rounded-[20px] overflow-hidden bg-white/60 p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                            <FiPieChart className="text-slate-400 w-3.5 h-3.5" />
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Distribution</h3>
                         </div>
-                        <div className="h-[240px] w-full flex items-center justify-center">
+                        <div className="h-[220px] w-full flex items-center justify-center">
                             <HospitalPieChart
                                 uniqueHospitals={uniqueHospitals}
                                 totalRecords={totalRecords}
@@ -544,23 +550,25 @@ const CertificateDatabasePage: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* 3. Analytics Summary */}
+                {/* 3. Analytics Summary (Compact) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...appleSpring, delay: 0.35 }}
-                    className="p-5 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-[24px] text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden"
+                    className="p-4 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-[20px] text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden"
                 >
                     <div className="relative z-10">
-                        <h3 className="font-bold text-lg mb-1 leading-tight">Analytics</h3>
-                        <p className="text-white/80 text-[11px] leading-relaxed mb-4">
-                            Real-time insights available above.
+                        <h3 className="font-bold text-base mb-0.5">Analytics</h3>
+                        <p className="text-white/80 text-[10px] leading-relaxed mb-3">
+                            Real-time insights active.
                         </p>
-                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <FiTrendingUp className="w-4 h-4" />
+                        <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <FiTrendingUp className="w-3.5 h-3.5" />
                         </div>
                     </div>
-                    <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                    {/* Decorative circles */}
+                    <div className="absolute top-[-20%] right-[-20%] w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+                    <div className="absolute bottom-[-10%] left-[-10%] w-16 h-16 bg-blue-400/20 rounded-full blur-xl" />
                 </motion.div>
             </div>
         </aside>
