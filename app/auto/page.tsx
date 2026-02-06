@@ -5,7 +5,6 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { motion } from 'framer-motion'
 import * as XLSX from 'xlsx'
-import JSZip from 'jszip' 
 import { 
   LuUpload, 
   LuDatabase, 
@@ -17,11 +16,12 @@ import {
   LuFileText,
   LuTriangleAlert,
   LuSearch,
-  LuX
+  LuX,
+  LuFolderInput // Icon for folder selection
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
-const NAME_MARGIN_LEFT = 89 
+const NAME_MARGIN_LEFT = 72 
 const NAME_MARGIN_TOP = 133    
 const HOSPITAL_MARGIN_LEFT = 72 
 const FONT_SIZE = 10
@@ -37,7 +37,7 @@ interface InvitationData {
   status: 'pending' | 'uploaded' | 'generated' | 'error';
 }
 
-// --- HELPER: DOWNLOAD FILE ---
+// --- HELPER: DOWNLOAD SINGLE FILE (Browser Fallback) ---
 const downloadFile = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -60,11 +60,11 @@ const toTitleCase = (str: any) => {
 
 export default function BulkInvitationPage() {
   const [data, setData] = useState<InvitationData[]>([])
-  const [searchQuery, setSearchQuery] = useState('') // Search State
+  const [searchQuery, setSearchQuery] = useState('') 
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
 
-  // --- FILTERED DATA (SEARCH LOGIC) ---
+  // --- FILTERED DATA ---
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;
     const lowerQuery = searchQuery.toLowerCase();
@@ -76,7 +76,7 @@ export default function BulkInvitationPage() {
     );
   }, [data, searchQuery]);
 
-  // --- 1. ADVANCED EXCEL ALGORITHM (MULTI-SHEET) ---
+  // --- 1. EXCEL ALGORITHM ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -108,7 +108,6 @@ export default function BulkInvitationPage() {
 
             const sheetData = rawData.map((row: any, index: number): InvitationData | null => {
                 const nameVal = row[nameKey];
-                
                 if (!nameVal) return null;
 
                 return {
@@ -124,9 +123,7 @@ export default function BulkInvitationPage() {
             allExtractedData = [...allExtractedData, ...sheetData];
         });
 
-        console.log(`Extracted ${allExtractedData.length} records from ${wb.SheetNames.length} sheets.`);
         setData(allExtractedData);
-
       } catch (error) {
         console.error("Error parsing excel:", error)
         alert("Failed to parse Excel file.")
@@ -187,30 +184,56 @@ export default function BulkInvitationPage() {
     }
   }
 
-  // --- 4. BULK DOWNLOAD (ZIP) ---
-  const handleBulkDownload = async () => {
-    // Only download filtered data if searching, or all data if not
-    const targetData = filteredData.length > 0 ? filteredData : data; 
-    
-    if (targetData.length === 0) return
-    setIsProcessing(true)
-    
-    try {
-      const zip = new JSZip()
-      const folder = zip.folder("Invitations")
-      
-      for (const item of targetData) {
-        const pdfBytes = await generatePdfBlob(item.name, item.hospital)
-        const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '_');
-        folder?.file(`Invitation_${safeName}.pdf`, pdfBytes)
-      }
+  // --- 4. SAVE TO FOLDER (Replaces Zip) ---
+  const handleSaveToFolder = async () => {
+    // Check if browser supports File System Access API
+    if (!('showDirectoryPicker' in window)) {
+        alert("Your browser does not support Folder Saving (Try Chrome, Edge, or Opera on Desktop).");
+        return;
+    }
 
-      const content = await zip.generateAsync({ type: "blob" })
-      downloadFile(content, "All_Invitations.zip")
-    } catch (error) {
-      console.error("Bulk download failed", error)
+    const targetData = filteredData.length > 0 ? filteredData : data; 
+    if (targetData.length === 0) return;
+
+    setIsProcessing(true);
+
+    try {
+        // 1. Ask user to pick a directory
+        // @ts-ignore
+        const dirHandle = await window.showDirectoryPicker();
+
+        let successCount = 0;
+
+        // 2. Loop through data and write files directly to that directory
+        for (const item of targetData) {
+            try {
+                const pdfBytes = await generatePdfBlob(item.name, item.hospital);
+                const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '_');
+                const fileName = `Invitation_${safeName}.pdf`;
+
+                // Create file handle in the directory
+                const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+                
+                // Create writable stream and write data
+                const writable = await fileHandle.createWritable();
+                await writable.write(pdfBytes);
+                await writable.close();
+
+                successCount++;
+            } catch (err) {
+                console.error(`Failed to save ${item.name}`, err);
+            }
+        }
+
+        alert(`Successfully saved ${successCount} files to the selected folder!`);
+
+    } catch (error: any) {
+        if (error.name !== 'AbortError') {
+            console.error("Folder save failed", error);
+            alert("An error occurred while saving files.");
+        }
     } finally {
-      setIsProcessing(false)
+        setIsProcessing(false);
     }
   }
 
@@ -269,7 +292,7 @@ export default function BulkInvitationPage() {
                 </div>
             </div>
 
-            {/* STATS CARD */}
+            {/* STATS */}
             {data.length > 0 && (
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                     <div className="flex items-center justify-between mb-2">
@@ -295,12 +318,12 @@ export default function BulkInvitationPage() {
           </button>
 
           <button
-            onClick={handleBulkDownload}
+            onClick={handleSaveToFolder}
             disabled={filteredData.length === 0 || isProcessing}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#007AFF] text-white font-bold text-[13px] shadow-lg shadow-blue-500/20 hover:bg-[#0062cc] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-             {isProcessing ? <LuLoader className="animate-spin" /> : <LuDownload size={16} />} 
-             {searchQuery ? 'Download Filtered (.ZIP)' : 'Download All (.ZIP)'}
+             {isProcessing ? <LuLoader className="animate-spin" /> : <LuFolderInput size={16} />} 
+             {searchQuery ? 'Save Filtered to Folder' : 'Save All to Folder'}
           </button>
 
           <button
@@ -315,13 +338,12 @@ export default function BulkInvitationPage() {
       {/* --- MAIN AREA --- */}
       <div className="flex-1 h-full flex flex-col overflow-hidden relative">
         
-        {/* HEADER & SEARCH BAR */}
+        {/* HEADER & SEARCH */}
         <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-8 justify-between shrink-0 gap-4">
             <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2 whitespace-nowrap">
                 <LuFileText className="text-slate-400" /> Data Preview
             </h2>
 
-            {/* SEARCH INPUT */}
             <div className="relative w-full max-w-md">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
