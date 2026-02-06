@@ -9,9 +9,11 @@ import {
     Calendar,
     Building2,
     User,
+    MoreHorizontal
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ICertificateClient, PAGE_LIMIT } from '../utils/constants';
-import { getHospitalColor, doiToDateInput, dateInputToDoi, formatName } from '../utils/helpers'; // ✅ Import formatName
+import { getHospitalColor, doiToDateInput, dateInputToDoi, formatName } from '../utils/helpers';
 import clsx from 'clsx';
 
 interface TableRowProps {
@@ -62,53 +64,64 @@ const TableRow: React.FC<TableRowProps> = ({
     const isDisabled = isPdfGenerating || isAnyActionLoading || (isEditing && !editFormData);
 
     const MobileLabel = ({ children }: { children: React.ReactNode }) => (
-        <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 min-w-[80px]">
+        <span className="md:hidden text-[11px] font-semibold text-slate-400 uppercase tracking-wide mr-4 min-w-[80px]">
             {children}
         </span>
     );
 
     return (
-        <tr
+        <motion.tr
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ 
+                opacity: isDeleting ? 0 : 1, 
+                x: isDeleting ? -20 : 0,
+                backgroundColor: isFlashing 
+                    ? 'rgba(240, 253, 244, 0.9)' // Success Green
+                    : isEditing 
+                        ? 'rgba(255, 251, 235, 0.6)' // Edit Amber
+                        : isSelected 
+                            ? 'rgba(238, 242, 255, 0.5)' // Selected Blue
+                            : 'rgba(255, 255, 255, 0)' // Transparent default
+            }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
             className={clsx(
-                "block md:table-row mb-4 md:mb-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)] md:shadow-none border border-slate-200 md:border-0 md:border-b md:border-slate-100",
-                isSelected ? "md:bg-indigo-50/60 ring-1 ring-indigo-500 md:ring-0" : "hover:bg-slate-50",
-                isDeleting && "opacity-0 -translate-x-4 pointer-events-none transition-all duration-300",
-                isEditing && "bg-amber-50/50"
+                "block md:table-row mb-4 md:mb-0 rounded-[20px] md:rounded-none",
+                "border border-slate-200 md:border-0 md:border-b md:border-slate-100/80",
+                "shadow-sm md:shadow-none bg-white md:bg-transparent",
+                !isEditing && "hover:bg-slate-50/80 transition-colors duration-200"
             )}
-            style={isFlashing ? { backgroundColor: 'rgba(240, 253, 244, 1)', transition: 'background-color 0.5s ease' } : {}}                                                                 
         >
             {/* CHECKBOX */}
-            <td className="flex md:table-cell items-center justify-between p-3 md:px-4 md:py-4 border-b border-slate-100 md:border-0">
+            <td className="flex md:table-cell items-center justify-between p-4 md:px-4 md:py-5 border-b border-slate-100 md:border-0">
                 <MobileLabel>Select</MobileLabel>
                 <div className="flex items-center justify-center md:justify-center w-full md:w-auto">
                     <label className={clsx(
-                        "relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-slate-100",
-                        isDisabled ? "cursor-not-allowed" : "cursor-pointer"
+                        "relative flex items-center justify-center w-5 h-5 transition-all duration-200",
+                        isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-90"
                     )}>
                         <input
                             type="checkbox"
-                            className={clsx(
-                                "peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-md checked:bg-indigo-600 checked:border-indigo-600 transition-all duration-200",
-                                isDisabled ? "cursor-not-allowed" : "cursor-pointer"
-                            )}
+                            className="peer appearance-none w-5 h-5 border-[1.5px] border-slate-300 rounded-[6px] checked:bg-slate-900 checked:border-slate-900 transition-all duration-200"
                             checked={isSelected}
                             onChange={(e) => handleSelectOne(cert._id, e.target.checked)}
                             disabled={isDisabled}
                         />
-                        <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200 scale-0 peer-checked:scale-100" strokeWidth={3} />
+                        <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-all duration-200 scale-50 peer-checked:scale-100" strokeWidth={3} />
                     </label>
                 </div>
             </td>
 
             {/* SERIAL NUMBER */}
-            <td className="hidden md:table-cell px-4 py-4 text-center">
-                <span className="text-xs font-medium text-slate-400 font-mono">
+            <td className="hidden md:table-cell px-4 py-5 text-center">
+                <span className="text-[13px] font-medium text-slate-400 font-mono tabular-nums tracking-tighter">
                     {String(serialNumber).padStart(2, '0')}
                 </span>
             </td>
 
             {/* Certificate No */}
-            <td className="flex md:table-cell items-center justify-between p-3 md:px-4 md:py-4 border-b border-slate-100 md:border-0">
+            <td className="flex md:table-cell items-center justify-between p-4 md:px-4 md:py-5 border-b border-slate-100 md:border-0">
                 <MobileLabel>Cert No.</MobileLabel>
                 <div className="w-full md:w-auto text-right md:text-left">
                     {isEditing ? (
@@ -116,15 +129,15 @@ const TableRow: React.FC<TableRowProps> = ({
                             type="text"
                             value={editFormData.certificateNo || ''}
                             onChange={(e) => handleChange('certificateNo', e.target.value)}
-                            className="w-full md:w-auto px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-sm cursor-text text-right md:text-left"
+                            className="w-full md:w-32 px-3 py-2 text-[13px] bg-white ring-1 ring-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 shadow-sm transition-all"
                             placeholder="Cert No."
                         />
                     ) : (
-                        <div className="flex items-center justify-end md:justify-start gap-2">
-                            <div className="p-1.5 rounded-md bg-slate-50 text-slate-400 hidden md:block">
+                        <div className="flex items-center justify-end md:justify-start gap-2.5 group">
+                            <div className="p-1.5 rounded-[8px] bg-slate-100/80 text-slate-400 hidden md:flex group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
                                 <FileText className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-sm font-bold text-slate-700 font-mono tracking-tight break-all">
+                            <span className="text-[13px] font-bold text-slate-700 font-mono tracking-tight">
                                 {cert.certificateNo}
                             </span>
                         </div>
@@ -132,8 +145,8 @@ const TableRow: React.FC<TableRowProps> = ({
                 </div>
             </td>
 
-            {/* Name - ✅ Using formatName here */}
-            <td className="flex md:table-cell items-center justify-between p-3 md:px-4 md:py-4 border-b border-slate-100 md:border-0">
+            {/* Name */}
+            <td className="flex md:table-cell items-center justify-between p-4 md:px-4 md:py-5 border-b border-slate-100 md:border-0">
                 <MobileLabel>Name</MobileLabel>
                 <div className="w-full md:w-auto text-right md:text-left">
                     {isEditing ? (
@@ -141,16 +154,16 @@ const TableRow: React.FC<TableRowProps> = ({
                             type="text"
                             value={editFormData.name || ''}
                             onChange={(e) => handleChange('name', e.target.value)}
-                            className="w-full md:w-auto px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-sm cursor-text text-right md:text-left"
-                            placeholder="Name"
+                            className="w-full md:w-48 px-3 py-2 text-[13px] font-medium bg-white ring-1 ring-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 shadow-sm transition-all"
+                            placeholder="Full Name"
                         />
                     ) : (
-                        <div className="flex items-center justify-end md:justify-start gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 hidden md:flex items-center justify-center text-slate-400 shrink-0">
+                        <div className="flex items-center justify-end md:justify-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-100 to-slate-50 border border-slate-100 hidden md:flex items-center justify-center text-slate-400 shrink-0 shadow-sm">
                                 <User className="w-4 h-4" />
                             </div>
-                            <span className="text-sm font-semibold text-slate-900 line-clamp-1">
-                                {formatName(cert.name)} {/* Formatted for display */}
+                            <span className="text-[14px] font-semibold text-slate-900 tracking-tight">
+                                {formatName(cert.name)}
                             </span>
                         </div>
                     )}
@@ -158,7 +171,7 @@ const TableRow: React.FC<TableRowProps> = ({
             </td>
 
             {/* Hospital */}
-            <td className="flex md:table-cell items-center justify-between p-3 md:px-4 md:py-4 border-b border-slate-100 md:border-0">
+            <td className="flex md:table-cell items-center justify-between p-4 md:px-4 md:py-5 border-b border-slate-100 md:border-0">
                 <MobileLabel>Hospital</MobileLabel>
                 <div className="w-full md:w-auto text-right md:text-left">
                     {isEditing ? (
@@ -166,15 +179,15 @@ const TableRow: React.FC<TableRowProps> = ({
                             type="text"
                             value={editFormData.hospital || ''}
                             onChange={(e) => handleChange('hospital', e.target.value)}
-                            className="w-full md:w-auto px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-sm cursor-text text-right md:text-left"
-                            placeholder="Hospital"
+                            className="w-full md:w-40 px-3 py-2 text-[13px] bg-white ring-1 ring-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 shadow-sm transition-all"
+                            placeholder="Hospital Name"
                         />
                     ) : (
                         <span className={clsx(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shadow-sm cursor-default",
+                            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold tracking-wide border shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
                             getHospitalColor(cert.hospital)
                         )}>
-                            <Building2 className="w-3 h-3" />
+                            <Building2 className="w-3 h-3 opacity-70" />
                             {cert.hospital}
                         </span>
                     )}
@@ -182,7 +195,7 @@ const TableRow: React.FC<TableRowProps> = ({
             </td>
 
             {/* Date of Issue */}
-            <td className="flex md:table-cell items-center justify-between p-3 md:px-4 md:py-4 border-b border-slate-100 md:border-0">
+            <td className="flex md:table-cell items-center justify-between p-4 md:px-4 md:py-5 border-b border-slate-100 md:border-0">
                 <MobileLabel>Date</MobileLabel>
                 <div className="w-full md:w-auto text-right md:text-left">
                     {isEditing ? (
@@ -190,12 +203,12 @@ const TableRow: React.FC<TableRowProps> = ({
                             type="date"
                             value={doiToDateInput(editFormData.doi || '')}
                             onChange={(e) => handleChange('doi', dateInputToDoi(e.target.value))}
-                            className="w-full md:w-auto px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-sm cursor-pointer"
+                            className="w-full md:w-auto px-3 py-2 text-[13px] bg-white ring-1 ring-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 shadow-sm cursor-pointer font-medium text-slate-600"
                         />
                     ) : (
                         <div className="flex items-center justify-end md:justify-start gap-2 text-slate-500">
-                            <Calendar className="w-3.5 h-3.5 hidden md:block" />
-                            <span className="text-sm">
+                            <Calendar className="w-3.5 h-3.5 hidden md:block opacity-60" />
+                            <span className="text-[13px] font-medium tabular-nums tracking-tight">
                                 {cert.doi}
                             </span>
                         </div>
@@ -204,59 +217,70 @@ const TableRow: React.FC<TableRowProps> = ({
             </td>
 
             {/* ACTION BUTTONS */}
-            <td className="block md:table-cell p-3 md:px-4 md:py-4 bg-slate-50 md:bg-transparent rounded-b-xl md:rounded-none border-t border-slate-200 md:border-0">
+            <td className="block md:table-cell p-3 md:px-4 md:py-5 bg-slate-50 md:bg-transparent rounded-b-[20px] md:rounded-none border-t border-slate-200 md:border-0">
                 <div className="w-full md:w-auto relative">
                     {isEditing ? (
                         <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200 w-full justify-end">
-                            <button
+                            <motion.button
+                                whileTap={{ scale: 0.94 }}
                                 onClick={() => handleSave(cert._id)}
-                                className="flex-1 md:flex-none justify-center flex items-center gap-1.5 px-3 py-2 md:py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-md shadow-sm transition-all cursor-pointer active:scale-95"
+                                className="flex-1 md:flex-none justify-center flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-black text-white text-[12px] font-bold rounded-[10px] shadow-md shadow-slate-900/10 transition-all cursor-pointer"
                             >
                                 <Save className="w-3.5 h-3.5" />
                                 Save
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
+                                whileTap={{ scale: 0.94 }}
                                 onClick={() => setEditingId(null)}
-                                className="flex-1 md:flex-none justify-center flex items-center gap-1.5 px-3 py-2 md:py-1.5 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-600 text-xs font-medium rounded-md shadow-sm transition-all cursor-pointer active:scale-95"
+                                className="flex-1 md:flex-none justify-center flex items-center gap-1.5 px-3 py-2 bg-white ring-1 ring-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-[12px] font-bold rounded-[10px] shadow-sm transition-all cursor-pointer"
                             >
                                 <X className="w-3.5 h-3.5" />
                                 Cancel
-                            </button>
+                            </motion.button>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-end gap-2">
-                            <button
+                        <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+                            <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                whileHover={{ scale: 1.05 }}
                                 onClick={() => handleEdit(cert)}
                                 disabled={isDisabled}
                                 className={clsx(
-                                    "p-2.5 md:p-2 rounded-lg transition-all duration-200 flex items-center justify-center",
+                                    "p-2 rounded-[10px] transition-all duration-200 flex items-center justify-center relative group/btn",
                                     isDisabled
-                                        ? "text-slate-300 cursor-not-allowed bg-slate-100"
-                                        : "text-slate-500 hover:text-amber-600 hover:bg-amber-50 cursor-pointer active:scale-90 bg-white md:bg-transparent border border-slate-200 md:border-0 shadow-sm md:shadow-none"
+                                        ? "text-slate-300 cursor-not-allowed"
+                                        : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer"
                                 )}
-                                title="Edit Record"
                             >
                                 <Edit3 className="w-4 h-4" />
-                            </button>
+                                {/* Tooltip */}
+                                <span className="absolute bottom-full mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-md opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                    Edit
+                                </span>
+                            </motion.button>
 
-                            <button
+                            <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                whileHover={{ scale: 1.05 }}
                                 onClick={() => handleDelete(cert._id)}
                                 disabled={isDisabled}
                                 className={clsx(
-                                    "p-2.5 md:p-2 rounded-lg transition-all duration-200 flex items-center justify-center",
+                                    "p-2 rounded-[10px] transition-all duration-200 flex items-center justify-center relative group/btn",
                                     isDisabled
-                                        ? "text-slate-300 cursor-not-allowed bg-slate-100"
-                                        : "text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer active:scale-90 bg-white md:bg-transparent border border-slate-200 md:border-0 shadow-sm md:shadow-none"
+                                        ? "text-slate-300 cursor-not-allowed"
+                                        : "text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
                                 )}
-                                title="Delete Record"
                             >
                                 <Trash2 className="w-4 h-4" />
-                            </button>
+                                <span className="absolute bottom-full mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-md opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                    Delete
+                                </span>
+                            </motion.button>
                         </div>
                     )}
                 </div>
             </td>
-        </tr>
+        </motion.tr>
     );
 };
 
