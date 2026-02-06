@@ -19,6 +19,14 @@ import {
   initialNewCertificateState 
 } from '@/components/Certificates/utils/constants';
 
+// --- IOS ANIMATION PHYSICS ---
+const iosSpring = {
+  type: "spring" as const,
+  stiffness: 350,
+  damping: 30,
+  mass: 0.8
+};
+
 const CertificateDatabasePage: React.FC = () => {
   // --- Global State ---
   const [refreshKey, setRefreshKey] = useState(0);
@@ -239,7 +247,7 @@ const CertificateDatabasePage: React.FC = () => {
     setSelectedIds: setDummySelectedIds,
     fetchCertificates: async () => { handleRefresh(); },
     deleteCertificate, 
-    updateCertificate, // <--- ✅ ADDED THIS TO FIX THE ERROR
+    updateCertificate, 
     fetchCertificatesForExport: fetchCertificatesForExportPageSide,
     showNotification: (msg, type) => handleAlert(msg, type === 'error'),
     onAlert: handleAlert,
@@ -247,8 +255,6 @@ const CertificateDatabasePage: React.FC = () => {
   });
 
   // --- Upload Handlers ---
-  
-  // ✅ Fixed Upload Success Handler to capture IDs
   const handleUploadSuccess = useCallback((message: string, uploadedIds?: string[]) => {
     handleAlert(message, false);
     handleRefresh();
@@ -325,7 +331,7 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-indigo-500/10 selection:text-indigo-700">
+    <div className="min-h-screen bg-[#F2F2F7] text-slate-800 font-quicksand selection:bg-[#007AFF]/20 selection:text-[#007AFF]">
         
       <AnimatePresence>
         {isHelpCardVisible && <HelpCard onClose={() => setIsHelpCardVisible(false)} />}
@@ -343,22 +349,26 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto w-full max-w-[1600px] px-6 py-10 space-y-8">
+      <main className="mx-auto w-full max-w-[1600px] px-6 py-8 space-y-8">
         
         {/* --- HEADER SECTION --- */}
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-8">
-          <div className="space-y-1">
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1 pl-1">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Certificate Database
             </h1>
-            <p className="text-sm text-slate-500 font-medium max-w-2xl">
-              Centralized repository for managing and tracking digital certification records.
+            <p className="text-[13px] text-slate-500 font-semibold tracking-wide uppercase opacity-80">
+              Centralized Repository
             </p>
           </div>
 
-          <div className="relative w-full lg:w-96 group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full lg:w-[420px] group"
+          >
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+              <FiSearch className="h-5 w-5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors" />
             </div>
             <input
               type="text"
@@ -366,134 +376,117 @@ const CertificateDatabasePage: React.FC = () => {
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="
-                block w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 
-                text-sm text-slate-900 placeholder:text-slate-400 
-                focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none
-                transition-all duration-200 shadow-sm
+                block w-full rounded-[20px] border-none bg-white py-4 pl-12 pr-4 
+                text-[15px] font-medium text-slate-700 placeholder:text-slate-400 
+                focus:ring-2 focus:ring-[#007AFF]/30 focus:bg-white
+                shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgb(0,0,0,0.05)]
+                transition-all duration-300
               "
             />
-          </div>
+          </motion.div>
         </header>
 
         {/* --- DASHBOARD STATS GRID --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* 1. TOTAL CERTIFICATES */}
           <motion.div 
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-emerald-200 transition-colors duration-300 group"
+            whileHover={{ y: -5 }}
+            transition={iosSpring}
+            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50"
           >
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Total Certificates
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  Total Records
                 </p>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[32px] font-bold text-slate-800 tracking-tight">
                   {animatedTotalRecords.toLocaleString()}
                 </span>
-                <span className="text-sm font-medium text-slate-400">entries</span>
               </div>
             </div>
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-emerald-5 border border-emerald-100 p-1">
-              <Image
-                src="/logos/ssilogo.png"
-                alt="SSI Logo"
-                fill
-                className="object-contain p-0.5 opacity-90 grayscale-[0.2] group-hover:grayscale-0 transition-all duration-300"
-              />
+            <div className="w-14 h-14 rounded-[20px] bg-gradient-to-tr from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/20 flex items-center justify-center p-0.5">
+               <div className="relative w-8 h-8 opacity-90 invert brightness-0">
+                  <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
+               </div>
             </div>
           </motion.div>
 
           {/* 2. TOTAL HOSPITALS */}
           <motion.div 
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors duration-300"
+            whileHover={{ y: -5 }}
+            transition={{ ...iosSpring, delay: 0.1 }}
+            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50"
           >
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Total Hospitals
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  Hospitals
                 </p>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[32px] font-bold text-slate-800 tracking-tight">
                   {animatedHospitalCount.toLocaleString()}
                 </span>
-                <span className="text-sm font-medium text-slate-400">active</span>
               </div>
             </div>
-            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-blue-50 border border-blue-100 p-1">
-                <FiGrid className="w-6 h-6 text-blue-500" />
+            <div className="w-14 h-14 rounded-[20px] bg-gradient-to-tr from-blue-400 to-blue-600 shadow-lg shadow-blue-500/20 flex items-center justify-center">
+                <FiGrid className="w-7 h-7 text-white" />
             </div>
           </motion.div>
 
           {/* 3. TOTAL DOCTORS */}
           <motion.div 
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-violet-200 transition-colors duration-300"
+            whileHover={{ y: -5 }}
+            transition={{ ...iosSpring, delay: 0.2 }}
+            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50"
           >
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                   Doctors
                 </p>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
-                </span>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[32px] font-bold text-slate-800 tracking-tight">
                   {animatedDoctors.toLocaleString()}
                 </span>
-                <span className="text-sm font-medium text-slate-400">identified</span>
               </div>
             </div>
-            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-violet-50 border border-violet-100 p-1">
-                <FiUserCheck className="w-6 h-6 text-violet-500" />
+            <div className="w-14 h-14 rounded-[20px] bg-gradient-to-tr from-violet-400 to-violet-600 shadow-lg shadow-violet-500/20 flex items-center justify-center">
+                <FiUserCheck className="w-7 h-7 text-white" />
             </div>
           </motion.div>
 
           {/* 4. TOTAL STAFF */}
           <motion.div 
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-amber-200 transition-colors duration-300"
+            whileHover={{ y: -5 }}
+            transition={{ ...iosSpring, delay: 0.3 }}
+            className="relative flex items-center justify-between p-6 bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50"
           >
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Staff Members
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  Staff
                 </p>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                </span>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[32px] font-bold text-slate-800 tracking-tight">
                   {animatedStaff.toLocaleString()}
                 </span>
-                <span className="text-sm font-medium text-slate-400">others</span>
               </div>
             </div>
-            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-amber-50 border border-amber-100 p-1">
-                <FiUsers className="w-6 h-6 text-amber-500" />
+            <div className="w-14 h-14 rounded-[20px] bg-gradient-to-tr from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20 flex items-center justify-center">
+                <FiUsers className="w-7 h-7 text-white" />
             </div>
           </motion.div>
         </div>
@@ -502,47 +495,51 @@ const CertificateDatabasePage: React.FC = () => {
         <div className="flex flex-col gap-4 pb-2">
             <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 
-                {/* ✅ NEW BATCH ACTIONS - Appears Left of Upload Button */}
+                {/* ✅ NEW BATCH ACTIONS - Dynamic Island Style */}
                 <AnimatePresence mode='wait'>
                     {newBatchIds.length > 0 && isBatchLoaded && (
                         <motion.div
                             key="new-batch-actions"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1 pr-2 bg-indigo-50 border border-indigo-100 rounded-xl"
+                            initial={{ opacity: 0, scale: 0.9, width: 0 }}
+                            animate={{ opacity: 1, scale: 1, width: "auto" }}
+                            exit={{ opacity: 0, scale: 0.9, width: 0 }}
+                            transition={iosSpring}
+                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1.5 pr-3 bg-white border border-indigo-100 rounded-[20px] shadow-sm overflow-hidden"
                         >
-                            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider px-2 hidden lg:inline-block">
+                            <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider px-3 hidden lg:inline-block">
                                 New Batch ({newBatchIds.length})
                             </span>
                             
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
                                 disabled={isBulkGeneratingV2}
-                                title="Download New Training Certificates"
-                                className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm whitespace-nowrap"
+                                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-xs font-bold rounded-[14px] hover:shadow-md transition-all shadow-indigo-200"
                             >
                                 {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
                                 <span>Training</span>
-                            </button>
+                            </motion.button>
                             
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
                                 disabled={isBulkGeneratingV1}
-                                title="Download New Proctoring Certificates"
-                                className="flex items-center gap-2 px-3 py-1.5 bg-white text-indigo-700 border border-indigo-200 text-xs font-medium rounded-lg hover:bg-indigo-50 transition-colors shadow-sm whitespace-nowrap"
+                                className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 text-xs font-bold rounded-[14px] hover:bg-indigo-100 transition-colors"
                             >
                                 {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
                                 <span>Proctoring</span>
-                            </button>
+                            </motion.button>
 
-                            <button 
+                            <motion.button 
+                                whileHover={{ scale: 1.1, rotate: 90 }}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={handleClearBatch}
-                                className="ml-1 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                                title="Clear Batch Selection"
+                                className="ml-1 p-2 text-slate-300 hover:text-red-500 bg-transparent rounded-full transition-colors"
                             >
-                                <FiX className="w-3.5 h-3.5" />
-                            </button>
+                                <FiX className="w-4 h-4" />
+                            </motion.button>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -554,15 +551,17 @@ const CertificateDatabasePage: React.FC = () => {
                     />
                 </div>
 
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleRefresh}
                     disabled={isRefreshing}
                     className={`
-                        w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 
-                        rounded-lg text-sm font-medium border transition-all duration-200
+                        w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 
+                        rounded-[16px] text-sm font-bold border transition-all duration-300
                         ${isRefreshing 
-                        ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm'
+                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:text-[#007AFF] hover:border-[#007AFF]/30 shadow-sm'
                         }
                     `}
                 >
@@ -570,28 +569,30 @@ const CertificateDatabasePage: React.FC = () => {
                         className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
                     />
                     <span>Sync</span>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setIsHelpCardVisible(true)}
                     className="
-                        w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 
-                        rounded-lg text-sm font-medium border border-transparent
-                        bg-slate-800 text-white shadow-sm hover:bg-slate-900 
-                        transition-all duration-200 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2
+                        w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 
+                        rounded-[16px] text-sm font-bold border border-transparent
+                        bg-slate-800 text-white shadow-lg shadow-slate-900/10 hover:bg-slate-900 
+                        transition-all duration-300
                     "
                 >
                     <FiHelpCircle className="w-4 h-4" />
                     <span>Guide</span>
-                </button>
+                </motion.button>
             </div>
         </div>
 
         {/* --- CONTENT AREA: Charts & Table --- */}
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-8">
           
           {/* Analytics Section */}
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-[32px] border border-white/60 bg-white/60 backdrop-blur-xl shadow-[0_20px_40px_-10px_rgb(0,0,0,0.05)] overflow-hidden p-1">
             <HospitalPieChart
               uniqueHospitals={uniqueHospitals}
               totalRecords={totalRecords}
@@ -600,7 +601,7 @@ const CertificateDatabasePage: React.FC = () => {
           </div>
           
           {/* Data Table Section */}
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[500px]">
+          <div className="rounded-[32px] border border-white/60 bg-white/60 backdrop-blur-xl shadow-[0_20px_40px_-10px_rgb(0,0,0,0.05)] overflow-hidden min-h-[500px] p-1">
             <CertificateTable
               refreshKey={refreshKey}
               onRefresh={handleTableDataUpdate as any} 
@@ -616,6 +617,12 @@ const CertificateDatabasePage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <style>{`
+        .font-quicksand {
+          font-family: 'Quicksand', sans-serif;
+        }
+      `}</style>
     </div>
   );
 };
