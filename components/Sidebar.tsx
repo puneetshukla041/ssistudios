@@ -5,8 +5,6 @@ import { motion, AnimatePresence, Variants } from 'framer-motion'
 import Image from "next/image"
 import { Tooltip } from 'react-tooltip'
 
-import Logo from '@/components/aminations/Logo'
-
 // Importing Lucide Icons
 import {
   LuLayoutDashboard,
@@ -24,7 +22,6 @@ import {
   LuChevronRight,
   LuSmartphone,
   LuMonitor,
-  LuGitBranch,
 } from 'react-icons/lu'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -32,12 +29,12 @@ import { useRouter, usePathname } from 'next/navigation'
 import LoadingScreen from '@/components/aminations/LoadingScreen'
 import type { UserAccess } from '@/contexts/AuthContext';
 
-// --- IOS ANIMATION PHYSICS ---
+// --- IOS ANIMATION PHYSICS (Fixed Type Error) ---
 const iosSpring = {
-  type: "spring",
+  type: "spring" as const, // <--- 'as const' FIXES THE BUILD ERROR
   stiffness: 350,
   damping: 30,
-  mass: 1
+  mass: 0.8
 };
 
 // --- Menu Data ---
@@ -92,12 +89,12 @@ const NO_LOADING_ANIMATION_PATHS = new Set(['/dashboard', '/logo', '/theme', '/u
 
 const menuContainerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
 };
 
 const menuItemVariants: Variants = {
-  hidden: { opacity: 0, x: -10 },
-  show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 200, damping: 20 } },
+  hidden: { opacity: 0, scale: 0.95, y: 5 },
+  show: { opacity: 1, scale: 1, y: 0, transition: iosSpring },
 };
 
 type SidebarProps = {
@@ -137,37 +134,41 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
 
   const renderSidebarContent = (isMobile: boolean, isDesktopHovered = false) => (
     <aside
-      className={`h-screen flex flex-col font-sans transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
-        ${isMobile ? 'w-[85%] max-w-sm' : isDesktopHovered ? 'w-64' : 'w-20'}
+      className={`h-screen flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
+        ${isMobile ? 'w-[85%] max-w-sm' : isDesktopHovered ? 'w-[260px]' : 'w-[88px]'}
         /* LIGHT THEME COLORS */
-        bg-[#F2F2F7]/90 
-        backdrop-blur-2xl 
-        border-r border-slate-200
-        shadow-[10px_0_40px_rgba(0,0,0,0.03)]
+        bg-[#F5F5F7]/95 
+        backdrop-blur-3xl 
+        border-r border-slate-200/60
+        shadow-[20px_0_60px_-10px_rgba(0,0,0,0.05)]
       `}
     >
       {/* Header */}
-      <div className="p-4 h-[80px] flex items-center justify-between relative z-10">
+      <div className="p-5 h-[85px] flex items-center justify-between relative z-10 mb-2">
         <div className="flex items-center justify-center w-full relative">
           <div className={`absolute transition-all duration-500 ease-out flex items-center gap-3 ${isMobile || isDesktopHovered ? "opacity-100 scale-100 left-0" : "opacity-0 scale-90 -left-4"}`}>
-            <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center shadow-sm border border-slate-200">
-                 <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
-            </div>
+            <motion.div 
+               whileHover={{ scale: 1.05 }}
+               whileTap={{ scale: 0.95 }}
+               className="w-[38px] h-[38px] bg-white rounded-[12px] flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 cursor-pointer"
+            >
+                 <Image src="/logos/ssilogo.png" alt="Logo" width={20} height={20} className="object-contain" />
+            </motion.div>
             <div>
-                <h1 className="text-slate-900 font-bold text-lg tracking-tight leading-none">SSI Studios</h1>
+                <h1 className="text-slate-800 font-bold text-[16px] tracking-tight leading-none">SSI Studios</h1>
                 <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-1">Creative Ops</p>
             </div>
           </div>
           <div className={`absolute transition-all duration-500 ease-out ${!isMobile && !isDesktopHovered ? "opacity-100 scale-100" : "opacity-0 scale-50"}`}>
-             <div className="w-11 h-11 bg-white rounded-[14px] flex items-center justify-center border border-slate-200 shadow-sm">
-                <Image src="/logos/ssilogo.png" alt="Logo" width={24} height={24} className="object-contain" />
+             <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+                <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
             </div>
           </div>
         </div>
       </div>
       
       {/* Nav */}
-      <motion.nav className="flex-1 px-3 py-4 overflow-y-auto no-scrollbar space-y-1" variants={menuContainerVariants} initial="hidden" animate="show">
+      <motion.nav className="flex-1 px-3.5 py-2 overflow-y-auto no-scrollbar space-y-1" variants={menuContainerVariants} initial="hidden" animate="show">
         {menu.map((item) => {
           const hasAccess = !item.requiredAccess || ((user?.access as any)?.[item.requiredAccess] ?? false);
           const isDeveloping = item.isUnderDevelopment || (!hasAccess && item.name !== 'Developer');
@@ -178,8 +179,13 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           const active = isParentActive(item)
 
           return (
-            <motion.div key={item.name} className="mb-0.5" variants={menuItemVariants}>
-              <button
+            <motion.div key={item.name} variants={menuItemVariants}>
+              <motion.button
+                /* --- INTERACTIVITY MAGIC --- */
+                whileHover={!isDeveloping ? { scale: 1.02, backgroundColor: active ? '' : 'rgba(255,255,255,0.7)' } : {}}
+                whileTap={!isDeveloping ? { scale: 0.96 } : {}}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                
                 onClick={() => {
                   if (isDeveloping) return;
                   if (item.name === 'Logout') { logout(); return; }
@@ -190,44 +196,62 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                     if (isOpen) toggleSidebar();
                   }
                 }}
-                className={`group flex items-center justify-between w-full px-3 py-3 rounded-[16px] transition-all duration-300 relative overflow-hidden
-                  ${active && !isDeveloping ? 'bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-white/60'}
+                className={`group flex items-center justify-between w-full px-3.5 py-3 rounded-[16px] transition-all duration-200 relative overflow-hidden
+                  ${active && !isDeveloping 
+                    ? 'bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-[0_6px_16px_-4px_rgba(0,122,255,0.35)]' 
+                    : 'text-slate-500 hover:text-slate-800'
+                  }
                   ${isDeveloping ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}
                 `}
                 type="button"
                 data-tooltip-id={`tooltip-${item.name.replace(/\s/g, '-')}`}
               >
                 <div className="relative flex items-center gap-3.5 z-10">
-                  <Icon size={20} className={`${active && !isDeveloping ? 'text-white' : item.name === 'Logout' ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-900'}`} />
-                  <span className={`text-[14px] font-semibold tracking-tight whitespace-nowrap transition-all duration-300 ${isMobile || isDesktopHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                  <Icon 
+                    size={20} 
+                    strokeWidth={active ? 2.5 : 2}
+                    className={`transition-colors duration-300 ${active && !isDeveloping ? 'text-white' : item.name === 'Logout' ? 'text-red-500' : 'text-slate-400 group-hover:text-[#007AFF]'}`} 
+                  />
+                  <span className={`text-[13.5px] font-bold tracking-tight whitespace-nowrap transition-all duration-300 ${isMobile || isDesktopHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
                     {item.name}
                   </span>
                 </div>
                 {item.children && (isMobile || isDesktopHovered) && (
-                  <div className="relative z-10">
+                  <div className="relative z-10 opacity-50 group-hover:opacity-100 transition-opacity">
                     {isOpenMenuItem ? <LuChevronDown size={16} /> : <LuChevronRight size={16} />}
                   </div>
                 )}
-              </button>
+              </motion.button>
               
+              {/* Submenu */}
               {item.children && (
-                <motion.div initial={false} animate={{ height: isOpenMenuItem ? 'auto' : 0, opacity: isOpenMenuItem ? 1 : 0 }} transition={iosSpring}>
-                  <div className="ml-4 pl-3 border-l border-slate-200 mt-1 space-y-1 py-1">
+                <motion.div 
+                    initial={false} 
+                    animate={{ height: isOpenMenuItem ? 'auto' : 0, opacity: isOpenMenuItem ? 1 : 0 }} 
+                    transition={iosSpring}
+                    className="overflow-hidden"
+                >
+                  <div className="ml-5 pl-4 border-l-2 border-slate-200/60 mt-1.5 space-y-1 py-1 mb-2">
                     {item.children.map((child) => (
-                      <button
+                      <motion.button
                         key={child.path}
+                        whileHover={{ x: 3, color: "#007AFF" }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => {
                           if (child.path !== pathname) {
                             NO_LOADING_ANIMATION_PATHS.has(child.path) ? router.push(child.path) : setRedirectUrl(child.path);
                             if (isOpen) toggleSidebar();
                           }
                         }}
-                        className={`block w-full text-left px-3 py-2 text-[13px] rounded-[10px] transition-all
-                          ${pathname.startsWith(child.path) ? 'bg-white text-[#007AFF] font-bold shadow-sm' : 'text-slate-500 hover:text-slate-900'}
+                        className={`block w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold
+                          ${pathname.startsWith(child.path) 
+                             ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.03)]' 
+                             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                          }
                         `}
                       >
                         {child.name}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </motion.div>
@@ -238,41 +262,60 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
       </motion.nav>
 
       {/* Footer */}
-      <motion.div className={`px-4 py-6 border-t border-slate-200 w-full mt-auto hidden lg:flex flex-col gap-5 ${isDesktopHovered ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <motion.div 
+        className={`px-4 py-5 border-t border-slate-200/60 w-full mt-auto hidden lg:flex flex-col gap-4 ${isDesktopHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}
+        transition={{ duration: 0.4, ease: "backOut" }}
+      >
         <div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Ecosystem</div>
+          <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1">Ecosystem</div>
           <div className="grid grid-cols-2 gap-2">
-            <a href="#" className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all">
+            <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+            >
               <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
               <span className="text-[10px] font-bold text-slate-600">iOS App</span>
-            </a>
-            <a href="#" className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all">
+            </motion.a>
+            <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+            >
               <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
               <span className="text-[10px] font-bold text-slate-600">Desktop</span>
-            </a>
+            </motion.a>
           </div>
         </div>
-        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
-           <span className="font-mono">v.1.08.25</span>
-           <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">BETA</span>
+        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-bold">
+           <span className="font-mono opacity-70">v.1.08.25</span>
+           <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
         </div>
-        <button onClick={logout} className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors">
-          <LuLogOut size={14} /> Sign Out
-        </button>
+        <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={logout} 
+            className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50/80 hover:bg-red-100 rounded-[14px] transition-colors cursor-pointer"
+        >
+          <LuLogOut size={15} /> Sign Out
+        </motion.button>
       </motion.div>
     </aside>
   )
 
   return (
     <>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      {/* Changed font to Quicksand for that "Cute" look */}
+      <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
       <div className="hidden lg:block fixed top-0 left-0 h-screen z-30" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
         {renderSidebarContent(false, isHovered)}
       </div>
       <AnimatePresence>
         {isOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 lg:hidden">
-            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={toggleSidebar} />
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" onClick={toggleSidebar} />
             <motion.div initial={{ x: '-100%' }} animate={{ x: '0%' }} exit={{ x: '-100%' }} transition={iosSpring} className="relative w-full max-w-sm h-full">
               {renderSidebarContent(true)}
             </motion.div>
@@ -280,7 +323,12 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         )}
       </AnimatePresence>
       <AnimatePresence>{redirectUrl && <LoadingScreen redirectUrl={redirectUrl} />}</AnimatePresence>
-      <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+      <style>{`
+        .font-quicksand {
+          font-family: 'Quicksand', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
     </>
   )
 }
