@@ -22,6 +22,7 @@ import {
   LuChevronRight,
   LuSmartphone,
   LuMonitor,
+  LuX, // Added Close Icon for Mobile
 } from 'react-icons/lu'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -29,9 +30,9 @@ import { useRouter, usePathname } from 'next/navigation'
 import LoadingScreen from '@/components/aminations/LoadingScreen'
 import type { UserAccess } from '@/contexts/AuthContext';
 
-// --- IOS ANIMATION PHYSICS (Fixed Type Error) ---
+// --- IOS ANIMATION PHYSICS ---
 const iosSpring = {
-  type: "spring" as const, // <--- 'as const' FIXES THE BUILD ERROR
+  type: "spring" as const,
   stiffness: 350,
   damping: 30,
   mass: 0.8
@@ -111,8 +112,11 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
   const [isHovered, setIsHovered] = useState(false)
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
+  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    if (window.innerWidth < 1024) { // Only lock on mobile/tablet
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -132,21 +136,26 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     return false
   }
 
+  // --- RENDER CONTENT FUNCTION (Reusable for Mobile & Desktop) ---
   const renderSidebarContent = (isMobile: boolean, isDesktopHovered = false) => (
     <aside
-      className={`h-screen flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
-        ${isMobile ? 'w-[85%] max-w-sm' : isDesktopHovered ? 'w-[260px]' : 'w-[88px]'}
-        /* LIGHT THEME COLORS */
+      className={`flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
+        /* Responsive Widths */
+        ${isMobile ? 'w-full h-full' : isDesktopHovered ? 'w-[260px] h-[100dvh]' : 'w-[88px] h-[100dvh]'}
+        
+        /* THEME & GLASSMORPHISM */
         bg-[#F5F5F7]/95 
         backdrop-blur-3xl 
         border-r border-slate-200/60
         shadow-[20px_0_60px_-10px_rgba(0,0,0,0.05)]
       `}
     >
-      {/* Header */}
-      <div className="p-5 h-[85px] flex items-center justify-between relative z-10 mb-2">
-        <div className="flex items-center justify-center w-full relative">
-          <div className={`absolute transition-all duration-500 ease-out flex items-center gap-3 ${isMobile || isDesktopHovered ? "opacity-100 scale-100 left-0" : "opacity-0 scale-90 -left-4"}`}>
+      {/* --- HEADER --- */}
+      <div className={`flex items-center justify-between relative z-10 shrink-0 ${isMobile ? 'p-6 pb-2' : 'p-5 h-[85px] mb-2'}`}>
+        <div className="flex items-center w-full relative">
+          
+          {/* Expanded Logo State */}
+          <div className={`absolute transition-all duration-500 ease-out flex items-center gap-3 ${isMobile || isDesktopHovered ? "opacity-100 scale-100 left-0" : "opacity-0 scale-90 -left-4 pointer-events-none"}`}>
             <motion.div 
                whileHover={{ scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
@@ -159,19 +168,38 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                 <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-1">Creative Ops</p>
             </div>
           </div>
-          <div className={`absolute transition-all duration-500 ease-out ${!isMobile && !isDesktopHovered ? "opacity-100 scale-100" : "opacity-0 scale-50"}`}>
+
+          {/* Collapsed Logo State (Desktop Only) */}
+          <div className={`absolute transition-all duration-500 ease-out ${!isMobile && !isDesktopHovered ? "opacity-100 scale-100" : "opacity-0 scale-50 pointer-events-none"}`}>
              <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                 <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
             </div>
           </div>
+          
+          {/* Mobile Close Button */}
+          {isMobile && (
+            <button 
+                onClick={toggleSidebar}
+                className="ml-auto p-2 bg-white rounded-full shadow-sm text-slate-400 active:scale-95 transition-transform"
+            >
+                <LuX size={20} />
+            </button>
+          )}
         </div>
       </div>
       
-      {/* Nav */}
-      <motion.nav className="flex-1 px-3.5 py-2 overflow-y-auto no-scrollbar space-y-1" variants={menuContainerVariants} initial="hidden" animate="show">
+      {/* --- NAVIGATION (Scrollable) --- */}
+      <motion.nav 
+        className="flex-1 px-3.5 py-2 overflow-y-auto no-scrollbar space-y-1" 
+        variants={menuContainerVariants} 
+        initial="hidden" 
+        animate="show"
+      >
         {menu.map((item) => {
           const hasAccess = !item.requiredAccess || ((user?.access as any)?.[item.requiredAccess] ?? false);
           const isDeveloping = item.isUnderDevelopment || (!hasAccess && item.name !== 'Developer');
+          
+          // Show Logout in nav only on mobile, otherwise footer
           if (item.mobileOnly && !isMobile) return null
 
           const Icon = item.icon
@@ -181,7 +209,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           return (
             <motion.div key={item.name} variants={menuItemVariants}>
               <motion.button
-                /* --- INTERACTIVITY MAGIC --- */
+                /* Physics */
                 whileHover={!isDeveloping ? { scale: 1.02, backgroundColor: active ? '' : 'rgba(255,255,255,0.7)' } : {}}
                 whileTap={!isDeveloping ? { scale: 0.96 } : {}}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -261,73 +289,107 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         })}
       </motion.nav>
 
-      {/* Footer */}
-      <motion.div 
-        className={`px-4 py-5 border-t border-slate-200/60 w-full mt-auto hidden lg:flex flex-col gap-4 ${isDesktopHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}
-        transition={{ duration: 0.4, ease: "backOut" }}
-      >
-        <div>
-          <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1">Ecosystem</div>
-          <div className="grid grid-cols-2 gap-2">
-            <motion.a 
-                href="#" 
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
-            >
-              <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
-              <span className="text-[10px] font-bold text-slate-600">iOS App</span>
-            </motion.a>
-            <motion.a 
-                href="#" 
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
-            >
-              <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
-              <span className="text-[10px] font-bold text-slate-600">Desktop</span>
-            </motion.a>
-          </div>
-        </div>
-        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-bold">
-           <span className="font-mono opacity-70">v.1.08.25</span>
-           <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
-        </div>
-        <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={logout} 
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50/80 hover:bg-red-100 rounded-[14px] transition-colors cursor-pointer"
+      {/* --- FOOTER (Hidden on mobile nav to save space, usually) --- */}
+      {/* Only show "Ecosystem" on Desktop. Mobile handles Logout in the list above. */}
+      {!isMobile && (
+        <motion.div 
+            className={`px-4 py-5 border-t border-slate-200/60 w-full mt-auto flex flex-col gap-4 shrink-0 transition-all duration-300 ${isDesktopHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}
+            transition={{ duration: 0.4, ease: "backOut" }}
         >
-          <LuLogOut size={15} /> Sign Out
-        </motion.button>
-      </motion.div>
+            <div>
+            <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1">Ecosystem</div>
+            <div className="grid grid-cols-2 gap-2">
+                <motion.a 
+                    href="#" 
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+                >
+                <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
+                <span className="text-[10px] font-bold text-slate-600">iOS App</span>
+                </motion.a>
+                <motion.a 
+                    href="#" 
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+                >
+                <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
+                <span className="text-[10px] font-bold text-slate-600">Desktop</span>
+                </motion.a>
+            </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-bold">
+            <span className="font-mono opacity-70">v.1.08.25</span>
+            <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
+            </div>
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={logout} 
+                className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50/80 hover:bg-red-100 rounded-[14px] transition-colors cursor-pointer"
+            >
+            <LuLogOut size={15} /> Sign Out
+            </motion.button>
+        </motion.div>
+      )}
+
+      {/* --- MOBILE SAFE AREA SPACER --- */}
+      {/* Ensures content isn't hidden behind iPhone home bar */}
+      {isMobile && <div className="h-safe-bottom shrink-0 w-full" style={{ height: 'env(safe-area-inset-bottom)' }} />}
     </aside>
   )
 
   return (
     <>
-      {/* Changed font to Quicksand for that "Cute" look */}
       <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
-      <div className="hidden lg:block fixed top-0 left-0 h-screen z-30" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      
+      {/* --- DESKTOP VIEW (Hidden on small screens) --- */}
+      <div 
+        className="hidden lg:block fixed top-0 left-0 h-[100dvh] z-30" 
+        onMouseEnter={() => setIsHovered(true)} 
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {renderSidebarContent(false, isHovered)}
       </div>
+
+      {/* --- MOBILE VIEW (Overlay) --- */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 lg:hidden">
-            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" onClick={toggleSidebar} />
-            <motion.div initial={{ x: '-100%' }} animate={{ x: '0%' }} exit={{ x: '-100%' }} transition={iosSpring} className="relative w-full max-w-sm h-full">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-40 lg:hidden" // lg:hidden ensures this never shows on desktop
+          >
+            {/* Backdrop */}
+            <div 
+                className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" 
+                onClick={toggleSidebar} 
+            />
+            
+            {/* Slide-in Panel */}
+            <motion.div 
+                initial={{ x: '-100%' }} 
+                animate={{ x: '0%' }} 
+                exit={{ x: '-100%' }} 
+                transition={iosSpring} 
+                className="relative w-[85%] max-w-[320px] h-[100dvh] shadow-2xl"
+            >
               {renderSidebarContent(true)}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
       <AnimatePresence>{redirectUrl && <LoadingScreen redirectUrl={redirectUrl} />}</AnimatePresence>
+      
       <style>{`
         .font-quicksand {
           font-family: 'Quicksand', sans-serif;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   )
