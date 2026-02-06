@@ -43,7 +43,6 @@ type MenuItem = {
   name: string
   icon: React.ElementType
   path?: string
-  // UPDATE 1: Added 'badge' optional property to children
   children?: { name: string; path: string; badge?: string }[]
   onClick?: () => void
   mobileOnly?: boolean
@@ -60,10 +59,15 @@ const menu: MenuItem[] = [
     children: [
       { name: 'Database', path: '/certificates/database' },
       { name: 'Analysis', path: '/certificates/analysis' },
-      // UPDATE 2: Added Invitation Letter with Badge
       { 
         name: 'Invitation Letter', 
         path: '/invitation', 
+        badge: 'NEW' 
+      },
+      // --- UPDATE: Added Auto Invite here ---
+      { 
+        name: 'Auto Invite', 
+        path: '/auto', // Routes to app/auto/page.tsx
         badge: 'NEW' 
       },
     ],
@@ -177,7 +181,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           <div className={`absolute transition-all duration-500 ease-out ${!isMobile && !isDesktopHovered ? "opacity-100 scale-100" : "opacity-0 scale-50 pointer-events-none"}`}>
              <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                 <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
-            </div>
+             </div>
           </div>
           
           {/* Mobile Close Button */}
@@ -273,7 +277,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                             if (isOpen) toggleSidebar();
                           }
                         }}
-                        // UPDATE 3: Changed to flex items-center justify-between to handle badge
                         className={`flex items-center justify-between w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold
                           ${pathname.startsWith(child.path) 
                              ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.03)]' 
@@ -282,7 +285,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                         `}
                       >
                         <span>{child.name}</span>
-                        {/* UPDATE 3.1: Render Badge if present */}
                         {child.badge && (
                           <span className="ml-2 bg-indigo-100 text-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wide">
                             {child.badge}
