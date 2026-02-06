@@ -291,11 +291,12 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative overflow-hidden flex flex-col">
+    // FIX 1: Changed h-screen to min-h-screen so the page can scroll naturally
+    <div className="min-h-screen w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative flex flex-col">
         
       {/* Background Ambience */}
-      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 blur-[120px] rounded-full pointer-events-none z-0" />
 
       <AnimatePresence>
         {isHelpCardVisible && <HelpCard onClose={() => setIsHelpCardVisible(false)} />}
@@ -313,14 +314,15 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Main Layout */}
-      <main className="w-full max-w-[1920px] px-4 md:px-6 py-1.5 relative z-10 flex flex-col lg:flex-row gap-2 lg:pl-32 transition-all duration-500 h-full overflow-hidden">
+      {/* FIX 2: Removed h-full/overflow-hidden. Added alignment. */}
+      <main className="w-full max-w-[1920px] px-4 md:px-6 py-4 relative z-10 flex flex-col lg:flex-row gap-4 lg:pl-32 transition-all duration-500 min-h-screen">
         
         {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5 h-full">
+        {/* FIX 3: Removed h-full constraints */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
             
             {/* HEADER */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1.5 bg-white/40 backdrop-blur-xl p-1.5 rounded-[18px] border border-white/60 shadow-sm shrink-0">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2 bg-white/40 backdrop-blur-xl p-2 rounded-[20px] border border-white/60 shadow-sm shrink-0 sticky top-2 z-30">
                 {/* 1. Title Area */}
                 <div className="px-2 shrink-0 flex items-center gap-3">
                       <div className="flex flex-col">
@@ -438,38 +440,37 @@ const CertificateDatabasePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Data Table Section - RESPONSIVE FIX */}
+            {/* Data Table Section - EXPANDS NATURALLY */}
             <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...appleSpring, delay: 0.2 }}
-                // FIX: Added 'flex flex-col' and kept 'min-h-0' to handle flex shrinking
-                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] overflow-hidden flex-1 p-0.5 min-h-0 flex flex-col"
+                // FIX 4: Removed flex-1, overflow-hidden. Added min-h-[500px] to give it presence.
+                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] p-0.5"
             >
-                {/* FIX: Changed overflow-hidden to overflow-y-auto so the table scrolls internally if it doesn't fit */}
-                <div className="rounded-[22px] bg-white/40 h-full relative flex flex-col overflow-hidden">
-                    <div className="flex-1 w-full h-full overflow-y-auto">
-                        <CertificateTable
-                            refreshKey={refreshKey}
-                            onRefresh={handleTableDataUpdate as any} 
-                            onAlert={handleAlert}
-                            searchQuery={searchQuery}
-                            setSearchQuery={setSearchQuery} 
-                            hospitalFilter={hospitalFilter}
-                            setHospitalFilter={setHospitalFilter}
-                            isAddFormVisible={isAddFormVisible}
-                            setIsAddFormVisible={setIsAddFormVisible}
-                            uniqueHospitals={uniqueHospitals} 
-                        />
-                    </div>
+                <div className="rounded-[22px] bg-white/40 relative">
+                    {/* The table will now grow as long as it needs to be */}
+                    <CertificateTable
+                        refreshKey={refreshKey}
+                        onRefresh={handleTableDataUpdate as any} 
+                        onAlert={handleAlert}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery} 
+                        hospitalFilter={hospitalFilter}
+                        setHospitalFilter={setHospitalFilter}
+                        isAddFormVisible={isAddFormVisible}
+                        setIsAddFormVisible={setIsAddFormVisible}
+                        uniqueHospitals={uniqueHospitals} 
+                    />
                 </div>
             </motion.div>
 
         </div>
 
         {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
-        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto no-scrollbar pb-2 h-full shrink-0">
-            <div className="flex flex-col gap-2">
+        {/* FIX 5: Made sticky top-4 so it floats while you scroll the long table */}
+        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-3 h-fit sticky top-4 z-20">
+            <div className="flex flex-col gap-3">
                 
                 {/* 1. Stat Cards */}
                 <VerticalStatCard 
