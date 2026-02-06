@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { motion } from 'framer-motion'
@@ -15,11 +15,13 @@ import {
   LuCheck, 
   LuTrash2,
   LuFileText,
-  LuTriangleAlert 
+  LuTriangleAlert,
+  LuSearch,
+  LuX
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
-const NAME_MARGIN_LEFT = 72 
+const NAME_MARGIN_LEFT = 89 
 const NAME_MARGIN_TOP = 133    
 const HOSPITAL_MARGIN_LEFT = 72 
 const FONT_SIZE = 10
@@ -58,8 +60,21 @@ const toTitleCase = (str: any) => {
 
 export default function BulkInvitationPage() {
   const [data, setData] = useState<InvitationData[]>([])
+  const [searchQuery, setSearchQuery] = useState('') // Search State
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
+
+  // --- FILTERED DATA (SEARCH LOGIC) ---
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return data;
+    const lowerQuery = searchQuery.toLowerCase();
+    return data.filter(item => 
+        item.name.toLowerCase().includes(lowerQuery) ||
+        item.hospital.toLowerCase().includes(lowerQuery) ||
+        item.email.toLowerCase().includes(lowerQuery) ||
+        item.sourceSheet.toLowerCase().includes(lowerQuery)
+    );
+  }, [data, searchQuery]);
 
   // --- 1. ADVANCED EXCEL ALGORITHM (MULTI-SHEET) ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,25 +91,21 @@ export default function BulkInvitationPage() {
         
         let allExtractedData: InvitationData[] = [];
 
-        // LOOP THROUGH ALL SHEETS
         wb.SheetNames.forEach(sheetName => {
             const ws = wb.Sheets[sheetName];
             const rawData = XLSX.utils.sheet_to_json(ws);
 
             if (!rawData || rawData.length === 0) return;
 
-            // Analyze the headers of the first row to find our target columns
             const firstRow = rawData[0] as any;
             const keys = Object.keys(firstRow);
 
-            // REGEX MATCHING
             const nameKey = keys.find(k => /name|doctor|participant|faculty/i.test(k));
             const hospitalKey = keys.find(k => /hospital|society|org|institute|clinic/i.test(k));
             const emailKey = keys.find(k => /email|e-mail|mail/i.test(k));
 
             if (!nameKey) return; 
 
-            // FIX: Added explicit return type ': InvitationData | null' to map
             const sheetData = rawData.map((row: any, index: number): InvitationData | null => {
                 const nameVal = row[nameKey];
                 
@@ -178,14 +189,17 @@ export default function BulkInvitationPage() {
 
   // --- 4. BULK DOWNLOAD (ZIP) ---
   const handleBulkDownload = async () => {
-    if (data.length === 0) return
+    // Only download filtered data if searching, or all data if not
+    const targetData = filteredData.length > 0 ? filteredData : data; 
+    
+    if (targetData.length === 0) return
     setIsProcessing(true)
     
     try {
       const zip = new JSZip()
       const folder = zip.folder("Invitations")
       
-      for (const item of data) {
+      for (const item of targetData) {
         const pdfBytes = await generatePdfBlob(item.name, item.hospital)
         const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '_');
         folder?.file(`Invitation_${safeName}.pdf`, pdfBytes)
@@ -215,6 +229,7 @@ export default function BulkInvitationPage() {
 
   const handleClear = () => {
     setData([])
+    setSearchQuery('')
     setUploadStatus('idle')
   }
 
@@ -281,11 +296,11 @@ export default function BulkInvitationPage() {
 
           <button
             onClick={handleBulkDownload}
-            disabled={data.length === 0 || isProcessing}
+            disabled={filteredData.length === 0 || isProcessing}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#007AFF] text-white font-bold text-[13px] shadow-lg shadow-blue-500/20 hover:bg-[#0062cc] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
              {isProcessing ? <LuLoader className="animate-spin" /> : <LuDownload size={16} />} 
-             Download All (.ZIP)
+             {searchQuery ? 'Download Filtered (.ZIP)' : 'Download All (.ZIP)'}
           </button>
 
           <button
@@ -297,22 +312,52 @@ export default function BulkInvitationPage() {
         </div>
       </motion.div>
 
-      {/* --- PREVIEW TABLE --- */}
+      {/* --- MAIN AREA --- */}
       <div className="flex-1 h-full flex flex-col overflow-hidden relative">
-        <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-8 justify-between shrink-0">
-            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+        
+        {/* HEADER & SEARCH BAR */}
+        <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-8 justify-between shrink-0 gap-4">
+            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2 whitespace-nowrap">
                 <LuFileText className="text-slate-400" /> Data Preview
             </h2>
-            <div className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+
+            {/* SEARCH INPUT */}
+            <div className="relative w-full max-w-md">
+                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input 
+                    type="text" 
+                    placeholder="Search name, hospital, email..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-blue-50/50 rounded-xl text-sm transition-all outline-none"
+                />
+                {searchQuery && (
+                    <button 
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                        <LuX size={14} />
+                    </button>
+                )}
+            </div>
+
+            <div className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full whitespace-nowrap hidden sm:block">
                 Columns: Name, Hospital, Email
             </div>
         </div>
 
+        {/* TABLE CONTENT */}
         <div className="flex-1 overflow-auto p-8">
             {data.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4">
                     <LuFileSpreadsheet className="w-16 h-16 opacity-20" />
                     <p className="text-sm font-medium">No data imported yet. Upload an Excel file to begin.</p>
+                </div>
+            ) : filteredData.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <LuSearch className="w-12 h-12 opacity-20" />
+                    <p className="text-sm font-medium">No results found for "{searchQuery}"</p>
+                    <button onClick={() => setSearchQuery('')} className="text-blue-500 text-xs font-bold hover:underline">Clear Search</button>
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -328,7 +373,7 @@ export default function BulkInvitationPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {data.map((row) => (
+                            {filteredData.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-3">
                                         {row.status === 'uploaded' ? (
