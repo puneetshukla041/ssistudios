@@ -218,7 +218,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
     }
 
     return (
-        <div className="relative flex flex-col gap-6 font-sans tracking-tight antialiased selection:bg-[#007AFF]/20 selection:text-slate-900">
+        <div className="relative flex flex-col gap-4 font-sans tracking-tight antialiased selection:bg-[#007AFF]/20 selection:text-slate-900">
             
             {/* Global Overlays */}
             <FloatingNotification 
@@ -233,7 +233,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 message={successMessage} 
             />
             
-            {/* Action Bar (Sliding In) */}
+            {/* Action Bar */}
             <motion.div 
                 initial={{ opacity: 0, y: -20, filter: "blur(10px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -268,9 +268,9 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 />
             </motion.div>
 
-            {/* Main Content Area (Glass Card) */}
+            {/* Main Content Area */}
             <motion.div 
-                className="bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-white/60 flex flex-col flex-grow relative overflow-hidden"
+                className="bg-white/70 backdrop-blur-2xl rounded-[24px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-white/60 flex flex-col flex-grow relative overflow-visible"
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.1, ...iosSpring }}
@@ -283,7 +283,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
                             animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
                             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                            className="absolute inset-0 bg-white/40 z-50 flex items-center justify-center"
+                            className="absolute inset-0 bg-white/40 z-50 flex items-center justify-center rounded-[24px]"
                         >
                             <motion.div 
                                 initial={{ scale: 0.8, y: 10, opacity: 0 }}
@@ -307,7 +307,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={iosSpring}
-                        className="flex flex-col items-center justify-center py-32 px-4 text-center"
+                        className="flex flex-col items-center justify-center py-24 px-4 text-center"
                     >
                         <div className="relative group cursor-pointer" onClick={() => fetchCertificates()}>
                             <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -330,13 +330,14 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                     </motion.div>
                 ) : (
                     <>
-                        {/* SCROLL FIX: 
-                            1. overflow-x-auto: Allows horizontal scroll if needed
-                            2. scrollbar-hide utilities: Removes the visual scrollbar line 
-                            3. p-1.5: Padding to prevent shadow clipping
+                        {/* RESPONSIVE TABLE WRAPPER:
+                          1. lg:overflow-visible: Removes horizontal scroll on laptops/desktops
+                          2. p-0: Maximize space
+                          3. w-full: Force full width
                         */}
-                        <div className="overflow-x-auto p-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                            <table className="w-full text-left border-collapse">
+                        <div className="w-full overflow-x-auto lg:overflow-visible p-0">
+                            <table className="w-full text-left border-collapse table-auto lg:table-fixed">
+                                {/* Pass compact flags to Header/Row via context or props if needed, or rely on CSS classes */}
                                 <TableHeader
                                     certificates={certificates}
                                     selectedIds={selectedIds}
@@ -374,8 +375,8 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                             </table>
                         </div>
 
-                        {/* --- Floating Pagination Dock (Apple Dynamic Island Style) --- */}
-                        <div className="sticky bottom-0 left-0 right-0 p-6 pointer-events-none z-10 flex justify-center">
+                        {/* --- Floating Pagination Dock --- */}
+                        <div className="sticky bottom-4 left-0 right-0 p-4 pointer-events-none z-10 flex justify-center mt-4">
                             <motion.div 
                                 layout
                                 className="pointer-events-auto flex items-center gap-1 bg-white/80 backdrop-blur-2xl p-1.5 pr-2 rounded-full shadow-[0_8px_40px_-10px_rgba(0,0,0,0.12)] border border-white/60 ring-1 ring-black/5"
