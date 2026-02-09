@@ -17,7 +17,8 @@ import {
   LuTriangleAlert,
   LuSearch,
   LuX,
-  LuFolderInput 
+  LuFolderInput,
+  LuCalendar // <--- Added Calendar Icon
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
@@ -26,8 +27,12 @@ const NAME_MARGIN_TOP = 133
 const HOSPITAL_MARGIN_LEFT = 72 
 
 // --- SECOND NAME CONFIGURATION ---
-const SECOND_NAME_MARGIN_LEFT = 98  
-const SECOND_NAME_MARGIN_TOP = 238  
+const SECOND_NAME_MARGIN_LEFT = 100
+const SECOND_NAME_MARGIN_TOP = 223  
+
+// --- DATE CONFIGURATION (Single Line) ---
+const DATE_MARGIN_LEFT = 455   
+const DATE_MARGIN_TOP = 75     
 
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
@@ -68,6 +73,9 @@ export default function BulkInvitationPage() {
   const [searchQuery, setSearchQuery] = useState('') 
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
+  
+  // --- NEW: SELECTED DATE STATE (Defaults to Today) ---
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
   // --- FILTERED DATA ---
   const filteredData = useMemo(() => {
@@ -145,7 +153,7 @@ export default function BulkInvitationPage() {
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
 
-    // --- UPDATED FONT LOADING LOGIC ---
+    // --- FONT LOADING (LOCAL) ---
     const fontBytes = await fetch('/fonts/Poppins-Regular.ttf').then(res => res.arrayBuffer())
     const customFont = await pdfDoc.embedFont(fontBytes)
 
@@ -156,11 +164,10 @@ export default function BulkInvitationPage() {
     // --- COORDINATE CALCULATIONS ---
     const nameY = pageHeight - NAME_MARGIN_TOP
     const hospitalY = nameY - 15 
-    
-    // Calculate second name Y based on its own top margin
     const secondNameY = pageHeight - SECOND_NAME_MARGIN_TOP 
+    const dateY = pageHeight - DATE_MARGIN_TOP
 
-    // 1. First Name (No Comma)
+    // --- DRAW 1: First Name (No Comma) ---
     if (name) {
       firstPage.drawText(name, { 
           x: NAME_MARGIN_LEFT, 
@@ -171,7 +178,7 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // 2. Hospital Name
+    // --- DRAW 2: Hospital Name ---
     if (hospital) {
       firstPage.drawText(hospital, { 
           x: HOSPITAL_MARGIN_LEFT, 
@@ -182,9 +189,9 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // 3. Second Name (WITH COMMA)
+    // --- DRAW 3: Second Name (WITH COMMA) ---
     if (name) {
-        firstPage.drawText(`${name},`, {  // <--- Added comma here
+        firstPage.drawText(`${name},`, { 
             x: SECOND_NAME_MARGIN_LEFT, 
             y: secondNameY,           
             size: FONT_SIZE, 
@@ -192,6 +199,25 @@ export default function BulkInvitationPage() {
             color: TEXT_COLOR 
         })
       }
+
+    // --- DRAW 4: DATE (Uses selectedDate state) ---
+    // We append T12:00:00 to prevent timezone rollback issues when parsing string dates
+    const now = new Date(selectedDate + 'T12:00:00') 
+    
+    const month = now.toLocaleString('en-US', { month: 'short' }) 
+    const day = String(now.getDate()).padStart(2, '0')            
+    const year = String(now.getFullYear())                        
+
+    // Result: "Feb 09, 2026"
+    const dateLine = `${month} ${day}, ${year}` 
+
+    firstPage.drawText(dateLine, {
+      x: DATE_MARGIN_LEFT,  
+      y: dateY,
+      size: FONT_SIZE,
+      font: customFont,
+      color: TEXT_COLOR
+    })
 
     return await pdfDoc.save()
   }
@@ -207,9 +233,8 @@ export default function BulkInvitationPage() {
     }
   }
 
-  // --- 4. SAVE TO FOLDER (Replaces Zip) ---
+  // --- 4. SAVE TO FOLDER ---
   const handleSaveToFolder = async () => {
-    // Check if browser supports File System Access API
     if (!('showDirectoryPicker' in window)) {
         alert("Your browser does not support Folder Saving (Try Chrome, Edge, or Opera on Desktop).");
         return;
@@ -221,23 +246,18 @@ export default function BulkInvitationPage() {
     setIsProcessing(true);
 
     try {
-        // 1. Ask user to pick a directory
         // @ts-ignore
         const dirHandle = await window.showDirectoryPicker();
 
         let successCount = 0;
 
-        // 2. Loop through data and write files directly to that directory
         for (const item of targetData) {
             try {
                 const pdfBytes = await generatePdfBlob(item.name, item.hospital);
                 const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `Invitation_${safeName}.pdf`;
 
-                // Create file handle in the directory
                 const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
-                
-                // Create writable stream and write data
                 const writable = await fileHandle.createWritable();
                 await writable.write(pdfBytes);
                 await writable.close();
@@ -299,6 +319,7 @@ export default function BulkInvitationPage() {
         </div>
 
         <div className="space-y-4 flex-1">
+            {/* FILE INPUT */}
             <div className="relative group">
                 <input 
                     type="file" 
@@ -312,6 +333,22 @@ export default function BulkInvitationPage() {
                     </div>
                     <span className="text-sm font-semibold text-slate-600">Import Excel</span>
                     <span className="text-[10px] text-slate-400">.xlsx or .xls files</span>
+                </div>
+            </div>
+
+            {/* --- NEW: CALENDAR INPUT --- */}
+            <div className="space-y-2 pt-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Invitation Date
+                </label>
+                <div className="relative group">
+                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all font-medium text-sm cursor-pointer"
+                    />
                 </div>
             </div>
 
@@ -350,8 +387,8 @@ export default function BulkInvitationPage() {
           </button>
 
           <button
-             onClick={handleClear}
-             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-[13px] hover:bg-slate-200 active:scale-95 transition-all"
+              onClick={handleClear}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-[13px] hover:bg-slate-200 active:scale-95 transition-all"
           >
             <LuTrash2 size={16} /> Clear Data
           </button>
