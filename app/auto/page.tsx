@@ -18,21 +18,21 @@ import {
   LuSearch,
   LuX,
   LuFolderInput,
-  LuCalendar // <--- Added Calendar Icon
+  LuCalendar
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
 const NAME_MARGIN_LEFT = 72 
-const NAME_MARGIN_TOP = 133    
+const NAME_MARGIN_TOP = 133     
 const HOSPITAL_MARGIN_LEFT = 72 
 
 // --- SECOND NAME CONFIGURATION ---
-const SECOND_NAME_MARGIN_LEFT = 100
-const SECOND_NAME_MARGIN_TOP = 223  
+const SECOND_NAME_MARGIN_LEFT = 72
+const SECOND_NAME_MARGIN_TOP = 213 
 
 // --- DATE CONFIGURATION (Single Line) ---
-const DATE_MARGIN_LEFT = 455   
-const DATE_MARGIN_TOP = 75     
+const DATE_MARGIN_LEFT = 455    
+const DATE_MARGIN_TOP = 75      
 
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
@@ -126,9 +126,9 @@ export default function BulkInvitationPage() {
                 return {
                     id: `${sheetName}-${index}-${Date.now()}`,
                     sourceSheet: sheetName,
-                    name: toTitleCase(nameVal),         
+                    name: toTitleCase(nameVal),          
                     hospital: hospitalKey ? toTitleCase(row[hospitalKey]) : '', 
-                    email: emailKey ? String(row[emailKey] || '') : '',      
+                    email: emailKey ? String(row[emailKey] || '') : '',       
                     status: 'uploaded' 
                 };
             }).filter((item): item is InvitationData => item !== null); 
@@ -189,11 +189,12 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // --- DRAW 3: Second Name (WITH COMMA) ---
+    // --- DRAW 3: Second Name (WITH "Dear" AND COMMA) ---
     if (name) {
-        firstPage.drawText(`${name},`, { 
+        // UPDATED HERE: Added "Dear " prefix
+        firstPage.drawText(`Dear ${name},`, { 
             x: SECOND_NAME_MARGIN_LEFT, 
-            y: secondNameY,           
+            y: secondNameY,            
             size: FONT_SIZE, 
             font: customFont, 
             color: TEXT_COLOR 
