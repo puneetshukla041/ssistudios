@@ -59,12 +59,13 @@ const downloadFile = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url);
 }
 
-// --- HELPER: TITLE CASE ---
+// --- HELPER: SMART CAPITALIZE ---
+// ✅ FIX: Capitalizes first letter, keeps the rest as is (e.g. MBBS -> MBBS, puneet -> Puneet)
 const toTitleCase = (str: any) => {
   if (str === null || str === undefined || str === '') return '';
   return String(str).trim().replace(
     /\w\S*/g,
-    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    (txt) => txt.charAt(0).toUpperCase() + txt.slice(1) 
   );
 }
 
@@ -74,7 +75,7 @@ export default function BulkInvitationPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
   
-  // --- NEW: SELECTED DATE STATE (Defaults to Today) ---
+  // --- SELECTED DATE STATE (Defaults to Today) ---
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
   // --- FILTERED DATA ---
@@ -191,7 +192,6 @@ export default function BulkInvitationPage() {
 
     // --- DRAW 3: Second Name (WITH "Dear" AND COMMA) ---
     if (name) {
-        // UPDATED HERE: Added "Dear " prefix
         firstPage.drawText(`Dear ${name},`, { 
             x: SECOND_NAME_MARGIN_LEFT, 
             y: secondNameY,            
@@ -202,7 +202,6 @@ export default function BulkInvitationPage() {
       }
 
     // --- DRAW 4: DATE (Uses selectedDate state) ---
-    // We append T12:00:00 to prevent timezone rollback issues when parsing string dates
     const now = new Date(selectedDate + 'T12:00:00') 
     
     const month = now.toLocaleString('en-US', { month: 'short' }) 
@@ -337,7 +336,7 @@ export default function BulkInvitationPage() {
                 </div>
             </div>
 
-            {/* --- NEW: CALENDAR INPUT --- */}
+            {/* --- CALENDAR INPUT --- */}
             <div className="space-y-2 pt-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
                   Invitation Date
