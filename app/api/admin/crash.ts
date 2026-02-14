@@ -14,7 +14,6 @@ const connectDB = async () => {
 };
 
 
-
 // Force dynamic to prevent caching the result
 
 
