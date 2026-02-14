@@ -9,6 +9,7 @@ const connectDB = async () => {
   await mongoose.connect(process.env.MONGODB_URI!);
 };
 
+
 // Force dynamic to prevent caching the result
 
 
