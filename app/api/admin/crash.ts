@@ -10,6 +10,7 @@ const connectDB = async () => {
 };
 
 // Force dynamic to prevent caching the result
+
 export const dynamic = 'force-dynamic';
 
 
