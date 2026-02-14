@@ -16,7 +16,6 @@ const connectDB = async () => {
 
 
 
-
 // Force dynamic to prevent caching the resul
 
 export const dynamic = 'force-dynamic';
