@@ -9,7 +9,7 @@ const connectDB = async () => {
   if (mongoose.connections[0].readyState) return;s
   
   
-  
+
   await mongoose.connect(process.env.MONGODB_URI!);
   
 };
