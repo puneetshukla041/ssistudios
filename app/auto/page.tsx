@@ -27,8 +27,9 @@ const NAME_MARGIN_TOP = 133
 const HOSPITAL_MARGIN_LEFT = 72 
 
 // --- SECOND NAME CONFIGURATION ---
-const SECOND_NAME_MARGIN_LEFT = 72
-const SECOND_NAME_MARGIN_TOP = 206
+const SECOND_NAME_MARGIN_LEFT = 99
+// UPDATED: Increased from 206 to 220 to move it down
+const SECOND_NAME_MARGIN_TOP = 238
 
 // --- DATE CONFIGURATION (Single Line) ---
 const DATE_MARGIN_LEFT = 455    
@@ -60,7 +61,6 @@ const downloadFile = (blob: Blob, fileName: string) => {
 }
 
 // --- HELPER: SMART CAPITALIZE ---
-// ✅ FIX: Capitalizes first letter, keeps the rest as is (e.g. MBBS -> MBBS, puneet -> Puneet)
 const toTitleCase = (str: any) => {
   if (str === null || str === undefined || str === '') return '';
   return String(str).trim().replace(
@@ -190,9 +190,10 @@ export default function BulkInvitationPage() {
       })
     }
 
-    // --- DRAW 3: Second Name (WITH "Dear" AND COMMA) ---
+    // --- DRAW 3: Second Name (REMOVED "DEAR") ---
     if (name) {
-        firstPage.drawText(`Dear ${name},`, { 
+        // UPDATED: Removed 'Dear ' prefix. Kept the comma.
+        firstPage.drawText(`${name},`, { 
             x: SECOND_NAME_MARGIN_LEFT, 
             y: secondNameY,            
             size: FONT_SIZE, 
