@@ -1,14 +1,25 @@
+
+
 import { NextResponse } from 'next/server';
+
 import mongoose from 'mongoose';
 import { SystemState } from '@/models/SystemState'; // Ensure path is correct
 
 const connectDB = async () => {
-  if (mongoose.connections[0].readyState) return;
+  if (mongoose.connections[0].readyState) return;s
+  
+
+
   await mongoose.connect(process.env.MONGODB_URI!);
+  
 };
 
-// Force dynamic to prevent caching the result
+
+// Force dynamic to prevent caching the resul
+
 export const dynamic = 'force-dynamic';
+
+
 
 export async function GET() {
   try {
