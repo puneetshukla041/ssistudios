@@ -18,10 +18,10 @@ import { useMailCertificate } from '../hooks/useMailCertificate';
 import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from '../utils/constants';
 
 // Import UI Components
-import QuickActionBar from '../ui/QuickActionBar';
+import QuickActionBar from './quick-action-bar';
 import TableHeader from '../ui/TableHeader';
 import TableRow from '../ui/TableRow';
-import MailComposer from '../ui/MailComposer';
+import MailComposer from './mail-composer';
 import FloatingNotification from '../ui/FloatingNotification';
 import SuccessAnimation from '../ui/SuccessAnimation'; 
 
