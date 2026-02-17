@@ -63,6 +63,7 @@ const menu: MenuItem[] = [
     children: [
       { name: 'Database', path: '/certificates/database' },
       { name: 'Analysis', path: '/certificates/analysis' },
+      { name: 'Master Sheet', path: '/mastersheet' }, // <--- ADDED MASTER SHEET HERE
     ],
   },
   {
@@ -127,7 +128,7 @@ const menu: MenuItem[] = [
     //icon: LuCode, 
    /// path: "https://puneetportfolio.vercel.app/content",
   //  requiredAccess: 'developer', // Now controlled by DB
- // },
+  // },
 //
   { name: 'Logout', icon: LuLogOut, mobileOnly: true },
 ]
