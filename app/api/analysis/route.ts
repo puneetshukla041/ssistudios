@@ -1,8 +1,8 @@
 // /app/api/analysis/route.ts or /pages/api/analysis.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/connect';
-import Certificate from '@/lib/db/models/Certificate';
+import dbConnect from '@/lib/dbconnect';
+import Certificate from '@/models/Certificate';
 
 export const dynamic = 'force-dynamic';
 

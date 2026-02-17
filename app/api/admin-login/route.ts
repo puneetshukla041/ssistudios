@@ -2,8 +2,8 @@
 // app/api/admin-login/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { Member, IMember } from '@/lib/db/models/Employee';
-import dbConnect from '@/lib/connect';
+import { Member, IMember } from '@/models/Employee';
+import dbConnect from '@/lib/dbconnect';
 
 export async function POST(req: NextRequest) {
   await dbConnect();

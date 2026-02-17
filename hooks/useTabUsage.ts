@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useTabUsage(pollInterval = 1) {
   const { user } = useAuth();

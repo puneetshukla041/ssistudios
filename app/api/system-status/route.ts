@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { SystemState } from '@/lib/db/models/SystemState';
+import { SystemState } from '@/models/SystemState';
 
 // Helper to connect to DB
 const connectDB = async () => {

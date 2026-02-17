@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTheme, CherryBlossomBackground, Theme } from "@/contexts/theme-context";
+import { useTheme, CherryBlossomBackground, Theme } from "@/contexts/ThemeContext";
 
 // Icons
 const SunIcon = () => (

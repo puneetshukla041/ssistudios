@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "./auth-context";
+import { useAuth } from "./AuthContext";
 import { usePathname } from "next/navigation";
 
 interface UsageContextType {

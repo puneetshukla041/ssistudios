@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download, Filter, Plus, Trash2, Loader2, X, Search, ChevronDown, Check, Mail, Shield, Award, FileText } from 'lucide-react';
 import clsx from 'clsx';
-import { generateCertificatePDF } from '@/components/features/Certificates/utils/pdfGenerator'; 
+import { generateCertificatePDF } from '@/components/Certificates/utils/pdfGenerator'; 
 
 interface QuickActionBarProps {
     isAddFormVisible: boolean;

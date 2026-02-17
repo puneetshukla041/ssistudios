@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/connect';
-import Certificate, { ICertificate } from '@/lib/db/models/Certificate'; // Import ICertificate
+import dbConnect from '@/lib/dbconnect';
+import Certificate, { ICertificate } from '@/models/Certificate'; // Import ICertificate
 
 // Ensure the route is executed dynamically
 export const dynamic = 'force-dynamic';

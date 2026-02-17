@@ -25,10 +25,10 @@ import {
   LuX,
 } from 'react-icons/lu'
 
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, usePathname } from 'next/navigation'
 import LoadingScreen from '@/components/aminations/LoadingScreen'
-import type { UserAccess } from '@/contexts/auth-context';
+import type { UserAccess } from '@/contexts/AuthContext';
 
 // --- IOS ANIMATION PHYSICS ---
 const iosSpring = {

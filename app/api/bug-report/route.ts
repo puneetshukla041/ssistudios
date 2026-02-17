@@ -1,9 +1,9 @@
 // D:\ssistudios\ssistudios\app\api\bug-report\route.ts
 
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/connect";
-import BugReport from "@/lib/db/models/BugReport"; // Ensure BugReport model is imported
-import { Member } from "@/lib/db/models/Employee"; // Ensure Employee/Member model is imported
+import dbConnect from "@/lib/dbconnect";
+import BugReport from "@/models/BugReport"; // Ensure BugReport model is imported
+import { Member } from "@/models/Employee"; // Ensure Employee/Member model is imported
 import * as mongoose from 'mongoose'; 
 
 // Define a local type for the minimal data structure returned by the .lean() query
