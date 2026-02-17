@@ -9,9 +9,9 @@ import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion'
 import HelpCard from '@/components/features/Certificates/ui/HelpCard'; 
 import UploadButton from '@/components/UploadButton'; 
 import CertificateTable from '@/components/features/Certificates/components/certificate-table';
-import HospitalPieChart from '@/components/features/Certificates/analysis/HospitalPieChart';
+import HospitalPieChart from '@/components/features/Certificates/components/hospital-pie-chart';
 import AddCertificateForm from '@/components/features/Certificates/components/add-certificate-form';
-import { useCertificateActions } from '@/components/features/Certificates/hooks/useCertificateActions';
+import { useCertificateActions } from '@/components/features/Certificates/hooks/use-certificate-actions';
 
 // Import Constants
 import { 

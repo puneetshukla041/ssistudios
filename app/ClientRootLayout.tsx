@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context"; 
-import { UsageProvider } from "@/contexts/UsageContext"; 
+import { UsageProvider } from "@/contexts/usage-context"; 
 import { ReactNode, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
