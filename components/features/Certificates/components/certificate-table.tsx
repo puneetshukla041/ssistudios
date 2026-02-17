@@ -12,18 +12,18 @@ import clsx from 'clsx';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
 
 // Import Hooks and Utils
-import { useCertificateData } from './hooks/useCertificateData';
-import { useCertificateActions } from './hooks/useCertificateActions';
-import { useMailCertificate } from './hooks/useMailCertificate'; 
-import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from './utils/constants';
+import { useCertificateData } from '../hooks/useCertificateData';
+import { useCertificateActions } from '../hooks/useCertificateActions';
+import { useMailCertificate } from '../hooks/useMailCertificate'; 
+import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from '../utils/constants';
 
 // Import UI Components
-import QuickActionBar from './ui/QuickActionBar';
-import TableHeader from './ui/TableHeader';
-import TableRow from './ui/TableRow';
-import MailComposer from './ui/MailComposer';
-import FloatingNotification from './ui/FloatingNotification';
-import SuccessAnimation from './ui/SuccessAnimation'; 
+import QuickActionBar from '../ui/QuickActionBar';
+import TableHeader from '../ui/TableHeader';
+import TableRow from '../ui/TableRow';
+import MailComposer from '../ui/MailComposer';
+import FloatingNotification from '../ui/FloatingNotification';
+import SuccessAnimation from '../ui/SuccessAnimation'; 
 
 // --- APPLE PHYSICS CONFIGURATION ---
 const iosSpring = {

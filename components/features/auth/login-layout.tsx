@@ -8,7 +8,7 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useAuth } from "@/contexts/auth-context";   // Assuming path
 import LoginForm from "./LoginForm";
 import RequestModal from "./RequestModal";
-import AnimatedModals from ".//AnimatedModals";
+import AnimatedModals from "./AnimatedModals";
 
 /**
  * The core component holding all login state, logic, and the main layout structure.
