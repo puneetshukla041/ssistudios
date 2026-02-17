@@ -6,18 +6,18 @@ import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDo
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
 
 // --- IMPORTS ---
-import HelpCard from '@/components/Certificates/ui/HelpCard'; 
+import HelpCard from '@/components/features/Certificates/ui/HelpCard'; 
 import UploadButton from '@/components/UploadButton'; 
-import CertificateTable from '@/components/Certificates/components/certificate-table';
-import HospitalPieChart from '@/components/Certificates/analysis/HospitalPieChart';
-import AddCertificateForm from '@/components/Certificates/ui/AddCertificateForm';
-import { useCertificateActions } from '@/components/Certificates/hooks/useCertificateActions';
+import CertificateTable from '@/components/features/Certificates/components/certificate-table';
+import HospitalPieChart from '@/components/features/Certificates/components/hospital-pie-chart';
+import AddCertificateForm from '@/components/features/Certificates/components/add-certificate-form';
+import { useCertificateActions } from '@/components/features/Certificates/hooks/use-certificate-actions';
 
 // Import Constants
 import { 
   ICertificateClient, 
   initialNewCertificateState 
-} from '@/components/Certificates/utils/constants';
+} from '@/components/features/Certificates/utils/constants';
 
 // --- PRO-MOTION PHYSICS (Apple Style) ---
 const appleSpring = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from 'mongoose';
-import Usage from "@/models/Usage";
+import Usage from "@/lib/db/models/Usage";
 
 // Ensure DB connection (using your existing pattern or a standard one)
 const connectDB = async () => {

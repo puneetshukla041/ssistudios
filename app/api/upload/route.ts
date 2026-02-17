@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbconnect';
+import dbConnect from '@/lib/connect';
 // Assuming your Certificate model has 'certificateNo' indexed as unique.
-import Certificate, { ICertificate } from '@/models/Certificate'; 
+import Certificate, { ICertificate } from '@/lib/db/models/Certificate'; 
 import * as XLSX from 'xlsx';
 
 // Maximum file size of 10MB

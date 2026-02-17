@@ -5,7 +5,7 @@ import {
   MessageSquare, Bug, ThumbsUp, Activity, Lock, 
   Image as ImageIcon, CheckCircle, AlertCircle, Paperclip 
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext'; 
+import { useAuth } from '@/contexts/auth-context'; 
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import clsx from 'clsx';
 

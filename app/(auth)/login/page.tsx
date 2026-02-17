@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Eye, EyeOff, ArrowRight } from "lucide-react"; 
-import { useAuth } from "@/contexts/AuthContext"; 
-import RequestModal from "@/components/login/RequestModal";
-import AnimatedModals from "@/components/login/AnimatedModals";
+import { useAuth } from "@/contexts/auth-context"; 
+import RequestModal from "@/components/features/auth/RequestModal";
+import AnimatedModals from "@/components/features/auth/AnimatedModals";
 
 export default function LoginLayout() {
   const { login } = useAuth();

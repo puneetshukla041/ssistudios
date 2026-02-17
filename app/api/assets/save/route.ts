@@ -1,7 +1,7 @@
 // app/api/assets/save/route.ts
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbconnect"; // Adjust path if your file is named dbconnect.ts
-import Asset from "@/models/Asset";
+import dbConnect from "@/lib/connect"; // Adjust path if your file is named dbconnect.ts
+import Asset from "@/lib/db/models/Asset";
 
 export async function POST(req: Request) {
   try {

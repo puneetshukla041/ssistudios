@@ -13,7 +13,7 @@ import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
 
 // Import Hooks and Utils
 import { useCertificateData } from '../hooks/useCertificateData';
-import { useCertificateActions } from '../hooks/useCertificateActions';
+import { useCertificateActions } from '../hooks/use-certificate-actions';
 import { useMailCertificate } from '../hooks/useMailCertificate'; 
 import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from '../utils/constants';
 

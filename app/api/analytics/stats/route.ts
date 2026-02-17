@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbconnect'; // FIXED: Changed to lowercase to match 'certificates/route.ts'
-import Certificate from '@/models/Certificate'; 
+import dbConnect from '@/lib/connect'; // FIXED: Changed to lowercase to match 'certificates/route.ts'
+import Certificate from '@/lib/db/models/Certificate'; 
 
 export const dynamic = 'force-dynamic';
 
