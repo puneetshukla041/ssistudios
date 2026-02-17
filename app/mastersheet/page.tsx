@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Upload, Trash2, Search, Loader2, Database, AlertCircle, FileSpreadsheet, RefreshCw, Save, BarChart3, ChevronUp, ChevronDown, FilterX } from 'lucide-react';
+import { 
+    Upload, Trash2, Search, Loader2, Database, AlertCircle, FileSpreadsheet, 
+    RefreshCw, Save, BarChart3, ChevronUp, ChevronDown, FilterX, Download 
+} from 'lucide-react';
 import clsx from 'clsx';
+// Updated import to support cell colors
+import * as xlsx from 'xlsx-js-style'; 
 import MasterAnalytics from '@/components/features/Certificates/ui/MasterAnalytics';
 
 export default function MasterSheetPage() {
@@ -18,7 +23,7 @@ export default function MasterSheetPage() {
     const [hospitalFilter, setHospitalFilter] = useState('');
     const [specialityFilter, setSpecialityFilter] = useState('');
     const [salesFilter, setSalesFilter] = useState('');
-    const [healthFilter, setHealthFilter] = useState(''); // '', 'missing_phone', 'missing_email', 'complete'
+    const [healthFilter, setHealthFilter] = useState(''); 
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const syncInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +46,7 @@ export default function MasterSheetPage() {
 
     useEffect(() => { fetchRecords(); }, []);
 
-    // 1. EXTRACT UNIQUE OPTIONS FOR FILTERS
+    // --- FILTER EXTRACTOR ---
     const filterOptions = useMemo(() => {
         return {
             hospitals: Array.from(new Set(records.map(r => r.hospitalName).filter(Boolean))).sort(),
@@ -50,7 +55,7 @@ export default function MasterSheetPage() {
         };
     }, [records]);
 
-    // 2. APPLY ALL FILTERS
+    // --- APPLY FILTERS ---
     const filteredRecords = useMemo(() => {
         return records.filter(record => {
             const matchesSearch = (record.surgeonName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -68,7 +73,83 @@ export default function MasterSheetPage() {
         });
     }, [records, searchQuery, hospitalFilter, specialityFilter, salesFilter, healthFilter]);
 
-    // UPLOAD & SYNC HANDLERS (Same as before)
+    // --- EXPORT TO EXCEL (With Empty Row Filtering & Blue Styling for Updates) ---
+    const exportToExcel = () => {
+        const dataToExport = filteredRecords.length > 0 ? filteredRecords : records;
+
+        // FILTER: Keep only records that have AT LEAST ONE of these three fields filled (including new pending updates).
+        const cleanedData = dataToExport.filter(record => {
+            const update = pendingUpdates[record._id] || {};
+            const spec = update.speciality ?? record.speciality;
+            const contact = update.contactNumber ?? record.contactNumber;
+            const email = update.emailId ?? record.emailId;
+
+            const hasSpeciality = spec && spec.trim() !== '';
+            const hasContact = contact && contact.trim() !== '';
+            const hasEmail = email && email.trim() !== '';
+            
+            return hasSpeciality || hasContact || hasEmail;
+        });
+
+        if (cleanedData.length === 0) {
+            alert("No relevant data available to export. All filtered records have empty Speciality, Contact, and Email fields.");
+            return;
+        }
+
+        // Apply pending updates to the exported data
+        const formattedData = cleanedData.map((record, index) => {
+            const update = pendingUpdates[record._id] || {};
+            return {
+                "S. no.": index + 1,
+                "Surgeon's Name": record.surgeonName || "",
+                "Speciality": update.speciality ?? (record.speciality || ""),
+                "Hospital Name": record.hospitalName || "",
+                "Contact Number": update.contactNumber ?? (record.contactNumber || ""),
+                "Email ID": update.emailId ?? (record.emailId || ""),
+                "Sales Person Name": record.salesPersonName || ""
+            };
+        });
+
+        const worksheet = xlsx.utils.json_to_sheet(formattedData);
+        
+        // --- ADDING BLUE COLOR TO NEW VALUES ---
+        const blueStyle = { font: { color: { rgb: "0071E3" }, bold: true } };
+
+        cleanedData.forEach((record, rowIndex) => {
+            const update = pendingUpdates[record._id];
+            if (update) {
+                // Header is row 0, so data starts at row 1
+                const actualRow = rowIndex + 1; 
+
+                // Column Indexes (0-based):
+                // Speciality = C (2), Contact Number = E (4), Email ID = F (5)
+                if (update.speciality !== undefined) {
+                    const cellRef = xlsx.utils.encode_cell({ c: 2, r: actualRow });
+                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
+                }
+                if (update.contactNumber !== undefined) {
+                    const cellRef = xlsx.utils.encode_cell({ c: 4, r: actualRow });
+                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
+                }
+                if (update.emailId !== undefined) {
+                    const cellRef = xlsx.utils.encode_cell({ c: 5, r: actualRow });
+                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
+                }
+            }
+        });
+
+        // Auto-size columns slightly for better readability
+        worksheet['!cols'] = [
+            { wch: 8 },  { wch: 25 }, { wch: 20 }, 
+            { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 20 }
+        ];
+
+        const workbook = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(workbook, worksheet, "Cleaned_Master_Sheet");
+        xlsx.writeFile(workbook, `Cleaned_MasterSheet_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
+    // --- FILE UPLOADS ---
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -132,6 +213,7 @@ export default function MasterSheetPage() {
         finally { setIsSyncing(false); if (syncInputRef.current) syncInputRef.current.value = ''; }
     };
 
+    // --- DB ACTIONS ---
     const handleSaveUpdates = async () => {
         setIsLoading(true);
         const updatesArray = Object.keys(pendingUpdates).map(id => ({ _id: id, ...pendingUpdates[id] }));
@@ -157,7 +239,7 @@ export default function MasterSheetPage() {
     const hasPendingUpdates = Object.keys(pendingUpdates).length > 0;
     const isAnyFilterActive = hospitalFilter || specialityFilter || salesFilter || healthFilter;
 
-    // Custom Apple-style Select Component
+    // --- UI SUBCOMPONENTS ---
     const FilterSelect = ({ value, onChange, options, defaultLabel, isObject = false }: any) => (
         <div className="relative">
             <select 
@@ -206,6 +288,12 @@ export default function MasterSheetPage() {
                             <button onClick={() => setShowAnalytics(!showAnalytics)} className={clsx("px-4 py-2.5 rounded-full text-[13px] font-semibold transition-colors flex items-center gap-2 shadow-sm active:scale-95 border", showAnalytics ? "bg-slate-800 text-white border-slate-900" : "bg-white/60 backdrop-blur-md border-[#e5e5ea] hover:bg-white")}>
                                 {showAnalytics ? <ChevronUp className="w-4 h-4" /> : <BarChart3 className="w-4 h-4 text-[#0071e3]" />} {showAnalytics ? "Hide Analytics" : "View Analytics"}
                             </button>
+                            
+                            {/* EXPORT BUTTON INJECTED HERE */}
+                            <button onClick={exportToExcel} disabled={records.length === 0} className="px-4 py-2.5 bg-white/60 backdrop-blur-md border border-[#e5e5ea] text-[#1d1d1f] rounded-full text-[13px] font-semibold hover:bg-white transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-95">
+                                <Download className="w-4 h-4 text-[#0071e3]" /> Export Excel
+                            </button>
+
                             <button onClick={handleClearAll} disabled={records.length === 0} className="px-4 py-2.5 bg-white/60 backdrop-blur-md border border-[#e5e5ea] text-[#ff3b30] rounded-full text-[13px] font-semibold hover:bg-[#ff3b30]/10 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm active:scale-95"><Trash2 className="w-4 h-4" /><span className="hidden sm:inline">Clear</span></button>
                             <input type="file" ref={syncInputRef} onChange={handleSyncUpload} className="hidden" accept=".xlsx, .xls, .csv" multiple />
                             <button onClick={() => syncInputRef.current?.click()} disabled={isSyncing || records.length === 0} className="px-5 py-2.5 bg-white/60 backdrop-blur-md border border-[#e5e5ea] text-[#1d1d1f] rounded-full text-[13px] font-semibold hover:bg-white transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-95">
