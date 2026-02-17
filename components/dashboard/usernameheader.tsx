@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import { Clock } from "lucide-react";
 

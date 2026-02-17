@@ -1,5 +1,5 @@
-import dbConnect from "@/lib/dbconnect";
-import IdCard from "@/models/IdCard";
+import dbConnect from "@/lib/connect";
+import IdCard from "@/lib/db/models/IdCard";
 import { NextRequest, NextResponse } from "next/server";
 
 // Update ID Card

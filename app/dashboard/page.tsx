@@ -9,7 +9,7 @@ import {
   ArrowRight, X, CreditCard
 } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import Header from "@/components/dashboard/Header";
 import Usernameheader from "@/components/dashboard/usernameheader";
 

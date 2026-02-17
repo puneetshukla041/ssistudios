@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbconnect'; // Ensure you have your dbConnect utility
-import VisitingCard, { IVisitingCard } from '@/models/VisitingCard';
+import dbConnect from '@/lib/connect'; // Ensure you have your dbConnect utility
+import VisitingCard, { IVisitingCard } from '@/lib/db/models/VisitingCard';
 
 export const dynamic = 'force-dynamic';
 
