@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/connect';
-import VisitingCard from '@/lib/db/models/VisitingCard';
+import dbConnect from '@/lib/dbconnect';
+import VisitingCard from '@/models/VisitingCard';
 
 export const dynamic = 'force-dynamic';
 

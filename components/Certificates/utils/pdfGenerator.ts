@@ -19,6 +19,8 @@ export const generateCertificatePDF = async (
 ): Promise<PdfFileResult | null | void> => { 
 
   // ✅ MODIFIED: Use the Name and Hospital EXACTLY as they appear in the database.
+  // This ensures if you saved "Dr. (col) Manoj", it prints exactly that.
+  // Fallback to "Unknown" if empty.
   const fullName = certData.name || "Unknown Name";
   const hospitalName = certData.hospital || "Unknown Hospital";
   
@@ -81,36 +83,24 @@ export const generateCertificatePDF = async (
         const fontSizeLarge = 18;
         const colorGray = rgb(0.5, 0.5, 0.5);
         const colorBlack = rgb(0, 0, 0); 
+        const isV2Template = template === 'certificate2.pdf';
+
+        // Full Name
+        firstPage.drawText(fullName, { x, y: yBase, size: fontSizeLarge, font: soraFont, color: colorBlack });
         
-        // Check which template we are using
-        const isTrainingCert = template === 'certificate2.pdf';
+        // Hospital Name
+        firstPage.drawText(hospitalName, { x, y: yBase - 20, size: fontSizeMedium, font: soraSemiBoldFont, color: colorBlack });
+        
+        if (isV2Template) {
+            const programName = "Robotics Training Program";
+            const operationText = "to operate the SSI Mantra Surgical Robotic System";
+            const providerLineText = "provided by Sudhir Srivastava Innovations Pvt. Ltd";
+            const staticLineText = "has successfully completed the";
 
-        // ---------------------------------------------------------
-        // ✅ DRAWING LOGIC BASED ON TEMPLATE
-        // ---------------------------------------------------------
-
-        if (isTrainingCert) {
-             // Case: Certificate 2 (Training) -> Show Name AND Hospital
-             firstPage.drawText(fullName, { x, y: yBase, size: fontSizeLarge, font: soraFont, color: colorBlack });
-             firstPage.drawText(hospitalName, { x, y: yBase - 20, size: fontSizeMedium, font: soraSemiBoldFont, color: colorBlack });
-             
-             // Extra text for Certificate 2
-             const programName = "Robotics Training Program";
-             const operationText = "to operate the SSI Mantra Surgical Robotic System";
-             const providerLineText = "provided by Sudhir Srivastava Innovations Pvt. Ltd";
-             const staticLineText = "has successfully completed the";
-
-             firstPage.drawText(staticLineText, { x, y: yBase - 64, size: fontSizeSmall, font: soraFont, color: colorGray, maxWidth: 350, lineHeight: 10 });
-             firstPage.drawText(programName, { x, y: yBase - 76, size: fontSizeSmall, font: soraSemiBoldFont, color: colorBlack });
-             firstPage.drawText(providerLineText, { x, y: yBase - 88, size: fontSizeSmall, font: soraFont, color: colorGray, maxWidth: 350, lineHeight: 10 });
-             firstPage.drawText(operationText, { x, y: yBase - 100, size: fontSizeSmall, font: soraSemiBoldFont, color: colorBlack });
-
-        } else {
-             // Case: Certificate 1 (Proctorship/Other) -> Show ONLY Name
-             // Move name down slightly (yBase - 20) to center it since hospital line is gone
-             firstPage.drawText(fullName, { x, y: yBase - 20, size: fontSizeLarge, font: soraFont, color: colorBlack });
-             
-             // DO NOT DRAW HOSPITAL NAME
+            firstPage.drawText(staticLineText, { x, y: yBase - 64, size: fontSizeSmall, font: soraFont, color: colorGray, maxWidth: 350, lineHeight: 10 });
+            firstPage.drawText(programName, { x, y: yBase - 76, size: fontSizeSmall, font: soraSemiBoldFont, color: colorBlack });
+            firstPage.drawText(providerLineText, { x, y: yBase - 88, size: fontSizeSmall, font: soraFont, color: colorGray, maxWidth: 350, lineHeight: 10 });
+            firstPage.drawText(operationText, { x, y: yBase - 100, size: fontSizeSmall, font: soraSemiBoldFont, color: colorBlack });
         }
         
         // DOI
@@ -130,16 +120,7 @@ export const generateCertificatePDF = async (
     const safeName = fullName.replace(/[\\/:*?"<>|]/g, '').trim() || "Unknown";
     const safeHospital = hospitalName.replace(/[\\/:*?"<>|]/g, '').trim() || "Hospital"; 
     
-    // ---------------------------------------------------------
-    // ✅ FILENAME LOGIC BASED ON TEMPLATE
-    // ---------------------------------------------------------
-    let fileName = `${safeName}.pdf`;
-
-    if (template === 'certificate2.pdf') {
-        // Training: Name_Hospital.pdf
-        fileName = `${safeName}_${safeHospital}.pdf`;
-    } 
-    // Certificate 1 & 3: Name.pdf (default)
+    const fileName = template === 'certificate3.pdf' ? `${safeName}.pdf` : `${safeName}_${safeHospital}.pdf`;
 
     if (isBulk) {
       return { filename: fileName, blob };

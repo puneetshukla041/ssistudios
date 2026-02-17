@@ -1,5 +1,5 @@
-import dbConnect from "@/lib/connect"; // Corrected import
-import IdCard from "@/lib/db/models/IdCard";
+import dbConnect from "@/lib/dbconnect"; // Corrected import
+import IdCard from "@/models/IdCard";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {

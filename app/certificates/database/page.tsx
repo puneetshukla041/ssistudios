@@ -2,80 +2,22 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image'; 
-import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX, FiDatabase, FiTrendingUp, FiPieChart } from 'react-icons/fi';
-import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
+import { FiRefreshCw, FiSearch, FiHelpCircle, FiGrid, FiUserCheck, FiUsers, FiDownload, FiCheckCircle, FiX } from 'react-icons/fi';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // --- IMPORTS ---
-import HelpCard from '@/components/features/Certificates/ui/HelpCard'; 
+import HelpCard from '@/components/Certificates/ui/HelpCard'; 
 import UploadButton from '@/components/UploadButton'; 
-import CertificateTable from '@/components/features/Certificates/components/certificate-table';
-import HospitalPieChart from '@/components/features/Certificates/components/hospital-pie-chart';
-import AddCertificateForm from '@/components/features/Certificates/components/add-certificate-form';
-import { useCertificateActions } from '@/components/features/Certificates/hooks/use-certificate-actions';
+import CertificateTable from '@/components/Certificates/CertificateTable';
+import HospitalPieChart from '@/components/Certificates/analysis/HospitalPieChart';
+import AddCertificateForm from '@/components/Certificates/ui/AddCertificateForm';
+import { useCertificateActions } from '@/components/Certificates/hooks/useCertificateActions';
 
 // Import Constants
 import { 
   ICertificateClient, 
   initialNewCertificateState 
-} from '@/components/features/Certificates/utils/constants';
-
-// --- PRO-MOTION PHYSICS (Apple Style) ---
-const appleSpring = {
-  type: "spring",
-  stiffness: 250,
-  damping: 25,
-  mass: 0.6,
-  restDelta: 0.001
-} as const;
-
-// --- COMPONENT: INTELLIGENT NUMBER COUNTER ---
-const AnimatedCounter = ({ value }: { value: number }) => {
-  const spring = useSpring(0, { stiffness: 150, damping: 20, mass: 0.8 });
-  const display = useTransform(spring, (current) => Math.floor(current).toLocaleString());
-
-  useEffect(() => {
-    spring.set(value);
-  }, [value, spring]);
-
-  return <motion.span className="tabular-nums tracking-tight">{display}</motion.span>;
-};
-
-// --- COMPONENT: VERTICAL STAT CARD ---
-const VerticalStatCard = ({ 
-  label, 
-  value, 
-  subtext, 
-  icon: Icon, 
-  colorClass, 
-  delay 
-}: { 
-  label: string, 
-  value: number, 
-  subtext: string, 
-  icon: any, 
-  colorClass: string,
-  delay: number
-}) => (
-  <motion.div 
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ ...appleSpring, delay }}
-    className="group relative p-3 bg-white/60 backdrop-blur-2xl rounded-[20px] border border-white/60 shadow-sm hover:shadow-md transition-all duration-300 cursor-default"
-  >
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-        <div className="text-[24px] font-bold text-slate-800 tracking-tight leading-tight">
-          <AnimatedCounter value={value} />
-        </div>
-        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{subtext}</p>
-      </div>
-      <div className={`w-9 h-9 rounded-[14px] flex items-center justify-center ${colorClass} bg-opacity-10 shadow-sm`}>
-        <Icon className={`w-4 h-4 ${colorClass.replace('bg-', 'text-')}`} />
-      </div>
-    </div>
-  </motion.div>
-);
+} from '@/components/Certificates/utils/constants';
 
 const CertificateDatabasePage: React.FC = () => {
   // --- Global State ---
@@ -85,11 +27,11 @@ const CertificateDatabasePage: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [uniqueHospitals, setUniqueHospitals] = useState<string[]>([]);
     
-  // --- Batch Upload State ---
+  // --- NEW: Batch Upload State (With Persistence) ---
   const [newBatchIds, setNewBatchIds] = useState<string[]>([]);
   const [isBatchLoaded, setIsBatchLoaded] = useState(false);
 
-  // Load Batch IDs
+  // Load Batch IDs from LocalStorage on mount
   useEffect(() => {
     let mounted = true;
     try {
@@ -97,7 +39,9 @@ const CertificateDatabasePage: React.FC = () => {
             const saved = localStorage.getItem('cert_db_new_batch');
             if (saved && mounted) {
                 const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) setNewBatchIds(parsed);
+                if (Array.isArray(parsed)) {
+                    setNewBatchIds(parsed);
+                }
             }
         }
     } catch (e) {
@@ -108,9 +52,10 @@ const CertificateDatabasePage: React.FC = () => {
     return () => { mounted = false; };
   }, []);
 
-  // Save Batch IDs
+  // Save Batch IDs to LocalStorage whenever they change
   useEffect(() => {
     if (!isBatchLoaded) return; 
+
     if (newBatchIds.length > 0) {
         localStorage.setItem('cert_db_new_batch', JSON.stringify(newBatchIds));
     } else {
@@ -119,27 +64,37 @@ const CertificateDatabasePage: React.FC = () => {
   }, [newBatchIds, isBatchLoaded]);
 
   // --- Stats State ---
+  const [dbTotalRecords, setDbTotalRecords] = useState(0); 
   const [doctorsCount, setDoctorsCount] = useState(0);
   const [staffCount, setStaffCount] = useState(0);
-  const [dbTotalRecords, setDbTotalRecords] = useState(0);
 
-  // --- UI State ---
+  // --- Search & UI State ---
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [hospitalFilter, setHospitalFilter] = useState('');
   const [isHelpCardVisible, setIsHelpCardVisible] = useState(false); 
   const [dummyLoading, setDummyLoading] = useState(false);
+
+  // --- ADD FORM STATE ---
   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newCertificateData, setNewCertificateData] = useState<Omit<ICertificateClient, '_id'>>(initialNewCertificateState);
 
-  // --- Debounce ---
+  // --- Animated Counts State ---
+  const [animatedTotalRecords, setAnimatedTotalRecords] = useState(0);
+  const [animatedHospitalCount, setAnimatedHospitalCount] = useState(0);
+  const [animatedDoctors, setAnimatedDoctors] = useState(0);
+  const [animatedStaff, setAnimatedStaff] = useState(0);
+
+  // --- Debounce Logic ---
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => setSearchQuery(inputQuery), 400); 
+    const delayDebounceFn = setTimeout(() => {
+      setSearchQuery(inputQuery);
+    }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [inputQuery]);
 
-  // --- Fetch Stats ---
+  // --- Fetch Global Stats ---
   useEffect(() => {
     const fetchGlobalStats = async () => {
       try {
@@ -157,24 +112,60 @@ const CertificateDatabasePage: React.FC = () => {
     fetchGlobalStats();
   }, [refreshKey]);
 
-  // --- Logic ---
-  const handleAlert = useCallback((message: string, isError: boolean) => {
+  // --- Helper: Number Animation ---
+  const useCounterAnimation = (targetValue: number, setter: React.Dispatch<React.SetStateAction<number>>, duration = 2000) => {
+    useEffect(() => {
+      let start = 0; 
+      const end = targetValue;
+      if (start === end) return;
+      const steps = 50;
+      const stepTime = duration / steps;
+      const increment = (end - start) / steps; 
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        if (currentStep <= steps) {
+          start += increment;
+          setter(Math.round(start));
+        } else {
+          setter(end);
+          clearInterval(timer);
+        }
+      }, stepTime);
+      return () => clearInterval(timer);
+    }, [targetValue, duration, setter]);
+  };
+
+  useCounterAnimation(dbTotalRecords, setAnimatedTotalRecords);
+  useCounterAnimation(uniqueHospitals.length, setAnimatedHospitalCount);
+  useCounterAnimation(doctorsCount, setAnimatedDoctors, 1500);
+  useCounterAnimation(staffCount, setAnimatedStaff, 1500);
+
+  // --- Alerts & Refresh Logic ---
+  const handleAlert = useCallback(
+    (message: string, isError: boolean) => {
        if (isError) console.error("Alert (ERROR):", message);
        else console.log("Alert (INFO):", message);
-  }, []);
+    },
+    []
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
     setIsRefreshing(true);
   }, []);
 
+  // Safety timeout for refresh spinner
   useEffect(() => {
     if (isRefreshing) {
-      const timeout = setTimeout(() => setIsRefreshing(false), 1500); 
+      const timeout = setTimeout(() => {
+        setIsRefreshing(false);
+      }, 2000); 
       return () => clearTimeout(timeout);
     }
   }, [isRefreshing]);
 
+  // --- Fetch Function for Actions Hook (Page Level) ---
   const fetchCertificatesForExportPageSide = useCallback(async (isBulkPdfExport = false, idsToFetch: string[] = []) => {
       try {
           const params = new URLSearchParams({ all: 'true' });
@@ -190,20 +181,30 @@ const CertificateDatabasePage: React.FC = () => {
       }
   }, []);
 
+  // --- Dummies for Hook ---
   const [dummySelectedIds, setDummySelectedIds] = useState<string[]>([]);
     
+  // ✅ DELETE Function
   const deleteCertificate = useCallback(async (id: string): Promise<boolean> => {
       try {
-          const response = await fetch(`/api/certificates/${id}`, { method: 'DELETE' });
+          const response = await fetch(`/api/certificates/${id}`, {
+              method: 'DELETE',
+          });
+            
           const result = await response.json();
-          if (!response.ok) throw new Error(result.message || "Failed to delete");
+
+          if (!response.ok) {
+              throw new Error(result.message || "Failed to delete certificate");
+          }
           return true;
       } catch (error: any) {
-          handleAlert(error.message, true);
+          console.error("Delete error:", error);
+          handleAlert(error.message || "Failed to delete certificate", true);
           return false;
       }
   }, [handleAlert]);
 
+  // ✅ UPDATE Function (Required by Hook, even if only used for bulk actions here)
   const updateCertificate = useCallback(async (id: string, data: Partial<ICertificateClient>): Promise<boolean> => {
     try {
         const response = await fetch(`/api/certificates/${id}`, {
@@ -211,15 +212,22 @@ const CertificateDatabasePage: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
+        
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Failed to update");
+
+        if (!response.ok) {
+            throw new Error(result.message || "Failed to update certificate");
+        }
+
         return true;
     } catch (error: any) {
-        handleAlert(error.message, true);
+        console.error("Update error:", error);
+        handleAlert(error.message || "Failed to update certificate", true);
         return false;
     }
   }, [handleAlert]);
 
+  // --- Initialize Actions Hook ---
   const { 
     handleBulkGeneratePDF_V1, 
     handleBulkGeneratePDF_V2,
@@ -231,18 +239,26 @@ const CertificateDatabasePage: React.FC = () => {
     setSelectedIds: setDummySelectedIds,
     fetchCertificates: async () => { handleRefresh(); },
     deleteCertificate, 
-    updateCertificate, 
+    updateCertificate, // <--- ✅ ADDED THIS TO FIX THE ERROR
     fetchCertificatesForExport: fetchCertificatesForExportPageSide,
     showNotification: (msg, type) => handleAlert(msg, type === 'error'),
     onAlert: handleAlert,
     setIsLoading: setDummyLoading,
   });
 
+  // --- Upload Handlers ---
+  
+  // ✅ Fixed Upload Success Handler to capture IDs
   const handleUploadSuccess = useCallback((message: string, uploadedIds?: string[]) => {
     handleAlert(message, false);
     handleRefresh();
+    
+    // Check if we received the IDs of the new batch
     if (uploadedIds && Array.isArray(uploadedIds) && uploadedIds.length > 0) {
+        console.log("New Batch Detected:", uploadedIds.length);
         setNewBatchIds(uploadedIds);
+    } else {
+        console.warn("Upload succeeded but no IDs were returned to client.");
     }
   }, [handleAlert, handleRefresh]);
 
@@ -250,7 +266,9 @@ const CertificateDatabasePage: React.FC = () => {
     if (message) handleAlert(message, true);
   }, [handleAlert]);
 
-  const handleClearBatch = () => setNewBatchIds([]);
+  const handleClearBatch = () => {
+    setNewBatchIds([]);
+  };
 
   const handleTableDataUpdate = useCallback(
     (data: ICertificateClient[], totalCount: number, uniqueHospitalsList: string[]) => {
@@ -258,11 +276,15 @@ const CertificateDatabasePage: React.FC = () => {
        setTotalRecords(totalCount);
        setUniqueHospitals(uniqueHospitalsList); 
        setIsRefreshing(false);
-    }, []
+    },
+    []
   );
 
   const handleNewCertChange = (field: keyof Omit<ICertificateClient, '_id'>, value: string) => {
-    setNewCertificateData(prev => ({ ...prev, [field]: value }));
+    setNewCertificateData(prev => ({
+        ...prev,
+        [field]: value
+    }));
   };
 
   const handleAddCertificate = async (): Promise<boolean> => {
@@ -271,19 +293,31 @@ const CertificateDatabasePage: React.FC = () => {
             alert("Please fill in all fields.");
             return false;
         }
+
         setIsAdding(true);
+
         const response = await fetch('/api/certificates', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(newCertificateData),
         });
+
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Failed to add certificate");
+
+        if (!response.ok) {
+            throw new Error(result.message || "Failed to add certificate");
+        }
+
         handleAlert("Certificate saved successfully!", false);
         setRefreshKey(prev => prev + 1); 
         return true; 
+
     } catch (error: any) {
+        console.error("Error saving:", error);
         handleAlert(error.message, true);
+        alert(error.message); 
         return false;
     } finally {
         setIsAdding(false);
@@ -291,13 +325,8 @@ const CertificateDatabasePage: React.FC = () => {
   };
 
   return (
-    // FIX 1: Changed h-screen to min-h-screen so the page can scroll naturally
-    <div className="min-h-screen w-full bg-[#F5F5F7] text-slate-900 font-sans antialiased tracking-tight selection:bg-[#007AFF]/30 selection:text-slate-900 relative flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-indigo-500/10 selection:text-indigo-700">
         
-      {/* Background Ambience */}
-      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none z-0" />
-      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 blur-[120px] rounded-full pointer-events-none z-0" />
-
       <AnimatePresence>
         {isHelpCardVisible && <HelpCard onClose={() => setIsHelpCardVisible(false)} />}
         
@@ -314,244 +343,278 @@ const CertificateDatabasePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* FIX 2: Removed h-full/overflow-hidden. Added alignment. */}
-      <main className="w-full max-w-[1920px] px-4 md:px-6 py-4 relative z-10 flex flex-col lg:flex-row gap-4 lg:pl-32 transition-all duration-500 min-h-screen">
+      <main className="mx-auto w-full max-w-[1600px] px-6 py-10 space-y-8">
         
-        {/* --- LEFT COLUMN (MAIN CONTENT) --- */}
-        {/* FIX 3: Removed h-full constraints */}
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
-            
-            {/* HEADER */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2 bg-white/40 backdrop-blur-xl p-2 rounded-[20px] border border-white/60 shadow-sm shrink-0 sticky top-2 z-30">
-                {/* 1. Title Area */}
-                <div className="px-2 shrink-0 flex items-center gap-3">
-                      <div className="flex flex-col">
-                        <motion.h1 
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="text-[18px] font-bold tracking-tight text-slate-900 leading-none"
-                        >
-                            Database
-                        </motion.h1>
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-[10px] text-slate-500 font-medium tracking-wide mt-0.5"
-                        >
-                            Central Registry
-                        </motion.p>
-                    </div>
-                </div>
+        {/* --- HEADER SECTION --- */}
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-8">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Certificate Database
+            </h1>
+            <p className="text-sm text-slate-500 font-medium max-w-2xl">
+              Centralized repository for managing and tracking digital certification records.
+            </p>
+          </div>
 
-                {/* 2. Actions Row (Search + Buttons) */}
-                <div className="flex flex-wrap items-center gap-1.5 w-full xl:w-auto xl:justify-end">
-                    
-                    {/* Search Bar */}
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative w-full sm:w-[220px] group"
-                    >
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                            <FiSearch className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            value={inputQuery}
-                            onChange={(e) => setInputQuery(e.target.value)}
-                            className="block w-full bg-white/50 border border-transparent focus:border-blue-200/50 py-1.5 pl-9 pr-3 text-[12px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none rounded-[14px] focus:bg-white transition-all h-9"
-                        />
-                    </motion.div>
-
-                    {/* Batch Actions */}
-                    <AnimatePresence mode='wait'>
-                        {newBatchIds.length > 0 && isBatchLoaded && (
-                            <motion.div
-                                key="new-batch-actions"
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="flex items-center gap-1 p-0.5 bg-white border border-indigo-100/50 rounded-[14px] shadow-sm h-9"
-                            >
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
-                                    disabled={isBulkGeneratingV2}
-                                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-indigo-500 text-white rounded-[12px]"
-                                    title="Training"
-                                >
-                                    {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> : <FiDownload className="w-3.5 h-3.5" />}
-                                </motion.button>
-                                
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
-                                    disabled={isBulkGeneratingV1}
-                                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-indigo-50 text-indigo-600 rounded-[12px]"
-                                    title="Proctoring"
-                                >
-                                    {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> : <FiDownload className="w-3.5 h-3.5" />}
-                                </motion.button>
-
-                                <motion.button 
-                                    whileHover={{ scale: 1.1 }}
-                                    onClick={handleClearBatch}
-                                    className="cursor-pointer w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500"
-                                >
-                                    <FiX className="w-3.5 h-3.5" />
-                                </motion.button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1.5">
-                        <div className="h-9 flex items-center">
-                            <UploadButton
-                                onUploadSuccess={handleUploadSuccess}
-                                onUploadError={handleUploadError}
-                            />
-                        </div>
-
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                            className={`cursor-pointer flex items-center gap-2 px-3 h-9 rounded-[14px] text-[11px] font-bold border transition-all duration-300 ${isRefreshing ? 'bg-slate-100 text-slate-400 border-transparent' : 'bg-white text-slate-700 border-white/50 hover:text-[#007AFF] shadow-sm'}`}
-                        >
-                            <FiRefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">Sync</span>
-                        </motion.button>
-
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsHelpCardVisible(true)}
-                            className="cursor-pointer flex items-center gap-2 px-3 h-9 rounded-[14px] text-[11px] font-bold border border-transparent bg-[#1d1d1f] text-white shadow-lg shadow-black/10 hover:bg-black transition-all duration-300"
-                        >
-                            <FiHelpCircle className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Guide</span>
-                        </motion.button>
-                    </div>
-                </div>
+          <div className="relative w-full lg:w-96 group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
             </div>
+            <input
+              type="text"
+              placeholder="Search database..."
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              className="
+                block w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 
+                text-sm text-slate-900 placeholder:text-slate-400 
+                focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none
+                transition-all duration-200 shadow-sm
+              "
+            />
+          </div>
+        </header>
 
-            {/* Data Table Section - EXPANDS NATURALLY */}
-            <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ...appleSpring, delay: 0.2 }}
-                // FIX 4: Removed flex-1, overflow-hidden. Added min-h-[500px] to give it presence.
-                className="rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.06)] p-0.5"
-            >
-                <div className="rounded-[22px] bg-white/40 relative">
-                    {/* The table will now grow as long as it needs to be */}
-                    <CertificateTable
-                        refreshKey={refreshKey}
-                        onRefresh={handleTableDataUpdate as any} 
-                        onAlert={handleAlert}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery} 
-                        hospitalFilter={hospitalFilter}
-                        setHospitalFilter={setHospitalFilter}
-                        isAddFormVisible={isAddFormVisible}
-                        setIsAddFormVisible={setIsAddFormVisible}
-                        uniqueHospitals={uniqueHospitals} 
-                    />
-                </div>
-            </motion.div>
+        {/* --- DASHBOARD STATS GRID --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 1. TOTAL CERTIFICATES */}
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-emerald-200 transition-colors duration-300 group"
+          >
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Total Certificates
+                </p>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                  {animatedTotalRecords.toLocaleString()}
+                </span>
+                <span className="text-sm font-medium text-slate-400">entries</span>
+              </div>
+            </div>
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-emerald-5 border border-emerald-100 p-1">
+              <Image
+                src="/logos/ssilogo.png"
+                alt="SSI Logo"
+                fill
+                className="object-contain p-0.5 opacity-90 grayscale-[0.2] group-hover:grayscale-0 transition-all duration-300"
+              />
+            </div>
+          </motion.div>
 
+          {/* 2. TOTAL HOSPITALS */}
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors duration-300"
+          >
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Total Hospitals
+                </p>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                  {animatedHospitalCount.toLocaleString()}
+                </span>
+                <span className="text-sm font-medium text-slate-400">active</span>
+              </div>
+            </div>
+            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-blue-50 border border-blue-100 p-1">
+                <FiGrid className="w-6 h-6 text-blue-500" />
+            </div>
+          </motion.div>
+
+          {/* 3. TOTAL DOCTORS */}
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-violet-200 transition-colors duration-300"
+          >
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Doctors
+                </p>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                  {animatedDoctors.toLocaleString()}
+                </span>
+                <span className="text-sm font-medium text-slate-400">identified</span>
+              </div>
+            </div>
+            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-violet-50 border border-violet-100 p-1">
+                <FiUserCheck className="w-6 h-6 text-violet-500" />
+            </div>
+          </motion.div>
+
+          {/* 4. TOTAL STAFF */}
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="relative flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-amber-200 transition-colors duration-300"
+          >
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Staff Members
+                </p>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                  {animatedStaff.toLocaleString()}
+                </span>
+                <span className="text-sm font-medium text-slate-400">others</span>
+              </div>
+            </div>
+            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center rounded-lg bg-amber-50 border border-amber-100 p-1">
+                <FiUsers className="w-6 h-6 text-amber-500" />
+            </div>
+          </motion.div>
         </div>
 
-        {/* --- RIGHT SIDEBAR (STATS & GRAPH) --- */}
-        {/* FIX 5: Made sticky top-4 so it floats while you scroll the long table */}
-        <aside className="w-full lg:w-[260px] flex-shrink-0 flex flex-col gap-3 h-fit sticky top-4 z-20">
-            <div className="flex flex-col gap-3">
+        {/* --- ACTION TOOLBAR --- */}
+        <div className="flex flex-col gap-4 pb-2">
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 
-                {/* 1. Stat Cards */}
-                <VerticalStatCard 
-                    label="Registry" 
-                    value={dbTotalRecords} 
-                    subtext="Verified Entries"
-                    icon={FiDatabase}
-                    colorClass="bg-emerald-500 text-emerald-600"
-                    delay={0.1}
-                />
-                
-                <VerticalStatCard 
-                    label="Institutions" 
-                    value={uniqueHospitals.length} 
-                    subtext="Partner Network"
-                    icon={FiGrid}
-                    colorClass="bg-blue-500 text-blue-600"
-                    delay={0.15}
-                />
+                {/* ✅ NEW BATCH ACTIONS - Appears Left of Upload Button */}
+                <AnimatePresence mode='wait'>
+                    {newBatchIds.length > 0 && isBatchLoaded && (
+                        <motion.div
+                            key="new-batch-actions"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mr-auto sm:mr-0 p-1 pr-2 bg-indigo-50 border border-indigo-100 rounded-xl"
+                        >
+                            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider px-2 hidden lg:inline-block">
+                                New Batch ({newBatchIds.length})
+                            </span>
+                            
+                            <button
+                                onClick={() => handleBulkGeneratePDF_V2(newBatchIds)}
+                                disabled={isBulkGeneratingV2}
+                                title="Download New Training Certificates"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                {isBulkGeneratingV2 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
+                                <span>Training</span>
+                            </button>
+                            
+                            <button
+                                onClick={() => handleBulkGeneratePDF_V1(newBatchIds)}
+                                disabled={isBulkGeneratingV1}
+                                title="Download New Proctoring Certificates"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white text-indigo-700 border border-indigo-200 text-xs font-medium rounded-lg hover:bg-indigo-50 transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                {isBulkGeneratingV1 ? <FiRefreshCw className="animate-spin" /> : <FiDownload />}
+                                <span>Proctoring</span>
+                            </button>
 
-                <VerticalStatCard 
-                    label="Practitioners" 
-                    value={doctorsCount} 
-                    subtext="Board Certified"
-                    icon={FiUserCheck}
-                    colorClass="bg-violet-500 text-violet-600"
-                    delay={0.2}
-                />
+                            <button 
+                                onClick={handleClearBatch}
+                                className="ml-1 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                title="Clear Batch Selection"
+                            >
+                                <FiX className="w-3.5 h-3.5" />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                <VerticalStatCard 
-                    label="Personnel" 
-                    value={staffCount} 
-                    subtext="System Directory"
-                    icon={FiUsers}
-                    colorClass="bg-orange-500 text-orange-600"
-                    delay={0.25}
-                />
+                <div className="w-full sm:w-auto">
+                    <UploadButton
+                        onUploadSuccess={handleUploadSuccess}
+                        onUploadError={handleUploadError}
+                    />
+                </div>
 
-                {/* 2. Graph */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...appleSpring, delay: 0.3 }}
-                    className="p-1 rounded-[24px] border border-white/50 bg-white/50 backdrop-blur-2xl shadow-sm"
+                <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className={`
+                        w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 
+                        rounded-lg text-sm font-medium border transition-all duration-200
+                        ${isRefreshing 
+                        ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm'
+                        }
+                    `}
                 >
-                    <div className="rounded-[20px] overflow-hidden bg-white/60 p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                            <FiPieChart className="text-slate-400 w-3.5 h-3.5" />
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Topology</h3>
-                        </div>
-                        <div className="h-[200px] w-full flex items-center justify-center">
-                            <HospitalPieChart
-                                uniqueHospitals={uniqueHospitals}
-                                totalRecords={totalRecords}
-                                certificates={certificateData} 
-                            />
-                        </div>
-                    </div>
-                </motion.div>
+                    <FiRefreshCw 
+                        className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+                    />
+                    <span>Sync</span>
+                </button>
 
-                {/* 3. Analytics Summary */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...appleSpring, delay: 0.35 }}
-                    className="p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-[20px] text-white shadow-lg shadow-black/10 relative overflow-hidden"
+                <button
+                    onClick={() => setIsHelpCardVisible(true)}
+                    className="
+                        w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 
+                        rounded-lg text-sm font-medium border border-transparent
+                        bg-slate-800 text-white shadow-sm hover:bg-slate-900 
+                        transition-all duration-200 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2
+                    "
                 >
-                    <div className="relative z-10">
-                        <h3 className="font-bold text-base mb-0.5">Intelligence</h3>
-                        <p className="text-white/60 text-[10px] leading-relaxed mb-3 font-medium">
-                            Automated verification and pattern analysis active.
-                        </p>
-                        <div className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/10">
-                            <FiTrendingUp className="w-3.5 h-3.5 text-blue-400" />
-                        </div>
-                    </div>
-                    <div className="absolute top-[-20%] right-[-20%] w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
-                </motion.div>
+                    <FiHelpCircle className="w-4 h-4" />
+                    <span>Guide</span>
+                </button>
             </div>
-        </aside>
+        </div>
 
+        {/* --- CONTENT AREA: Charts & Table --- */}
+        <div className="grid grid-cols-1 gap-6">
+          
+          {/* Analytics Section */}
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <HospitalPieChart
+              uniqueHospitals={uniqueHospitals}
+              totalRecords={totalRecords}
+              certificates={certificateData} 
+            />
+          </div>
+          
+          {/* Data Table Section */}
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[500px]">
+            <CertificateTable
+              refreshKey={refreshKey}
+              onRefresh={handleTableDataUpdate as any} 
+              onAlert={handleAlert}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery} 
+              hospitalFilter={hospitalFilter}
+              setHospitalFilter={setHospitalFilter}
+              isAddFormVisible={isAddFormVisible}
+              setIsAddFormVisible={setIsAddFormVisible}
+              uniqueHospitals={uniqueHospitals} 
+            />
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -19,7 +19,7 @@ import {
   X,
   Hash // Keeping Hash for ID Number
 } from "lucide-react";
-import { generateIdCardPDF, IIdCardData } from "@/components/features/Certificates/utils/idCardGenerator";
+import { generateIdCardPDF, IIdCardData } from "@/components/Certificates/utils/idCardGenerator";
 
 // --- Helper: Blood Group Image Mapping ---
 const getBloodGroupImage = (bg: string) => {

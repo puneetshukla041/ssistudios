@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import AuthBg from "@/components/aminations/AuthBg"; // Assuming path
 import Logo from "@/components/aminations/Logo";     // Assuming path
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import { useAuth } from "@/contexts/auth-context";   // Assuming path
+import { useAuth } from "@/contexts/AuthContext";   // Assuming path
 import LoginForm from "./LoginForm";
 import RequestModal from "./RequestModal";
-import AnimatedModals from "./AnimatedModals";
+import AnimatedModals from ".//AnimatedModals";
 
 /**
  * The core component holding all login state, logic, and the main layout structure.

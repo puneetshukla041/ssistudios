@@ -1,201 +1,211 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, Variants, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
-  Plus, Eraser, Settings, Layers2Icon, LayoutGrid,
-  Search, LayoutTemplate, Image as ImageIcon, StarIcon, BugIcon,
-  ArrowRight, X, CreditCard
+  Plus, Eraser, Settings, Layers2Icon, LayoutGrid, Palette,
+  Search, LayoutTemplate, Video, Megaphone, Briefcase, CreditCard, Image, StarIcon, BugIcon, PercentSquareIcon,
+  ArrowRight, Sparkles, X
 } from "lucide-react";
 
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/dashboard/Header";
 import Usernameheader from "@/components/dashboard/usernameheader";
 
-// --- APPLE PHYSICS CONFIG ---
-const appleSpring = {
-  type: "spring" as const,
-  stiffness: 350,
-  damping: 30,
-};
 
-// --- DATA ---
+// --- Types ---
 interface QuickAction {
   id: string;
   label: string;
   subLabel: string;
   icon: any;
-  color: string; // Tailwind bg class
+  gradient: string;
   path: string;
   keywords: string[];
 }
 
-const quickActions: QuickAction[] = [
-  {
-    id: "create-poster",
-    label: "Create Poster",
-    subLabel: "Start scratch",
-    icon: Plus,
-    color: "bg-blue-500",
-    path: "/poster",
-    keywords: ["marketing", "design"],
+// --- Animation Variants ---
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
   },
-  {
-    id: "manage-certs",
-    label: "Certificates",
-    subLabel: "Issue Docs",
-    icon: Layers2Icon,
-    color: "bg-orange-500",
-    path: "/certificates/database",
-    keywords: ["docs", "award"],
-  },
-  {
-    id: "bg-remover",
-    label: "BG Remover",
-    subLabel: "AI Tool",
-    icon: Eraser,
-    color: "bg-emerald-500",
-    path: "/bgremover",
-    keywords: ["edit", "transparent"],
-  },
-  {
-    id: "visiting-cards",
-    label: "Visiting Cards",
-    subLabel: "Identity",
-    icon: LayoutGrid,
-    color: "bg-purple-500",
-    path: "/visitingcards",
-    keywords: ["contact", "business"],
-  },
-  {
-    id: "id-card",
-    label: "ID Card",
-    subLabel: "Utilities",
-    icon: CreditCard,
-    color: "bg-cyan-500",
-    path: "/idcard",
-    keywords: ["draw", "kit"],
-  },
-  {
-    id: "settings",
-    label: "Themes",
-    subLabel: "Customize",
-    icon: Settings,
-    color: "bg-slate-600",
-    path: "/theme",
-    keywords: ["config"],
-  },
-];
+};
 
-const heroFilters = [
-  { label: "Assets", icon: <LayoutTemplate size={15} />, path: "/assets" },
-  { label: "Themes", icon: <ImageIcon size={15} />, path: "/themes" },
-  { label: "Rate Us", icon: <StarIcon size={15} />, path: "/reportbug" },
-  { label: "Report Bug", icon: <BugIcon size={15} />, path: "/reportbug" },
-];
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1, y: 0, scale: 1,
+    transition: { type: "spring", stiffness: 100, damping: 20 }
+  },
+  exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
+};
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const navigateTo = (path: string) => router.push(path);
+  const navigateTo = (path: string) => {
+    router.push(path);
+  };
+
+  const quickActions: QuickAction[] = [
+    {
+      id: "create-poster",
+      label: "Create Poster",
+      subLabel: "Start scratch",
+      icon: Plus,
+      gradient: "from-blue-500 to-indigo-600",
+      path: "/poster",
+      keywords: ["marketing", "design", "canvas"],
+    },
+    {
+      id: "manage-certs",
+      label: "Certificates",
+      subLabel: "Issue Docs",
+      icon: Layers2Icon,
+      gradient: "from-orange-400 to-pink-500",
+      path: "/certificates/database",
+      keywords: ["docs", "diploma", "award"],
+    },
+    {
+      id: "bg-remover",
+      label: "BG Remover",
+      subLabel: "AI Tool",
+      icon: Eraser,
+      gradient: "from-emerald-400 to-teal-600",
+      path: "/bgremover",
+      keywords: ["image", "edit", "clean", "transparent"],
+    },
+    {
+      id: "visiting-cards",
+      label: "Visiting Cards",
+      subLabel: "Identity",
+      icon: LayoutGrid,
+      gradient: "from-violet-500 to-purple-600",
+      path: "/visitingcards",
+      keywords: ["id", "contact", "business"],
+    },
+    {
+      id: "id-card",
+      label: "ID Card",
+      subLabel: "Utilities",
+      icon: CreditCard,
+      gradient: "from-cyan-400 to-blue-500",
+      path: "/idcard",
+      keywords: ["color", "draw", "kit"],
+    },
+    {
+      id: "settings",
+      label: "Themes",
+      subLabel: "Customize",
+      icon: Settings,
+      gradient: "from-slate-700 to-slate-900",
+      path: "/theme",
+      keywords: ["dark mode", "appearance", "config"],
+    },
+  ];
+
+  const heroFilters = [
+    { label: "Assets", icon: <LayoutTemplate size={16} />, path: "/assets" },
+    { label: "Themes", icon: <Image size={16} />, path: "/themes" },
+    { label: "Rate Us", icon: <StarIcon size={16} />, path: "/reportbug" },
+    { label: "Report a Bug", icon: <BugIcon size={16} />, path: "/reportbug" },
+  ];
 
   const filteredActions = quickActions.filter((action) => {
     const query = searchQuery.toLowerCase();
     return (
       action.label.toLowerCase().includes(query) ||
       action.subLabel.toLowerCase().includes(query) ||
-      action.keywords.some((k) => k.includes(query))
+      action.keywords.some(k => k.includes(query))
     );
   });
 
   return (
-    <main className="relative min-h-screen bg-[#F5F5F7] text-slate-900 overflow-x-hidden font-sans selection:bg-blue-200 selection:text-blue-900">
-      
-      {/* 1. AMBIENT BACKGROUND (macOS Style) */}
+    <main className="relative flex-1 min-h-screen bg-slate-50/50 text-slate-900 overflow-x-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900">
+
+      {/* Background Mesh */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <motion.div 
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-blue-300/30 blur-[100px]" 
-        />
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-[10%] -right-[10%] w-[60vw] h-[60vw] rounded-full bg-purple-300/30 blur-[100px]" 
-        />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-100/50 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-100/50 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 px-4 sm:px-8 lg:px-12 xl:px-20 pb-12 sm:pb-24 max-w-[1600px] mx-auto">
-        
-        {/* Header Area */}
-        <div className="pt-6 mb-8 space-y-6">
+      <div className="relative z-10 px-4 sm:px-8 lg:px-12 xl:px-20 pb-12 sm:pb-24 max-w-[1920px] mx-auto">
+
+        {/* Header */}
+        <div className="pt-4 sm:pt-6 mb-6 sm:mb-8 space-y-4 sm:space-y-6">
           <div className="hidden lg:block"> <Header /> </div>
           <Usernameheader />
         </div>
 
-        {/* 2. HERO SECTION - "Glass Panel" */}
+        {/* Hero Section */}
         <motion.section
-          initial={{ opacity: 0, scale: 0.98, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ ...appleSpring, duration: 0.8 }}
-          className="relative w-full rounded-[2.5rem] overflow-hidden mb-12"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full rounded-3xl sm:rounded-[2rem] overflow-hidden mb-10 sm:mb-16 shadow-2xl shadow-indigo-500/10 group"
         >
-          {/* Frosted Glass Background */}
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-2xl border border-white/60 shadow-xl shadow-blue-900/5 z-0" />
-          
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-16 sm:py-20 space-y-8">
-            
-            <div className="space-y-4 max-w-2xl">
-              <motion.span 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                className="text-xs font-semibold tracking-widest text-slate-500 uppercase"
+          {/* Backgrounds */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777] opacity-95" />
+          <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
+
+          <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-12 sm:px-6 sm:py-20 space-y-8 sm:space-y-10">
+            <div className="space-y-4 max-w-3xl">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white/90 text-xs font-medium"
               >
-                Creative Operations
-              </motion.span>
-              <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-slate-900 leading-[1.1]">
-                What will you <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">create</span>?
+                <span>A CREATIVE OPERATIONS APPLICATION</span>
+              </motion.div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white drop-shadow-sm leading-[1.1]">
+                What will you <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-pink-200">create</span>?
               </h1>
             </div>
 
-            {/* 3. SPOTLIGHT SEARCH BAR */}
-            <div className="w-full max-w-xl relative group">
-              <motion.div 
-                className="relative flex items-center bg-white/60 hover:bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl p-2 shadow-lg shadow-black/5 transition-all focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:bg-white"
-                whileTap={{ scale: 0.99 }}
-              >
-                <div className="pl-4 pr-3 text-slate-400">
-                  <Search size={22} />
+            {/* Search Bar */}
+            <div className="w-full max-w-2xl relative group/search">
+              <div className="absolute inset-0 bg-white/20 blur-xl rounded-full transition-opacity opacity-0 group-hover/search:opacity-100" />
+              <div className="relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 rounded-full p-1.5 shadow-lg transition-all focus-within:bg-white/15 focus-within:border-white/40 focus-within:scale-[1.01]">
+                <div className="pl-3 sm:pl-4 pr-2 text-white/60">
+                  <Search size={20} className="sm:w-[22px] sm:h-[22px]" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tools, assets, or settings..."
-                  className="flex-1 bg-transparent h-10 text-slate-800 placeholder:text-slate-400 text-lg outline-none min-w-0"
+                  placeholder="Search..."
+                  className="flex-1 bg-transparent h-10 sm:h-12 text-white placeholder:text-white/50 text-base sm:text-lg outline-none min-w-0"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="p-2 text-slate-400 hover:text-slate-600">
-                    <X size={18} />
+                  <button 
+                    onClick={() => setSearchQuery("")} 
+                    className="p-2 text-white/70 hover:text-white cursor-pointer"
+                  >
+                    <X size={16} />
                   </button>
                 )}
-              </motion.div>
+                <button className="h-9 sm:h-11 px-4 sm:px-6 rounded-full bg-white text-indigo-600 font-semibold text-xs sm:text-sm hover:bg-blue-50 transition-colors shadow-sm cursor-pointer">
+                  Search
+                </button>
+              </div>
             </div>
 
             {/* Filter Pills */}
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 w-full">
               {heroFilters.map((filter, idx) => (
                 <motion.button
                   key={filter.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + (idx * 0.05), ...appleSpring }}
-                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.8)" }}
-                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + (idx * 0.05) }}
                   onClick={() => navigateTo(filter.path)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/40 border border-white/40 text-slate-600 text-sm font-medium shadow-sm backdrop-blur-md transition-colors cursor-pointer"
+                  // ✅ Added cursor-pointer here
+                  className="flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full bg-black/20 hover:bg-black/30 border border-white/10 text-white text-xs sm:text-sm font-medium transition-all backdrop-blur-sm cursor-pointer"
                 >
                   {filter.icon} {filter.label}
                 </motion.button>
@@ -204,73 +214,64 @@ export default function DashboardPage() {
           </div>
         </motion.section>
 
-        {/* 4. WIDGET GRID (Bento Style) */}
-        <AnimatePresence mode="wait">
-          {filteredActions.length > 0 && (
-            <motion.section 
-              className="mb-20"
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-            >
-              <div className="flex items-end justify-between mb-8 px-2">
-                <h2 className="text-2xl font-semibold text-slate-800 tracking-tight">
-                  Quick Actions
-                </h2>
+        {/* --- Tools Section --- */}
+        {(filteredActions.length > 0) && (
+          <section className="mb-16 sm:mb-24">
+            <div className="flex items-end justify-between mb-6 sm:mb-8 px-1">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Your Tools</h2>
+                <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base truncate max-w-[300px] sm:max-w-none">
+                  {searchQuery ? `Results for "${searchQuery}"` : "Quick access to your workspace"}
+                </p>
               </div>
+            </div>
 
-              <motion.div
-                className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6"
-                variants={{
-                  visible: { transition: { staggerChildren: 0.05 } }
-                }}
-                initial="hidden"
-                animate="visible"
-              >
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <AnimatePresence>
                 {filteredActions.map((action) => (
                   <motion.div
                     key={action.id}
                     layout
-                    variants={{
-                      hidden: { opacity: 0, y: 20, scale: 0.9 },
-                      visible: { opacity: 1, y: 0, scale: 1, transition: appleSpring }
-                    }}
-                    whileHover={{ scale: 1.03, y: -5 }}
-                    whileTap={{ scale: 0.95 }}
+                    variants={itemVariants}
+                    whileHover={{ y: -8 }}
+                    whileTap={{ scale: 0.96 }}
+                    // ✅ cursor-pointer is already present here
+                    className="group relative h-40 sm:h-48 cursor-pointer"
                     onClick={() => navigateTo(action.path)}
-                    className="group relative h-44 sm:h-52 cursor-pointer"
                   >
-                    {/* Glass Widget Card */}
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-sm border border-white/60 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:bg-white/80" />
+                    <div className="absolute inset-0 bg-white rounded-2xl sm:rounded-[1.5rem] shadow-sm border border-slate-200 transition-all duration-300 group-hover:shadow-lg group-hover:border-indigo-100" />
 
-                    <div className="relative h-full p-6 flex flex-col items-center justify-center text-center z-10 gap-4">
-                      
-                      {/* iOS Style Icon Container */}
-                      <div className={`w-16 h-16 rounded-[1.2rem] flex items-center justify-center shadow-md ${action.color} text-white transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-                        <action.icon size={32} strokeWidth={1.5} />
+                    <div className="relative h-full p-4 sm:p-6 flex flex-col justify-between z-10">
+                      <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br ${action.gradient} transform transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110`}>
+                        <action.icon className="text-white w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-semibold text-slate-800 tracking-tight">
+                      <div>
+                        <h3 className="text-sm sm:text-lg font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">
                           {action.label}
                         </h3>
-                        <p className="text-slate-500 text-xs font-medium">
+                        <p className="text-slate-400 text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 group-hover:text-slate-500 line-clamp-1">
                           {action.subLabel}
                         </p>
                       </div>
 
-                      {/* Hover Arrow */}
-                      <div className="absolute bottom-4 opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 text-blue-500">
-                        <ArrowRight size={20} />
+                      <div className="hidden sm:block absolute top-6 right-6 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                        <ArrowRight size={20} className="text-slate-300 group-hover:text-indigo-500" />
                       </div>
                     </div>
                   </motion.div>
                 ))}
-              </motion.div>
-            </motion.section>
-          )}
-        </AnimatePresence>
+              </AnimatePresence>
+            </motion.div>
+          </section>
+        )}
 
+    
       </div>
     </main>
   );

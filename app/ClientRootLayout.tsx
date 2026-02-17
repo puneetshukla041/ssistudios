@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
-import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import { ThemeProvider } from "@/contexts/theme-context"; 
-import { UsageProvider } from "@/contexts/usage-context"; 
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext"; 
+import { UsageProvider } from "@/contexts/UsageContext"; 
 import { ReactNode, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
@@ -59,14 +59,17 @@ const GlobalChaosStyles = ({ active }: { active: boolean }) => {
         animation: shake-hard 0.2s infinite;
         background-color: #000 !important;
       }
+      /* Disable interactions */
       body * {
         user-select: none !important;
         pointer-events: none !important;
       }
+      /* Glitch everything */
       img, svg, div, p, h1, h2, span, button {
         filter: invert(1) hue-rotate(180deg) blur(0.5px);
         animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
       }
+      /* Text scatter */
       h1, h2, h3, p, span, a {
         text-shadow: 2px 0 red, -2px 0 blue;
         animation: glitch-text 0.1s infinite;
@@ -105,13 +108,13 @@ const GlobalChaosStyles = ({ active }: { active: boolean }) => {
 
 function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const auth = useAuth(); 
-  const isAuthenticated = auth?.isAuthenticated;
+  const { isAuthenticated } = useAuth();
   
   // --- REAL TIME POLLING LOGIC ---
   const [isCrashed, setIsCrashed] = useState(false);
 
   useEffect(() => {
+    // Poll the DB status every 3 seconds
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/system-status');
@@ -123,15 +126,20 @@ function AppLayout({ children }: { children: ReactNode }) {
         console.error("Status check failed", err);
       }
     };
+
+    // Initial check
     checkStatus();
+
+    // Check every 3s
     const interval = setInterval(checkStatus, 3000); 
+
     return () => clearInterval(interval);
   }, []);
   // -------------------------------
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const forceActive = pathname === "/selector" ? "Dashboard" : undefined;
-  const isEditorPage = pathname?.startsWith("/editor");
+  const isEditorPage = pathname.startsWith("/editor");
   const isLoginPage = pathname === "/login";
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -141,32 +149,25 @@ function AppLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ""; };
   }, [isSidebarOpen, isCrashed]);
 
-  // Dynamic Backgrounds for Layout Wrapper
   const themeBg = pathname === "/bgremover" ? "bg-white text-gray-900" 
     : pathname === "/poster" ? "bg-slate-100 text-slate-900"
     : pathname === "/idcard" ? "bg-slate-100 text-slate-900"
     : pathname === "/userprofile" ? "bg-[#F3F4F6] text-gray-900"
-    : "bg-[#F2F2F7] text-gray-900"; // Default to iOS Gray to match database page
+    : "bg-white text-gray-900"; 
 
   if (isEditorPage) return <>{children}</>;
-
-  if (!isAuthenticated && !isLoginPage) {
-      // return null; 
-  }
+  if (!isAuthenticated && !isLoginPage) return null;
 
   return (
     <>
+      {/* Inject Global Glitch CSS if crashed */}
       <GlobalChaosStyles active={isCrashed} />
 
       {!isLoginPage ? (
         <div className={`flex relative z-10 min-h-screen ${themeBg}`}>
           <Sidebar forceActive={forceActive} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-          
-          {/* ✅ FIXED: Removed 'p-4 lg:p-8' so content can go full width/height */}
-          <main className="flex-1 overflow-y-auto transition-all duration-300 relative w-full h-screen">
-            
-            {/* ✅ FIXED: Added padding only to the mobile header */}
-            <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit/90 backdrop-blur-sm">
+          <main className="flex-1 overflow-y-auto transition-all duration-300 p-4 lg:p-8 relative">
+            <div className="flex items-center justify-between mb-6 lg:hidden">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
                 {pathname === "/dashboard" ? "" : "SSI Studios"}
               </h1>
@@ -177,15 +178,11 @@ function AppLayout({ children }: { children: ReactNode }) {
                 <AnimatedHamburgerIcon isOpen={isSidebarOpen} size={28} />
               </button>
             </div>
-            
-            {/* Children render edge-to-edge now */}
             {children}
           </main>
         </div>
       ) : (
-        <main className="min-h-screen w-full flex flex-col items-center justify-center relative z-10 p-0 m-0">
-            {children}
-        </main>
+        <main className="min-h-screen flex flex-col items-center justify-center relative z-10 px-4 bg-white">{children}</main>
       )}
     </>
   );

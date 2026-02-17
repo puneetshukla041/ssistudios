@@ -5,64 +5,44 @@ import {
     ChevronLeft, 
     ChevronRight, 
     Inbox,
-    Loader2,
-    RefreshCw
+    Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
-import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Import Hooks and Utils
-import { useCertificateData } from '../hooks/useCertificateData';
-import { useCertificateActions } from '../hooks/use-certificate-actions';
-import { useMailCertificate } from '../hooks/useMailCertificate'; 
-import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from '../utils/constants';
+import { useCertificateData } from './hooks/useCertificateData';
+import { useCertificateActions } from './hooks/useCertificateActions';
+import { useMailCertificate } from './hooks/useMailCertificate'; 
+import { CertificateTableProps, PAGE_LIMIT, NotificationState, NotificationType } from './utils/constants';
 
 // Import UI Components
-import QuickActionBar from './quick-action-bar';
-import TableHeader from '../ui/TableHeader';
-import TableRow from '../ui/TableRow';
-import MailComposer from './mail-composer';
-import FloatingNotification from '../ui/FloatingNotification';
-import SuccessAnimation from '../ui/SuccessAnimation'; 
+import QuickActionBar from './ui/QuickActionBar';
+import TableHeader from './ui/TableHeader';
+import TableRow from './ui/TableRow';
+import MailComposer from './ui/MailComposer';
+import FloatingNotification from './ui/FloatingNotification';
+import SuccessAnimation from './ui/SuccessAnimation'; 
 
-// --- APPLE PHYSICS CONFIGURATION ---
-const iosSpring = {
-    type: "spring",
-    stiffness: 320,
-    damping: 30,
-    mass: 0.8
-} as const;
+// --- Components ---
 
-// --- COMPONENT: ANIMATED NUMBER ---
-const AnimatedNumber = ({ value }: { value: number }) => {
-    const spring = useSpring(0, { stiffness: 200, damping: 20 });
-    const display = useTransform(spring, (current) => Math.round(current).toLocaleString());
-  
-    useEffect(() => {
-      spring.set(value);
-    }, [value, spring]);
-  
-    return <motion.span className="tabular-nums">{display}</motion.span>;
-};
-
-// --- COMPONENT: PREMIUM SKELETON LOADER ---
+// 1. Modern Skeleton Loader
 const SkeletonLoader = () => (
-    <div className="w-full space-y-6 p-2">
-        {/* Action Bar Skeleton */}
-        <div className="h-16 bg-white/50 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm animate-pulse" />
-        
-        {/* Table Skeleton */}
-        <div className="bg-white/40 backdrop-blur-xl rounded-[32px] shadow-sm border border-white/60 overflow-hidden p-1.5">
-            <div className="h-14 bg-white/50 rounded-[24px] mb-2 mx-1 mt-1" />
-            <div className="space-y-3 p-2">
+    <div className="w-full space-y-6">
+        <div className="h-16 bg-slate-100/50 rounded-2xl border border-slate-200/60 animate-pulse" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="h-12 bg-slate-50 border-b border-slate-100" />
+            <div className="divide-y divide-slate-50">
                 {Array(6).fill(0).map((_, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        key={i} 
-                        className="h-20 bg-white/60 rounded-[20px] shadow-sm border border-white/40" 
-                    />
+                    <div key={i} className="h-20 flex items-center px-6 gap-6 animate-pulse">
+                        <div className="w-5 h-5 rounded bg-slate-200" />
+                        <div className="w-10 h-10 rounded-full bg-slate-200" />
+                        <div className="space-y-2 flex-1">
+                            <div className="w-1/4 h-4 rounded bg-slate-200" />
+                            <div className="w-1/6 h-3 rounded bg-slate-100" />
+                        </div>
+                        <div className="w-24 h-8 rounded-lg bg-slate-100" />
+                    </div>
                 ))}
             </div>
         </div>
@@ -92,10 +72,10 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
     uniqueHospitals: _propUniqueHospitals 
 }) => {
     
-    // ✅ State for Certificate Type Mode
+    // ✅ State for Certificate Type Mode (External/Internal/Others)
     const [certTypeMode, setCertTypeMode] = useState('internal');
 
-    // --- Notification State ---
+    // --- Notification State Management ---
     const [notification, setNotification] = useState<NotificationState | null>(null);
 
     const showNotification = useCallback((message: string, type: NotificationType) => {
@@ -129,7 +109,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         fetchCertificates,
         fetchCertificatesForExport,
         deleteCertificate,
-        updateCertificate,
+        updateCertificate, // <--- Destructured here
         setCurrentPage,
         setSelectedIds,
         requestSort,
@@ -181,7 +161,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         fetchCertificates,
         fetchCertificatesForExport,
         deleteCertificate,
-        updateCertificate,
+        updateCertificate, // <--- Passed here
         showNotification, 
         onAlert: pdfOnAlert, 
         setIsLoading,
@@ -207,18 +187,20 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
         }
     }, [flashId, setFlashId]);
 
-    // ✅ Bulk Mail Handlers
-    const handleBulkMail_V1 = () => showNotification("Bulk Mail (Proctorship) coming soon", "info");
-    const handleBulkMail_V2 = () => showNotification("Bulk Mail (Training) coming soon", "info");
-    const handleBulkMail_V3 = () => showNotification("Bulk Mail (100+) coming soon", "info");
+    // ✅ Bulk Mail Handlers (Placeholders)
+    const handleBulkMail_V1 = () => showNotification("Bulk Mail (Proctorship) feature coming soon!", "info");
+    const handleBulkMail_V2 = () => showNotification("Bulk Mail (Training) feature coming soon!", "info");
+    const handleBulkMail_V3 = () => showNotification("Bulk Mail (100+) feature coming soon!", "info");
+
 
     // --- Render Logic ---
+
     if (isLoading) {
         return <SkeletonLoader />;
     }
 
     return (
-        <div className="relative flex flex-col gap-6 font-sans tracking-tight antialiased selection:bg-[#007AFF]/20 selection:text-slate-900">
+        <div className="relative flex flex-col gap-6 font-sans">
             
             {/* Global Overlays */}
             <FloatingNotification 
@@ -233,12 +215,11 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 message={successMessage} 
             />
             
-            {/* Action Bar (Sliding In) */}
+            {/* Action Bar */}
             <motion.div 
-                initial={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={iosSpring}
-                className="z-20"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
             >
                 <QuickActionBar
                     isAddFormVisible={isAddFormVisible}
@@ -268,74 +249,45 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                 />
             </motion.div>
 
-            {/* Main Content Area (Glass Card) */}
+            {/* Main Content Area */}
             <motion.div 
-                className="bg-white/70 backdrop-blur-2xl rounded-[32px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-white/60 flex flex-col flex-grow relative overflow-hidden"
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: 0.1, ...iosSpring }}
-                layout
+                className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-grow relative"
+                initial={{ opacity: 0, scale: 0.99 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
             >
-                {/* Processing Overlay */}
-                <AnimatePresence>
-                    {isAnyActionLoading && (
-                        <motion.div 
-                            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                            animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-                            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                            className="absolute inset-0 bg-white/40 z-50 flex items-center justify-center"
-                        >
-                            <motion.div 
-                                initial={{ scale: 0.8, y: 10, opacity: 0 }}
-                                animate={{ scale: 1, y: 0, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                transition={iosSpring}
-                                className="bg-white/90 backdrop-blur-2xl p-6 px-8 rounded-[24px] shadow-2xl border border-white/60 flex flex-col items-center gap-4"
-                            >
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
-                                    <Loader2 className="w-8 h-8 text-[#007AFF] animate-spin relative z-10" />
-                                </div>
-                                <span className="text-[14px] font-semibold text-slate-800 tracking-wide">Processing...</span>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {isAnyActionLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-50 flex items-center justify-center">
+                        <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3">
+                            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+                            <span className="text-sm font-medium text-slate-700">Processing request...</span>
+                        </div>
+                    </div>
+                )}
 
                 {sortedCertificates.length === 0 ? (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={iosSpring}
-                        className="flex flex-col items-center justify-center py-32 px-4 text-center"
+                        className="flex flex-col items-center justify-center py-24 px-4 text-center"
                     >
-                        <div className="relative group cursor-pointer" onClick={() => fetchCertificates()}>
-                            <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <div className="w-24 h-24 bg-gradient-to-br from-slate-50 to-white rounded-[28px] flex items-center justify-center mb-6 shadow-sm border border-slate-200/50 relative z-10 group-hover:scale-105 transition-transform duration-300">
-                                <Inbox className="w-10 h-10 text-slate-300 group-hover:text-[#007AFF] transition-colors duration-300" strokeWidth={1.5} />
-                            </div>
+                        <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 ring-[12px] ring-slate-50/50">
+                            <Inbox className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">No records found</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mb-8 leading-relaxed text-[14px]">
-                            We couldn't find any records matching your active filters.
+                        <h3 className="text-xl font-semibold text-slate-900 mb-2">No certificates found</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto mb-8 leading-relaxed">
+                            We couldn't find any records matching your active filters. Try adjusting your search query or add a new entry.
                         </p>
-                        <motion.button 
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.96 }}
+                        <button 
                             onClick={() => setIsAddFormVisible(true)}
-                            className="px-6 py-3 bg-[#007AFF] hover:bg-[#0062cc] text-white text-[14px] font-semibold rounded-full shadow-lg shadow-blue-500/20 transition-all"
+                            className="group relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer active:scale-95"
                         >
-                            Add New Certificate
-                        </motion.button>
+                            <span>Add New Certificate</span>
+                        </button>
                     </motion.div>
                 ) : (
                     <>
-                        {/* SCROLL FIX: 
-                            1. overflow-x-auto: Allows horizontal scroll if needed
-                            2. scrollbar-hide utilities: Removes the visual scrollbar line 
-                            3. p-1.5: Padding to prevent shadow clipping
-                        */}
-                        <div className="overflow-x-auto p-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                        <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-left border-collapse">
                                 <TableHeader
                                     certificates={certificates}
@@ -344,7 +296,7 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                                     requestSort={requestSort}
                                     handleSelectAll={handleSelectAll}
                                 />
-                                <tbody className="divide-y divide-slate-100/80">
+                                <tbody className="divide-y divide-slate-100/80 bg-white">
                                     {sortedCertificates.map((cert, index) => ( 
                                         <TableRow
                                             key={cert._id}
@@ -374,44 +326,52 @@ const CertificateTable: React.FC<CertificateTableExtendedProps> = ({
                             </table>
                         </div>
 
-                        {/* --- Floating Pagination Dock (Apple Dynamic Island Style) --- */}
-                        <div className="sticky bottom-0 left-0 right-0 p-6 pointer-events-none z-10 flex justify-center">
-                            <motion.div 
-                                layout
-                                className="pointer-events-auto flex items-center gap-1 bg-white/80 backdrop-blur-2xl p-1.5 pr-2 rounded-full shadow-[0_8px_40px_-10px_rgba(0,0,0,0.12)] border border-white/60 ring-1 ring-black/5"
-                            >
-                                <motion.button
-                                    whileTap={{ scale: 0.9 }}
+                        {/* --- Modern Floating Pagination --- */}
+                        <div className="border-t border-slate-100 bg-slate-50/40 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="text-xs text-slate-500 font-medium tracking-wide">
+                                Showing <span className="text-slate-900 font-bold">{((currentPage - 1) * PAGE_LIMIT) + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(currentPage * PAGE_LIMIT, totalItems)}</span> of <span className="text-slate-900 font-bold">{totalItems}</span> results
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-sm border border-slate-200/80">
+                                <button
                                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                     disabled={currentPage === 1}
-                                    className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-900 hover:bg-white shadow-sm hover:shadow border border-transparent hover:border-black/5 disabled:opacity-30 disabled:hover:shadow-none disabled:hover:bg-transparent transition-all duration-200"
+                                    className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all cursor-pointer active:scale-95"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                </motion.button>
-
-                                <div className="flex items-center px-4 gap-3 text-[13px] font-medium text-slate-500 select-none">
-                                    <div className="flex flex-col items-center leading-none">
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Page</span>
-                                        <span className="text-slate-900 font-bold text-[14px]">
-                                            <AnimatedNumber value={currentPage} />
-                                        </span>
-                                    </div>
-                                    <div className="w-[1px] h-6 bg-slate-200" />
-                                    <div className="flex flex-col items-center leading-none">
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total</span>
-                                        <span className="text-slate-700 font-bold text-[14px]">{totalPages}</span>
-                                    </div>
+                                </button>
+                                
+                                <div className="flex items-center gap-1 px-2">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                        .filter(page => page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1))
+                                        .map((page, index, array) => (
+                                            <React.Fragment key={page}>
+                                                {index > 0 && array[index - 1] !== page - 1 && (
+                                                    <span className="text-xs text-slate-400 px-1 select-none">...</span>
+                                                )}
+                                                <button
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={clsx(
+                                                        "w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95",
+                                                        page === currentPage
+                                                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105"
+                                                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                    )}
+                                                >
+                                                    {page}
+                                                </button>
+                                            </React.Fragment>
+                                    ))}
                                 </div>
 
-                                <motion.button
-                                    whileTap={{ scale: 0.9 }}
+                                <button
                                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                     disabled={currentPage === totalPages || totalPages === 0}
-                                    className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-900 hover:bg-white shadow-sm hover:shadow border border-transparent hover:border-black/5 disabled:opacity-30 disabled:hover:shadow-none disabled:hover:bg-transparent transition-all duration-200"
+                                    className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all cursor-pointer active:scale-95"
                                 >
                                     <ChevronRight className="w-4 h-4" />
-                                </motion.button>
-                            </motion.div>
+                                </button>
+                            </div>
                         </div>
                     </>
                 )}

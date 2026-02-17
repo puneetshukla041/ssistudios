@@ -12,7 +12,7 @@ import {
   Bell,
   Check,
 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UserProfile {
   _id: string;
