@@ -8,10 +8,17 @@ import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion'
 // --- IMPORTS ---
 import HelpCard from '@/components/Certificates/ui/HelpCard'; 
 import UploadButton from '@/components/UploadButton'; 
+<<<<<<< HEAD
 import CertificateTable from '@/components/Certificates/components/certificate-table';
 import HospitalPieChart from '@/components/Certificates/analysis/HospitalPieChart';
 import AddCertificateForm from '@/components/Certificates/ui/AddCertificateForm';
 import { useCertificateActions } from '@/components/Certificates/hooks/useCertificateActions';
+=======
+import CertificateTable from '@/components/features/Certificates/components/certificate-table';
+import HospitalPieChart from '@/components/features/Certificates/analysis/HospitalPieChart';
+import AddCertificateForm from '@/components/features/Certificates/components/add-certificate-form';
+import { useCertificateActions } from '@/components/features/Certificates/hooks/useCertificateActions';
+>>>>>>> parent of 404b366 (.)
 
 // Import Constants
 import { 
