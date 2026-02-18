@@ -19,13 +19,21 @@
   }
 }
 
+/* ✅ CRITICAL: Disable native smooth scroll globally so Lenis takes full control */
+html {
+  scroll-behavior: auto !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* ✅ Ensure body can grow */
+  min-height: 100vh;
+  width: 100%;
 }
 
-/* --- LENIS SMOOTH SCROLL FIXES --- */
+/* --- LENIS CONFIGURATION --- */
 html.lenis, html.lenis body {
   height: auto;
 }
