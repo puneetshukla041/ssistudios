@@ -26,6 +26,7 @@ const NAME_MARGIN_LEFT = 72
 const NAME_MARGIN_TOP = 133     
 const HOSPITAL_MARGIN_LEFT = 72 
 
+
 // --- SECOND NAME CONFIGURATION ---
 const SECOND_NAME_MARGIN_LEFT = 98
 // UPDATED: Increased from 206 to 220 to move it down
