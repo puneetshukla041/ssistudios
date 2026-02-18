@@ -10,17 +10,18 @@ export default function AuthLayout({
 }) {
   const logoSrc = "/logos/ssilogo.png";
 
-  // Explicitly typing this as a tuple so TypeScript knows it's a valid Framer Motion easing curve
-  const premiumEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
+  // The ultimate Apple-style frictionless curve
+  const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
 
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.96, y: 15 },
+    hidden: { opacity: 0, scale: 0.92, y: 30, filter: "blur(10px)" },
     visible: { 
       opacity: 1, 
       scale: 1, 
       y: 0,
+      filter: "blur(0px)",
       transition: { 
-        duration: 0.9,
+        duration: 1.2, 
         ease: premiumEase,
         when: "beforeChildren"
       }
@@ -29,28 +30,38 @@ export default function AuthLayout({
 
   const leftPanelVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.8, ease: premiumEase } }
+    visible: { 
+      opacity: 1, 
+      transition: { 
+        duration: 1.0, 
+        ease: premiumEase,
+        when: "beforeChildren",
+        staggerChildren: 0.12 
+      } 
+    }
   };
 
-  // The sliding panel now uses a frictionless tween rather than a bouncy spring
   const rightPanelVariants: Variants = {
-    hidden: { x: "-100%" },
+    // Adding a subtle scale and blur to the slide makes it feel incredibly premium
+    hidden: { x: "-105%", scale: 0.95, filter: "blur(8px)" },
     visible: { 
       x: 0,
+      scale: 1,
+      filter: "blur(0px)",
       transition: { 
-        duration: 0.85,
+        duration: 1.1,
         ease: premiumEase,
-        delay: 0.15, // Perfect micro-delay after the main card appears
+        delay: 0.15, 
         when: "beforeChildren",
-        staggerChildren: 0.08, // Staggers the form items beautifully
-        delayChildren: 0.3 // Waits for the panel to slide out before showing inputs
+        staggerChildren: 0.1, 
+        delayChildren: 0.4 
       }
     }
   };
 
   const textVariants: Variants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: premiumEase } }
+    hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: premiumEase } }
   };
 
   return (
@@ -60,13 +71,13 @@ export default function AuthLayout({
       <div className="absolute inset-0 z-0">
          <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] via-[#5856D6] to-[#AF52DE] opacity-90" />
          <motion.div 
-           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
-           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+           animate={{ scale: [1, 1.15, 1], rotate: [0, 8, 0] }}
+           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
            className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-white/20 rounded-full blur-[120px] mix-blend-overlay"
          />
          <motion.div 
-           animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 0] }}
-           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+           animate={{ scale: [1, 1.25, 1], rotate: [0, -8, 0] }}
+           transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
            className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-blue-300/30 rounded-full blur-[100px] mix-blend-overlay"
          />
       </div>
@@ -76,55 +87,61 @@ export default function AuthLayout({
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="relative flex w-full max-w-[960px] h-[600px] sm:h-[580px] rounded-[48px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)] overflow-hidden z-10"
+        style={{ perspective: 1000 }}
+        className="relative flex w-full max-w-[960px] h-[600px] sm:h-[580px] rounded-[48px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden z-10"
       >
         
-        {/* LEFT PANEL: Z-Index 20 keeps it completely on top of the sliding form */}
-        <motion.div variants={leftPanelVariants} className="hidden md:flex flex-col justify-between w-[45%] h-full relative overflow-hidden group z-20 shadow-[15px_0_40px_-10px_rgba(0,0,0,0.15)]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl backdrop-saturate-150" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
-          <div className="absolute inset-0 border-r border-white/20" />
-
-          <div className="relative z-10 flex flex-col justify-between h-full p-12 text-white">
-            <motion.div variants={textVariants} className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/25 rounded-[14px] flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
-                <img 
-                  src={logoSrc} 
-                  alt="SSI Logo" 
-                  className="w-7 h-7 object-contain drop-shadow-sm"
-                  onError={(e) => (e.currentTarget.style.display = 'none')} 
-                />
-              </div>
-              <span className="text-lg font-semibold tracking-tight text-white/90">SSI Studios</span>
-            </motion.div>
-
-            <div className="mb-6">
-              <motion.div variants={textVariants} className="mb-6">
-                <p className="text-lg text-white/80 font-medium mb-1 tracking-wide">Welcome to</p>
-                <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter drop-shadow-sm mb-4">
-                  SSI Studios
-                </h1>
-                <div className="inline-flex items-center px-4 py-1.5 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full shadow-lg">
-                  <span className="text-white text-[11px] font-bold tracking-widest uppercase opacity-90">
-                    Creative Operations
-                  </span>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* RIGHT PANEL WRAPPER: The overflow-hidden mask. 
-            This forces the form to emerge precisely from the seam without showing its curves early. */}
-        <div className="w-full md:w-[55%] h-full relative z-10 overflow-hidden bg-[#F8F9FE] md:bg-transparent">
-          <motion.div 
-            variants={rightPanelVariants}
-            className="w-full h-full bg-[#F8F9FE] md:bg-white/90 backdrop-blur-xl flex flex-col justify-center px-6 md:px-14 py-10 relative"
-          >
-            {children}
-          </motion.div>
+        {/* 1. FULL WIDTH GLASS BASE (Z-0) */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl backdrop-saturate-150" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent opacity-60" />
+          {/* Subtle inner border for the glass */}
+          <div className="absolute inset-0 rounded-[48px] border border-white/20" />
         </div>
 
+        {/* 2. SLIDING WHITE CARD (Z-10) */}
+        <motion.div 
+          variants={rightPanelVariants}
+          className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white/95 backdrop-blur-2xl flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)]"
+        >
+          {children}
+        </motion.div>
+
+        {/* 3. LEFT CONTENT AREA (Z-20) */}
+        <motion.div variants={leftPanelVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
+          
+          <motion.div variants={textVariants} className="flex items-center gap-3 pointer-events-auto">
+            {/* Added a subtle continuous breathing animation to the logo */}
+            <motion.div 
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="w-13 h-13 bg-white/20 rounded-[16px] flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] border border-white/40 p-2.5"
+            >
+              <img 
+                src={logoSrc} 
+                alt="SSI Logo" 
+                className="w-full h-full object-contain drop-shadow-md"
+                onError={(e) => (e.currentTarget.style.display = 'none')} 
+              />
+            </motion.div>
+            <span className="text-xl font-bold tracking-tight text-white/95 drop-shadow-sm">SSI Studios</span>
+          </motion.div>
+
+          <div className="mb-6 pointer-events-auto">
+            <motion.div variants={textVariants} className="mb-6">
+              <p className="text-lg text-white/90 font-medium mb-1.5 tracking-wide drop-shadow-sm">Welcome to</p>
+              <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tighter drop-shadow-md mb-5 text-transparent bg-clip-text bg-gradient-to-b from-white to-white/80">
+                SSI Studios
+              </h1>
+              <div className="inline-flex items-center px-5 py-2 bg-white/20 backdrop-blur-xl border border-white/40 rounded-full shadow-xl">
+                <span className="text-white text-[11px] font-bold tracking-[0.2em] uppercase opacity-95">
+                  Creative Operations
+                </span>
+              </div>
+            </motion.div>
+          </div>
+
+        </motion.div>
       </motion.div>
     </div>
   );

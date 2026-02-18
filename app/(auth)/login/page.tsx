@@ -32,19 +32,24 @@ export default function LoginPage() {
 
   const iosSpring = {
     type: "spring" as const,
-    stiffness: 300,
-    damping: 30,
-    mass: 1.2
+    stiffness: 450,
+    damping: 25,
+    mass: 0.8
   };
 
-  // Premium blur-to-focus slide for the inputs
+  // Elastic, fluid rise for the inputs
   const itemVariants: Variants = {
-    hidden: { opacity: 0, x: -10, filter: "blur(4px)" },
+    hidden: { opacity: 0, y: 20, filter: "blur(6px)" },
     visible: { 
       opacity: 1, 
-      x: 0, 
+      y: 0, 
       filter: "blur(0px)",
-      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+      transition: { 
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+        mass: 0.8
+      }
     }
   };
 
@@ -137,10 +142,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-[360px] mx-auto">
+    <div className="w-full max-w-[370px] mx-auto">
       <AnimatedModals {...modalProps} />
 
-      {/* Mobile Header (Shows the Logo and text on mobile only) */}
+      {/* Mobile Header */}
       <div className="md:hidden mb-10 flex flex-col items-center justify-center text-center mt-4">
         <img 
           src="/logos/ssilogo.png" 
@@ -156,10 +161,11 @@ export default function LoginPage() {
       <AnimatePresence>
         {error && (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }} 
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="mb-6 p-4 bg-red-50/80 backdrop-blur-md border border-red-100 text-red-600 text-sm font-medium rounded-2xl text-center shadow-sm"
+            initial={{ opacity: 0, scale: 0.95, y: -10 }} 
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.4, ease: [0.19, 1.0, 0.22, 1.0] }}
+            className="mb-6 p-4 bg-red-50/80 backdrop-blur-md border border-red-100 text-red-600 text-[13.5px] font-medium rounded-2xl text-center shadow-sm"
           >
             {error}
           </motion.div>
@@ -169,12 +175,12 @@ export default function LoginPage() {
       <form onSubmit={handleLogin} className="space-y-7">
         
         <motion.div variants={itemVariants} className="space-y-2.5">
-          <label className="text-[12px] font-bold text-slate-400 ml-3 tracking-wider uppercase">Login ID</label>
+          <label className="text-[12px] font-bold text-[#8A94A6] ml-3 tracking-wider uppercase">Login ID</label>
           <div className="relative group">
             <input
               type="text"
               placeholder="Enter Mail ID"
-              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
+              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-[#94A3B8] border-0 rounded-[22px] py-4 px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)]"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading || showTick || showWelcome}
@@ -183,12 +189,12 @@ export default function LoginPage() {
         </motion.div>
 
         <motion.div variants={itemVariants} className="space-y-2.5">
-          <label className="text-[12px] font-bold text-slate-400 ml-3 tracking-wider uppercase">Password</label>
+          <label className="text-[12px] font-bold text-[#8A94A6] ml-3 tracking-wider uppercase">Password</label>
           <div className="relative group">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••••"
-              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 pr-14 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
+              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-[#94A3B8] border-0 rounded-[22px] py-4 px-6 pr-14 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)]"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading || showTick || showWelcome}
@@ -196,7 +202,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007AFF] transition-colors p-1 cursor-pointer"
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#007AFF] transition-colors p-1 cursor-pointer"
             >
               {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
             </button>
@@ -207,24 +213,26 @@ export default function LoginPage() {
           <button 
             type="button"
             onClick={() => setShowRequestModal(true)}
-            className="text-[14px] font-semibold text-slate-400 hover:text-[#007AFF] transition-colors cursor-pointer"
+            className="text-[13.5px] font-semibold text-[#8A94A6] hover:text-[#007AFF] transition-colors cursor-pointer relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[2px] after:bottom-0 after:left-0 after:bg-[#007AFF] after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
           >
             New User? Request Access
           </button>
 
           <motion.button
-            whileHover={{ scale: 1.08, boxShadow: "0px 10px 25px -5px rgba(0, 122, 255, 0.4)" }}
-            whileTap={{ scale: 0.92 }}
+            whileHover={{ scale: 1.05, boxShadow: "0px 15px 30px -5px rgba(0, 122, 255, 0.45)" }}
+            whileTap={{ scale: 0.95 }}
             transition={iosSpring}
             type="submit"
             disabled={isLoading || showTick || showWelcome}
-            className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white shadow-[0_8px_16px_rgba(0,122,255,0.3)] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
+            // group class added here so the child arrow can react to the button hover
+            className="group w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             {isLoading ? (
               <div className="w-6 h-6 border-[2.5px] border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <ArrowRight size={26} strokeWidth={2.5} className="relative z-10" />
+              // Arrow glides forward on hover
+              <ArrowRight size={26} strokeWidth={2.5} className="relative z-10 transition-transform duration-300 ease-out group-hover:translate-x-1" />
             )}
           </motion.button>
         </motion.div>
