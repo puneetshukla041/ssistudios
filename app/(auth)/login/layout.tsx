@@ -16,90 +16,100 @@ export default function AuthLayout({
 }) {
   const logoSrc = "/logos/ssilogo.png";
 
-  // --- THE DOM NUKER (Allows right-click, but hides code when inspected) ---
+  // --- THE DOM NUKER (Professional Edition) ---
   useEffect(() => {
-    // 1. Cheeky Console Message
+    // 1. Professional Console Message
     console.clear(); 
     console.log(
-      "%cHey stalkers 👀 wanna see the code?...", 
-      "color: #007AFF; font-size: 30px; font-weight: 900; font-family: sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);"
+      "%cSSI Studios | Security Alert", 
+      "color: #007AFF; font-size: 24px; font-weight: 800; font-family: sans-serif;"
+    );
+    console.log(
+      "%cDeveloper tools are restricted in this environment.", 
+      "color: #64748B; font-size: 16px; font-family: sans-serif;"
     );
 
     // 2. The "Self-Destruct" DOM Replacement
     const blockStalkers = () => {
-      // If the difference between the outer window and inner window is large, 
-      // it means the DevTools panel was just opened.
       const threshold = 160; 
       const widthDiff = window.outerWidth - window.innerWidth;
       const heightDiff = window.outerHeight - window.innerHeight;
 
       if (widthDiff > threshold || heightDiff > threshold) {
-        // This instantly deletes your website DOM and replaces it with your message
         document.body.innerHTML = `
-          <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #F2F2F7; color: #007AFF; font-family: sans-serif; text-align: center; padding: 20px;">
-            <h1 style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem;">Hey bro, wanna see the code? 👀</h1>
-            <p style="font-size: 1.5rem; color: #64748B;">Nice try though! 🚫</p>
+          <div style="height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background-color: #000; position: relative; overflow: hidden; font-family: sans-serif;">
+            
+            <style>
+              .dev-btn {
+                margin-top: 2rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 28px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 6px;
+                color: white;
+                text-decoration: none;
+                font-size: 0.95rem;
+                font-weight: 500;
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease;
+                letter-spacing: 0.02em;
+              }
+              .dev-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.6);
+              }
+            </style>
+
+            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom right, #0F172A, #1E293B, #334155); opacity: 1;"></div>
+            
+            <div style="position: relative; z-index: 10; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding: 4rem 5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 100px -20px rgba(0,0,0,0.5); text-align: center; color: white; max-width: 90%;">
+              <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; margin-top: 0;">Access Restricted</h1>
+              <p style="font-size: 1.1rem; font-weight: 400; color: rgba(255,255,255,0.7); margin: 0; line-height: 1.6;">Developer tools are disabled for security reasons.<br>Please return to the standard view.</p>
+              
+              <a href="https://www.linkedin.com/in/puneet-shukla-72b915225/" target="_blank" rel="noopener noreferrer" class="dev-btn">
+                <span>Contact Developer</span>
+              </a>
+
+            </div>
           </div>
         `;
       }
     };
 
-    // Checks every 500ms if they opened the inspect tab
     const intervalId = setInterval(blockStalkers, 500);
-
-    // Cleanup when component unmounts
     return () => clearInterval(intervalId);
   }, []);
   // ----------------------------------------
 
-  // The ultimate Apple-style frictionless curve
-  const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
+  // Explicit type definition for Cubic Bezier tuple
+  const fastEase: [number, number, number, number] = [0.19, 1.0, 0.22, 1.0];
 
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.94, y: 20 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
+    hidden: { opacity: 0, scale: 0.96, y: 10 },
+    visible: {
+      opacity: 1,
+      scale: 1,
       y: 0,
-      transition: { 
-        duration: 0.9, 
-        ease: premiumEase,
-        when: "beforeChildren"
-      }
-    }
+      transition: {
+        duration: 0.5,
+        ease: fastEase,
+      },
+    },
   };
 
-  const leftPanelVariants: Variants = {
+  const contentVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1, 
-      transition: { 
-        duration: 0.8, 
-        ease: premiumEase,
-        when: "beforeChildren",
-        staggerChildren: 0.1 
-      } 
-    }
-  };
-
-  const rightPanelVariants: Variants = {
-    hidden: { x: "-100%" },
-    visible: { 
-      x: 0,
-      transition: { 
-        duration: 0.95,
-        ease: premiumEase,
-        delay: 0.05,
-        when: "beforeChildren",
-        staggerChildren: 0.08, 
-        delayChildren: 0.3 
-      }
-    }
-  };
-
-  const textVariants: Variants = {
-    hidden: { opacity: 0, y: 15, filter: "blur(4px)" },
-    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: premiumEase } }
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        ease: "linear",
+        delay: 0.1,
+      },
+    },
   };
 
   return (
@@ -138,16 +148,16 @@ export default function AuthLayout({
 
         {/* 2. SLIDING WHITE CARD (Z-10) */}
         <motion.div 
-          variants={rightPanelVariants}
+          variants={contentVariants}
           className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)] will-change-transform"
         >
           {children}
         </motion.div>
 
         {/* 3. LEFT CONTENT AREA (Z-20) */}
-        <motion.div variants={leftPanelVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
+        <motion.div variants={contentVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
           
-          <motion.div variants={textVariants} className="flex items-center gap-3 pointer-events-auto">
+          <div className="flex items-center gap-3 pointer-events-auto">
             <motion.div 
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -161,10 +171,10 @@ export default function AuthLayout({
               />
             </motion.div>
             <span className="text-xl font-bold tracking-tight text-white/95 drop-shadow-sm">SSI Studios</span>
-          </motion.div>
+          </div>
 
           <div className="mb-6 pointer-events-auto">
-            <motion.div variants={textVariants} className="mb-6">
+            <div className="mb-6">
               <p className="text-lg text-white/90 font-medium mb-1.5 tracking-wide drop-shadow-sm">Welcome to</p>
               <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tighter drop-shadow-md mb-5 text-transparent bg-clip-text bg-gradient-to-b from-white to-white/80">
                 SSI Studios
@@ -174,7 +184,7 @@ export default function AuthLayout({
                   Creative Operations
                 </span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
         </motion.div>
