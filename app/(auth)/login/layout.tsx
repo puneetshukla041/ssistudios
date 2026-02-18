@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import localFont from "next/font/local";
 
@@ -15,6 +15,42 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const logoSrc = "/logos/ssilogo.png";
+
+  // --- THE DOM NUKER (Allows right-click, but hides code when inspected) ---
+  useEffect(() => {
+    // 1. Cheeky Console Message
+    console.clear(); 
+    console.log(
+      "%cHey stalkers 👀 wanna see the code?...", 
+      "color: #007AFF; font-size: 30px; font-weight: 900; font-family: sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);"
+    );
+
+    // 2. The "Self-Destruct" DOM Replacement
+    const blockStalkers = () => {
+      // If the difference between the outer window and inner window is large, 
+      // it means the DevTools panel was just opened.
+      const threshold = 160; 
+      const widthDiff = window.outerWidth - window.innerWidth;
+      const heightDiff = window.outerHeight - window.innerHeight;
+
+      if (widthDiff > threshold || heightDiff > threshold) {
+        // This instantly deletes your website DOM and replaces it with your message
+        document.body.innerHTML = `
+          <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #F2F2F7; color: #007AFF; font-family: sans-serif; text-align: center; padding: 20px;">
+            <h1 style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem;">Hey bro, wanna see the code? 👀</h1>
+            <p style="font-size: 1.5rem; color: #64748B;">Nice try though! 🚫</p>
+          </div>
+        `;
+      }
+    };
+
+    // Checks every 500ms if they opened the inspect tab
+    const intervalId = setInterval(blockStalkers, 500);
+
+    // Cleanup when component unmounts
+    return () => clearInterval(intervalId);
+  }, []);
+  // ----------------------------------------
 
   // The ultimate Apple-style frictionless curve
   const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
@@ -47,14 +83,13 @@ export default function AuthLayout({
   };
 
   const rightPanelVariants: Variants = {
-    // Removed scale & blur here to prevent the GPU lag! Just a pure, clean slide.
     hidden: { x: "-100%" },
     visible: { 
       x: 0,
       transition: { 
         duration: 0.95,
         ease: premiumEase,
-        delay: 0.05, // Almost zero delay so it feels instantly responsive
+        delay: 0.05,
         when: "beforeChildren",
         staggerChildren: 0.08, 
         delayChildren: 0.3 
@@ -101,11 +136,9 @@ export default function AuthLayout({
           <div className="absolute inset-0 rounded-[48px] border border-white/20" />
         </div>
 
-        {/* 2. SLIDING WHITE CARD (Z-10) 
-            Removed backdrop-blur from here. It sits over the already blurred glass, completely fixing the stutter. */}
+        {/* 2. SLIDING WHITE CARD (Z-10) */}
         <motion.div 
           variants={rightPanelVariants}
-          // Added 'will-change-transform' to force hardware acceleration for a buttery glide
           className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)] will-change-transform"
         >
           {children}
