@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { motion, Variants } from "framer-motion";
 import localFont from "next/font/local";
 
@@ -15,74 +15,6 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const logoSrc = "/logos/ssilogo.png";
-
-  // --- THE DOM NUKER (Professional Edition) ---
-  useEffect(() => {
-    // 1. Professional Console Message
-    console.clear(); 
-    console.log(
-      "%cSSI Studios | Security Alert", 
-      "color: #007AFF; font-size: 24px; font-weight: 800; font-family: sans-serif;"
-    );
-    console.log(
-      "%cDeveloper tools are restricted in this environment.", 
-      "color: #64748B; font-size: 16px; font-family: sans-serif;"
-    );
-
-    // 2. The "Self-Destruct" DOM Replacement
-    const blockStalkers = () => {
-      const threshold = 160; 
-      const widthDiff = window.outerWidth - window.innerWidth;
-      const heightDiff = window.outerHeight - window.innerHeight;
-
-      if (widthDiff > threshold || heightDiff > threshold) {
-        document.body.innerHTML = `
-          <div style="height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background-color: #000; position: relative; overflow: hidden; font-family: sans-serif;">
-            
-            <style>
-              .dev-btn {
-                margin-top: 2rem;
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 12px 28px;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 6px;
-                color: white;
-                text-decoration: none;
-                font-size: 0.95rem;
-                font-weight: 500;
-                backdrop-filter: blur(10px);
-                transition: all 0.3s ease;
-                letter-spacing: 0.02em;
-              }
-              .dev-btn:hover {
-                background: rgba(255, 255, 255, 0.2);
-                border-color: rgba(255, 255, 255, 0.6);
-              }
-            </style>
-
-            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom right, #0F172A, #1E293B, #334155); opacity: 1;"></div>
-            
-            <div style="position: relative; z-index: 10; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding: 4rem 5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 100px -20px rgba(0,0,0,0.5); text-align: center; color: white; max-width: 90%;">
-              <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; margin-top: 0;">Access Restricted</h1>
-              <p style="font-size: 1.1rem; font-weight: 400; color: rgba(255,255,255,0.7); margin: 0; line-height: 1.6;">Developer tools are disabled for security reasons.<br>Please return to the standard view.</p>
-              
-              <a href="https://www.linkedin.com/in/puneet-shukla-72b915225/" target="_blank" rel="noopener noreferrer" class="dev-btn">
-                <span>Contact Developer</span>
-              </a>
-
-            </div>
-          </div>
-        `;
-      }
-    };
-
-    const intervalId = setInterval(blockStalkers, 500);
-    return () => clearInterval(intervalId);
-  }, []);
-  // ----------------------------------------
 
   // Explicit type definition for Cubic Bezier tuple
   const fastEase: [number, number, number, number] = [0.19, 1.0, 0.22, 1.0];

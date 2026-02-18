@@ -1,7 +1,8 @@
-// app/layout.tsx (FIXED)
+// app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
 import ClientRootLayout from './ClientRootLayout';
+import SecurityGuard from '@/components/SecurityGuard'; // 1. Import the guard
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       {/* It's okay to keep the class here, but the warning prop is removed from body */}
       <body className={inter.className}> 
+        <SecurityGuard /> {/* 2. Add the guard component here */}
         <ClientRootLayout>{children}</ClientRootLayout>
       </body>
     </html>
