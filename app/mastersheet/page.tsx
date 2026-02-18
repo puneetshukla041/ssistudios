@@ -6,7 +6,7 @@ import {
     RefreshCw, Save, BarChart3, ChevronUp, ChevronDown, FilterX, Download 
 } from 'lucide-react';
 import clsx from 'clsx';
-// Updated import to support cell colors
+// Remember to have 'xlsx-js-style' installed for the colors to work!
 import * as xlsx from 'xlsx-js-style'; 
 import MasterAnalytics from '@/components/features/Certificates/ui/MasterAnalytics';
 
@@ -17,6 +17,9 @@ export default function MasterSheetPage() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [pendingUpdates, setPendingUpdates] = useState<Record<string, any>>({});
+    
+    // NEW: Remembers updates even AFTER you click save, just for the Excel export
+    const [savedSessionUpdates, setSavedSessionUpdates] = useState<Record<string, any>>({});
 
     // Filtering States
     const [searchQuery, setSearchQuery] = useState('');
@@ -73,13 +76,13 @@ export default function MasterSheetPage() {
         });
     }, [records, searchQuery, hospitalFilter, specialityFilter, salesFilter, healthFilter]);
 
-    // --- EXPORT TO EXCEL (With Empty Row Filtering & Blue Styling for Updates) ---
+    // --- EXPORT TO EXCEL (With Empty Row Filtering, Sorting, & Status Column) ---
     const exportToExcel = () => {
         const dataToExport = filteredRecords.length > 0 ? filteredRecords : records;
 
-        // FILTER: Keep only records that have AT LEAST ONE of these three fields filled (including new pending updates).
+        // 1. FILTER: Keep only records that have AT LEAST ONE of these three fields filled.
         const cleanedData = dataToExport.filter(record => {
-            const update = pendingUpdates[record._id] || {};
+            const update = pendingUpdates[record._id] || savedSessionUpdates[record._id] || {};
             const spec = update.speciality ?? record.speciality;
             const contact = update.contactNumber ?? record.contactNumber;
             const email = update.emailId ?? record.emailId;
@@ -92,20 +95,32 @@ export default function MasterSheetPage() {
         });
 
         if (cleanedData.length === 0) {
-            alert("No relevant data available to export. All filtered records have empty Speciality, Contact, and Email fields.");
+            alert("No relevant data available to export.");
             return;
         }
 
-        // Apply pending updates to the exported data
+        // 2. SORT: Push updated records (both pending AND saved in this session) to the top
+        cleanedData.sort((a, b) => {
+            const aIsUpdated = !!pendingUpdates[a._id] || !!savedSessionUpdates[a._id];
+            const bIsUpdated = !!pendingUpdates[b._id] || !!savedSessionUpdates[b._id];
+            if (aIsUpdated && !bIsUpdated) return -1;
+            if (!aIsUpdated && bIsUpdated) return 1;
+            return 0; // Keep original order if both are updated or both are old
+        });
+
+        // 3. MAP: Apply pending updates and add the "Status" column
         const formattedData = cleanedData.map((record, index) => {
-            const update = pendingUpdates[record._id] || {};
+            const isUpdated = !!pendingUpdates[record._id] || !!savedSessionUpdates[record._id];
+            const pendingUpdate = pendingUpdates[record._id]; // Only used if not saved yet
+
             return {
-                "S. no.": index + 1,
+                "S. no.": index + 1, 
+                "Status": isUpdated ? "New" : "Old", 
                 "Surgeon's Name": record.surgeonName || "",
-                "Speciality": update.speciality ?? (record.speciality || ""),
+                "Speciality": pendingUpdate?.speciality ?? (record.speciality || ""),
                 "Hospital Name": record.hospitalName || "",
-                "Contact Number": update.contactNumber ?? (record.contactNumber || ""),
-                "Email ID": update.emailId ?? (record.emailId || ""),
+                "Contact Number": pendingUpdate?.contactNumber ?? (record.contactNumber || ""),
+                "Email ID": pendingUpdate?.emailId ?? (record.emailId || ""),
                 "Sales Person Name": record.salesPersonName || ""
             };
         });
@@ -113,35 +128,52 @@ export default function MasterSheetPage() {
         const worksheet = xlsx.utils.json_to_sheet(formattedData);
         
         // --- ADDING BLUE COLOR TO NEW VALUES ---
-        const blueStyle = { font: { color: { rgb: "0071E3" }, bold: true } };
+        const highlightStyle = { 
+            font: { color: { rgb: "0071E3" }, bold: true },
+            fill: { fgColor: { rgb: "EBF4FF" } }
+        };
 
         cleanedData.forEach((record, rowIndex) => {
-            const update = pendingUpdates[record._id];
-            if (update) {
+            // Check if it was updated right now OR saved earlier in the session
+            const updateInfo = pendingUpdates[record._id] || savedSessionUpdates[record._id];
+            
+            if (updateInfo) {
                 // Header is row 0, so data starts at row 1
                 const actualRow = rowIndex + 1; 
 
-                // Column Indexes (0-based):
-                // Speciality = C (2), Contact Number = E (4), Email ID = F (5)
-                if (update.speciality !== undefined) {
-                    const cellRef = xlsx.utils.encode_cell({ c: 2, r: actualRow });
-                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
+                // Shifted Column Indexes (0-based):
+                // Status = 1, Speciality = 3, Contact = 5, Email = 6
+                
+                // Color the Status cell blue
+                const statusRef = xlsx.utils.encode_cell({ c: 1, r: actualRow });
+                if (worksheet[statusRef]) worksheet[statusRef].s = highlightStyle;
+
+                // Color the specific cells that changed
+                if (updateInfo.speciality !== undefined) {
+                    const cellRef = xlsx.utils.encode_cell({ c: 3, r: actualRow });
+                    if (worksheet[cellRef]) worksheet[cellRef].s = highlightStyle;
                 }
-                if (update.contactNumber !== undefined) {
-                    const cellRef = xlsx.utils.encode_cell({ c: 4, r: actualRow });
-                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
-                }
-                if (update.emailId !== undefined) {
+                if (updateInfo.contactNumber !== undefined) {
                     const cellRef = xlsx.utils.encode_cell({ c: 5, r: actualRow });
-                    if (worksheet[cellRef]) worksheet[cellRef].s = blueStyle;
+                    if (worksheet[cellRef]) worksheet[cellRef].s = highlightStyle;
+                }
+                if (updateInfo.emailId !== undefined) {
+                    const cellRef = xlsx.utils.encode_cell({ c: 6, r: actualRow });
+                    if (worksheet[cellRef]) worksheet[cellRef].s = highlightStyle;
                 }
             }
         });
 
         // Auto-size columns slightly for better readability
         worksheet['!cols'] = [
-            { wch: 8 },  { wch: 25 }, { wch: 20 }, 
-            { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 20 }
+            { wch: 8 },  // S. no.
+            { wch: 12 }, // Status
+            { wch: 25 }, // Surgeon
+            { wch: 20 }, // Speciality
+            { wch: 30 }, // Hospital Name
+            { wch: 15 }, // Contact Number
+            { wch: 25 }, // Email ID
+            { wch: 20 }  // Sales Person
         ];
 
         const workbook = xlsx.utils.book_new();
@@ -159,7 +191,11 @@ export default function MasterSheetPage() {
         try {
             const res = await fetch('/api/master/upload', { method: 'POST', body: formData });
             const data = await res.json();
-            if (data.success) { alert(`Success! ${data.count} records imported.`); fetchRecords(); } 
+            if (data.success) { 
+                alert(`Success! ${data.count} records imported.`); 
+                setSavedSessionUpdates({}); // Reset tracking on new base upload
+                fetchRecords(); 
+            } 
             else alert(`Upload failed: ${data.message}`);
         } catch (error) { alert("An error occurred during upload."); } 
         finally { setIsUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
@@ -219,7 +255,12 @@ export default function MasterSheetPage() {
         const updatesArray = Object.keys(pendingUpdates).map(id => ({ _id: id, ...pendingUpdates[id] }));
         try {
             const res = await fetch('/api/master/bulk-update', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates: updatesArray }) });
-            if ((await res.json()).success) { alert('Changes saved!'); fetchRecords(); }
+            if ((await res.json()).success) { 
+                alert('Changes saved!'); 
+                // Store the updates we just saved so the Excel export still knows what's "New"
+                setSavedSessionUpdates(prev => ({ ...prev, ...pendingUpdates }));
+                fetchRecords(); 
+            }
         } catch (error) { alert("Error saving updates."); } 
         finally { setIsLoading(false); }
     };
@@ -232,7 +273,13 @@ export default function MasterSheetPage() {
 
     const handleClearAll = async () => {
         if (!confirm("WARNING: This will delete ALL records. Are you sure?")) return;
-        try { const res = await fetch('/api/master', { method: 'DELETE' }); if ((await res.json()).success) setRecords([]); } 
+        try { 
+            const res = await fetch('/api/master', { method: 'DELETE' }); 
+            if ((await res.json()).success) {
+                setRecords([]); 
+                setSavedSessionUpdates({});
+            }
+        } 
         catch (error) {}
     };
 
@@ -289,7 +336,7 @@ export default function MasterSheetPage() {
                                 {showAnalytics ? <ChevronUp className="w-4 h-4" /> : <BarChart3 className="w-4 h-4 text-[#0071e3]" />} {showAnalytics ? "Hide Analytics" : "View Analytics"}
                             </button>
                             
-                            {/* EXPORT BUTTON INJECTED HERE */}
+                            {/* EXPORT BUTTON */}
                             <button onClick={exportToExcel} disabled={records.length === 0} className="px-4 py-2.5 bg-white/60 backdrop-blur-md border border-[#e5e5ea] text-[#1d1d1f] rounded-full text-[13px] font-semibold hover:bg-white transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-95">
                                 <Download className="w-4 h-4 text-[#0071e3]" /> Export Excel
                             </button>
