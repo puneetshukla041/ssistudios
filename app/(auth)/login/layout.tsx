@@ -17,23 +17,24 @@ export default function AuthLayout({
   const logoSrc = "/logos/ssilogo.png";
   const [isMounted, setIsMounted] = useState(false);
 
-  // 1. Mount Check to prevent "Stuck" Glitch
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
+  // --- THE PHYSICS ENGINE ---
+  // FIX: Explicitly typed as a tuple of 4 numbers
+  const ultraSmoothEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-  // 1. The Main Glass Card
+  // 1. The Glass Container
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.96, y: 15 },
+    hidden: { opacity: 0, scale: 0.98, y: 15 },
     visible: { 
       opacity: 1, 
       scale: 1, 
       y: 0,
       transition: { 
-        duration: 0.8, 
-        ease: premiumEase,
+        duration: 0.6, 
+        ease: "easeOut",
         when: "beforeChildren"
       }
     }
@@ -45,45 +46,43 @@ export default function AuthLayout({
     visible: { 
       opacity: 1, 
       transition: { 
-        duration: 0.8, 
-        ease: premiumEase,
+        duration: 0.5, 
+        ease: "linear",
         when: "beforeChildren",
-        staggerChildren: 0.1 
+        staggerChildren: 0.05 
       } 
     }
   };
 
-  // 3. THE WHITE CARD SLIDE (From Left Corner)
+  // 3. THE WHITE CARD SLIDE (Optimized)
   const rightPanelVariants: Variants = {
     hidden: { 
-      x: "-100%",      // Starts at the far left edge of the container
-      opacity: 0,      // Invisible initially
-      filter: "blur(10px)" // High blur for speed sensation
+      x: "-100%",     
+      opacity: 0,     
     },
     visible: { 
-      x: "0%",         // Slides to natural position
+      x: "0%",
       opacity: 1,
-      filter: "blur(0px)",
       transition: { 
-        duration: 1.2,      // Long, luxurious slide
-        ease: premiumEase,
-        delay: 0.1,         
+        duration: 0.9,      
+        ease: ultraSmoothEase, // Now types match correctly
+        delay: 0.05,         
         when: "beforeChildren",
-        staggerChildren: 0.1, 
-        delayChildren: 0.2
+        staggerChildren: 0.05,
+        delayChildren: 0.15
       }
     }
   };
 
   const textVariants: Variants = {
-    hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
-    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: premiumEase } }
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: ultraSmoothEase } }
   };
 
   return (
     <div className={`min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 antialiased relative overflow-hidden ${manrope.className}`}>
       
-      {/* IOS DYNAMIC WALLPAPER */}
+      {/* BACKGROUND */}
       <div className="absolute inset-0 z-0">
          <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] via-[#5856D6] to-[#AF52DE] opacity-90" />
          <motion.div 
@@ -115,7 +114,6 @@ export default function AuthLayout({
         </div>
 
         {/* 2. RIGHT PANEL (White Card) */}
-        {/* CSS Opacity Guard: Ensures card is invisible before JS loads to prevent "Stuck" look */}
         <div className={`absolute inset-y-0 right-0 w-full md:w-[55%] h-full z-10 ${!isMounted ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
           <motion.div 
             variants={rightPanelVariants}
