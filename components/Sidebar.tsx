@@ -5,57 +5,53 @@ import { motion, AnimatePresence, Variants } from 'framer-motion'
 import Image from "next/image"
 import { Tooltip } from 'react-tooltip'
 
-import Logo from '@/components/aminations/Logo'
-
-// Importing Lucide Icons (Clean, rounded, modern)
+// Importing Lucide Icons
 import {
-  LuLayoutDashboard, // Dashboard
-  LuAward,           // Certificates
-  LuEraser,          // Bg Remover
-  LuContact,         // Visiting Cards
-  LuWand,           // Image Enhancer
-  LuIdCard,         // ID Card
-  LuLayoutTemplate,  // Posters
-  LuPalette,         // Branding
-  LuSettings,        // Settings
-  LuBug,             // Bug Report
-  LuLogOut,          // Logout
+  LuLayoutDashboard,
+  LuAward,
+  LuEraser,
+  LuContact,
+  LuWand,
+  LuIdCard,
+  LuLayoutTemplate,
+  LuPalette,
+  LuSettings,
+  LuBug,
+  LuLogOut,
   LuChevronDown,
   LuChevronRight,
-  LuSmartphone,      // Android
-  LuMonitor,         // Desktop
-  LuGitBranch,       // Versions
-  LuCode,           // Developer Icon
+  LuSmartphone,
+  LuMonitor,
+  LuX,
 } from 'react-icons/lu'
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, usePathname } from 'next/navigation'
 import LoadingScreen from '@/components/aminations/LoadingScreen'
-
-// Import the UserAccess interface to use for strong typing
 import type { UserAccess } from '@/contexts/AuthContext';
+
+// --- IOS ANIMATION PHYSICS ---
+const iosSpring = {
+  type: "spring" as const,
+  stiffness: 350,
+  damping: 30,
+  mass: 0.8
+};
 
 // --- Menu Data ---
 type MenuItem = {
   name: string
   icon: React.ElementType
   path?: string
-  children?: { name: string; path: string }[]
+  children?: { name: string; path: string; badge?: string }[]
   onClick?: () => void
   mobileOnly?: boolean
-  // FIX: Allow string to support keys not yet added to UserAccess interface (fixes build error)
   requiredAccess?: keyof UserAccess | string; 
   isUnderDevelopment?: boolean;
 }
 
 const menu: MenuItem[] = [
-  { 
-    name: 'Dashboard', 
-    icon: LuLayoutDashboard, 
-    path: '/dashboard',
-    requiredAccess: 'dashboard' // Now controlled by DB
-  },
-
+  { name: 'Dashboard', icon: LuLayoutDashboard, path: '/dashboard', requiredAccess: 'dashboard' },
   {
     name: 'Certificates',
     icon: LuAward,
@@ -63,101 +59,56 @@ const menu: MenuItem[] = [
     children: [
       { name: 'Database', path: '/certificates/database' },
       { name: 'Analysis', path: '/certificates/analysis' },
-      { name: 'Master Sheet', path: '/mastersheet' }, // <--- ADDED MASTER SHEET HERE
+      { 
+        name: 'Invitation Letter', 
+        path: '/invitation', 
+        badge: 'NEW' 
+      },
+      // --- UPDATE: Added Auto Invite here ---
+      { 
+        name: 'Auto Invite', 
+        path: '/auto', // Routes to app/auto/page.tsx
+        badge: 'NEW' 
+      },
     ],
   },
-  {
-    name: 'Bg Remover',
-    icon: LuEraser,
-    path: "/bgremover",
-    requiredAccess: 'bgRemover',
-  },
-  {
-    name: 'Visiting Cards',
-    icon: LuContact,
-    path: "/visitingcards",
-    requiredAccess: 'visitingCard', // Fixed key name to match DB
-  },
-
-  {
-    name: 'Image Enhancer',
-    icon: LuWand,
-    path: '/imageenhancer',
-    requiredAccess: 'imageEnhancer', // Added access control
-    isUnderDevelopment: true,
-  },
-  {
-    name: 'ID Card Maker',
-    icon: LuIdCard,
-    path: "/idcard",
-    requiredAccess: 'idCard',
-  },
-  {
-    name: 'Posters',
-    icon: LuLayoutTemplate,
-    path: "/poster",
-    requiredAccess: 'posterEditor',
-  },
-  
+  { name: 'Bg Remover', icon: LuEraser, path: "/bgremover", requiredAccess: 'bgRemover' },
+  { name: 'Visiting Cards', icon: LuContact, path: "/visitingcards", requiredAccess: 'visitingCard' },
+  { name: 'Image Enhancer', icon: LuWand, path: '/imageenhancer', requiredAccess: 'imageEnhancer', isUnderDevelopment: true },
+  { name: 'ID Card Maker', icon: LuIdCard, path: "/idcard", requiredAccess: 'idCard' },
+  { name: 'Posters', icon: LuLayoutTemplate, path: "/poster", requiredAccess: 'posterEditor' },
   {
     name: 'Branding Assets',
     icon: LuPalette,
     requiredAccess: 'assets',
     isUnderDevelopment: true,
-    children: [
-      { name: 'Logo Library', path: '/logo' },
-    ],
+    children: [{ name: 'Logo Library', path: '/logo' }],
   },
   {
     name: 'Settings',
     icon: LuSettings,
-    requiredAccess: 'settings', // Now controlled by DB
+    requiredAccess: 'settings',
     children: [
       { name: 'Theme', path: '/theme' },
       { name: 'Profile & Preferences', path: '/userprofile' },
     ],
   },
-  {
-    name: 'Report a Bug',
-    icon: LuBug,
-    path: "/reportbug",
-    requiredAccess: 'bugReport', // Now controlled by DB
-  },
-  //{
-   //name: 'Developer',
-    //icon: LuCode, 
-   /// path: "https://puneetportfolio.vercel.app/content",
-  //  requiredAccess: 'developer', // Now controlled by DB
-  // },
-//
+  { name: 'Report a Bug', icon: LuBug, path: "/reportbug", requiredAccess: 'bugReport' },
   { name: 'Logout', icon: LuLogOut, mobileOnly: true },
 ]
 
-// Define the menu items that should NOT show the loading animation
-const NO_LOADING_ANIMATION_PATHS = new Set([
-  '/dashboard',
-  '/logo',
-  '/theme',
-  '/userprofile',
-]);
+const NO_LOADING_ANIMATION_PATHS = new Set(['/dashboard', '/logo', '/theme', '/userprofile']);
 
-// --- Animation Variants for Staggered Menu Items ---
 const menuContainerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
 };
 
 const menuItemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  hidden: { opacity: 0, scale: 0.95, y: 5 },
+  show: { opacity: 1, scale: 1, y: 0, transition: iosSpring },
 };
 
-// --- Sidebar Component ---
 type SidebarProps = {
   forceActive?: string
   isOpen: boolean
@@ -170,25 +121,18 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
   const pathname = usePathname()
   const [expanded, setExpanded] = useState<string[]>([])
   const [isHovered, setIsHovered] = useState(false)
-
-  // State to manage redirection and loading
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
-  // Control body overflow on sidebar open/close
+  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
+    if (window.innerWidth < 1024) { 
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
   }, [isOpen]);
 
   useEffect(() => {
     const expandedParents = menu
-      .filter(
-        (item) =>
-          item.children && item.children.some((child) => pathname.startsWith(child.path))
-      )
+      .filter((item) => item.children && item.children.some((child) => pathname.startsWith(child.path)))
       .map((item) => item.name)
     setExpanded(expandedParents)
   }, [pathname])
@@ -203,196 +147,152 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     return false
   }
 
-  const isChildActive = (path: string) => pathname.startsWith(path)
-
-  const handleLogout = () => logout()
-
+  // --- RENDER CONTENT FUNCTION ---
   const renderSidebarContent = (isMobile: boolean, isDesktopHovered = false) => (
     <aside
-      className={`h-screen bg-[#111214] text-white flex flex-col font-quicksand border-r-2 border-white/5 shadow-xl transition-all duration-300 ease-in-out relative
-        ${isMobile ? 'w-[85%] max-w-sm' : isDesktopHovered ? 'w-64' : 'w-20'}
+      className={`flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative
+        ${isMobile ? 'w-full h-full' : isDesktopHovered ? 'w-[260px] h-[100dvh]' : 'w-[88px] h-[100dvh]'}
+        bg-[#F5F5F7]/95 
+        backdrop-blur-3xl 
+        border-r border-slate-200/60
+        shadow-[20px_0_60px_-10px_rgba(0,0,0,0.05)]
       `}
     >
-      <div className="p-5 h-[72px] border-b border-gray-800/50 flex items-center justify-between overflow-hidden">
-        <div className="flex items-center justify-center w-full relative">
-          {/* Full Logo */}
-          <div
-            className={`absolute transition-all duration-300 ${
-              isMobile || isDesktopHovered
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-95"
-            }`}
-          >
-            <Logo />
+      {/* --- HEADER --- */}
+      <div className={`flex items-center justify-between relative z-10 shrink-0 ${isMobile ? 'p-6 pb-2' : 'p-5 h-[85px] mb-2'}`}>
+        <div className="flex items-center w-full relative">
+          
+          {/* Expanded Logo State */}
+          <div className={`absolute transition-all duration-500 ease-out flex items-center gap-3 ${isMobile || isDesktopHovered ? "opacity-100 scale-100 left-0" : "opacity-0 scale-90 -left-4 pointer-events-none"}`}>
+            <motion.div 
+               whileHover={{ scale: 1.05 }}
+               whileTap={{ scale: 0.95 }}
+               className="w-[38px] h-[38px] bg-white rounded-[12px] flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 cursor-pointer"
+            >
+                 <Image src="/logos/ssilogo.png" alt="Logo" width={20} height={20} className="object-contain" />
+            </motion.div>
+            <div>
+                <h1 className="text-slate-800 font-bold text-[16px] tracking-tight leading-none">SSI Studios</h1>
+                <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-1">Creative Ops</p>
+            </div>
           </div>
 
-          {/* Compact Icon Logo */}
-          <div
-            className={`absolute transition-all duration-300 ${
-              !isMobile && !isDesktopHovered
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-95"
-            }`}
-          >
-            <Image
-              src="/logos/ssilogo.png"
-              alt="SSI Logo"
-              width={32}
-              height={32}
-              className="transition-all duration-300"
-              priority
-            />
+          {/* Collapsed Logo State (Desktop Only) */}
+          <div className={`absolute transition-all duration-500 ease-out ${!isMobile && !isDesktopHovered ? "opacity-100 scale-100" : "opacity-0 scale-50 pointer-events-none"}`}>
+             <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+                <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
+             </div>
           </div>
+          
+          {/* Mobile Close Button */}
+          {isMobile && (
+            <button 
+                onClick={toggleSidebar}
+                className="ml-auto p-2 bg-white rounded-full shadow-sm text-slate-400 active:scale-95 transition-transform"
+            >
+                <LuX size={20} />
+            </button>
+          )}
         </div>
       </div>
       
-      {/* Updated `nav` element for animations */}
-      <motion.nav
-        className="flex-1 px-4 py-4 overflow-y-auto no-scrollbar"
-        variants={menuContainerVariants}
-        initial="hidden"
+      {/* --- NAVIGATION (Scrollable) --- */}
+      <motion.nav 
+        className="flex-1 px-3.5 py-2 overflow-y-auto no-scrollbar space-y-1" 
+        variants={menuContainerVariants} 
+        initial="hidden" 
         animate="show"
       >
         {menu.map((item) => {
-          // This is the access check logic.
-          // FIX: Cast user.access to 'any' to allow indexing by dynamic strings (dashboard)
           const hasAccess = !item.requiredAccess || ((user?.access as any)?.[item.requiredAccess] ?? false);
+          const isDeveloping = item.isUnderDevelopment || (!hasAccess && item.name !== 'Developer');
           
-          // Special check: Developer button is always visible
-          const isRestricted = !hasAccess && item.name !== 'Developer';
-          
-          // Check for development status
-          const isDeveloping = item.isUnderDevelopment || isRestricted; 
-          const tooltipContent = item.isUnderDevelopment ? "Feature under development" : "Take permission from admin";
-
-
-          // If the user doesn't have the required access, don't render it
           if (item.mobileOnly && !isMobile) return null
 
           const Icon = item.icon
           const isOpenMenuItem = expanded.includes(item.name)
           const active = isParentActive(item)
 
-          // Unify the button styling for all states (restricted, active, default, developing).
-          // CHANGED: Used font-medium for active, font-normal for inactive. Removed heavy bolding.
-          const buttonClass = `
-            text-white hover:text-white transition-all duration-200
-            ${isDeveloping ? 'opacity-30 cursor-not-allowed' : 'opacity-100 cursor-pointer'}
-            ${active && !isDeveloping ? 'font-semibold bg-white/10' : 'font-medium hover:bg-white/5'}
-            ${item.name === 'Logout' ? 'text-red-500 hover:bg-red-500/10 hover:text-red-400' : ''}
-            ${item.name === 'Developer' ? 'text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300' : ''} 
-          `;
-
           return (
-            <motion.div key={item.name} className="mb-1.5" variants={menuItemVariants}>
-              <button
+            <motion.div key={item.name} variants={menuItemVariants}>
+              <motion.button
+                whileHover={!isDeveloping ? { scale: 1.02, backgroundColor: active ? '' : 'rgba(255,255,255,0.7)' } : {}}
+                whileTap={!isDeveloping ? { scale: 0.96 } : {}}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                
                 onClick={() => {
                   if (isDeveloping) return;
-                  
-                  if (item.name === 'Logout') {
-                    handleLogout();
-                    return;
-                  }
-
-                  // --- EXTERNAL LINK HANDLING ---
-                  if (item.path && item.path.startsWith('http')) {
-                    window.open(item.path, '_blank');
-                    return;
-                  }
-
-                  if (item.children) {
-                    toggle(item.name);
-                  } else if (item.path && item.path !== pathname) {
-                    // Check if the current item should have a loading animation
-                    if (NO_LOADING_ANIMATION_PATHS.has(item.path)) {
-                      router.push(item.path);
-                    } else {
-                      setRedirectUrl(item.path);
-                    }
+                  if (item.name === 'Logout') { logout(); return; }
+                  if (item.path?.startsWith('http')) { window.open(item.path, '_blank'); return; }
+                  if (item.children) { toggle(item.name); } 
+                  else if (item.path && item.path !== pathname) {
+                    NO_LOADING_ANIMATION_PATHS.has(item.path) ? router.push(item.path) : setRedirectUrl(item.path);
                     if (isOpen) toggleSidebar();
                   }
                 }}
-                className={`group flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200 relative ${buttonClass}`}
+                className={`group flex items-center justify-between w-full px-3.5 py-3 rounded-[16px] transition-all duration-200 relative overflow-hidden
+                  ${active && !isDeveloping 
+                    ? 'bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-[0_6px_16px_-4px_rgba(0,122,255,0.35)]' 
+                    : 'text-slate-500 hover:text-slate-800'
+                  }
+                  ${isDeveloping ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}
+                `}
                 type="button"
                 data-tooltip-id={`tooltip-${item.name.replace(/\s/g, '-')}`}
-                data-tooltip-content={tooltipContent}
-                disabled={isDeveloping}
               >
-                <div className="relative flex items-center gap-3 overflow-hidden">
-                  <Icon
-                    size={20} // Slightly smaller size looks more elegant with these icons
-                    strokeWidth={2} // Ensures they aren't too bold
-                    className={`transition-colors flex-shrink-0 ${item.name === 'Developer' ? 'text-indigo-400' : 'text-white'} ${isDeveloping ? 'opacity-40' : 'opacity-100'}`}
+                <div className="relative flex items-center gap-3.5 z-10">
+                  <Icon 
+                    size={20} 
+                    strokeWidth={active ? 2.5 : 2}
+                    className={`transition-colors duration-300 ${active && !isDeveloping ? 'text-white' : item.name === 'Logout' ? 'text-red-500' : 'text-slate-400 group-hover:text-[#007AFF]'}`} 
                   />
-                  <span
-                    className={`text-[14px] whitespace-nowrap transition-opacity duration-200 ${
-                      isMobile || isDesktopHovered ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  >
+                  <span className={`text-[13.5px] font-bold tracking-tight whitespace-nowrap transition-all duration-300 ${isMobile || isDesktopHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
                     {item.name}
                   </span>
                 </div>
-                <div
-                  className={`absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full transition-opacity duration-300 ${
-                    active && !isDeveloping ? 'opacity-100 bg-white shadow-glow' : 'opacity-0'
-                  }`}
-                />
-                {item.children &&
-                  (isMobile || isDesktopHovered ? (
-                    isOpenMenuItem ? (
-                      <LuChevronDown
-                        size={16}
-                        className={`text-gray-500 group-hover:text-gray-300 transition-transform duration-200 flex-shrink-0 ${isDeveloping ? 'opacity-0' : 'opacity-100'}`}
-                      />
-                    ) : (
-                      <LuChevronRight
-                        size={16}
-                        className={`text-gray-500 group-hover:text-gray-300 transition-transform duration-200 flex-shrink-0 ${isDeveloping ? 'opacity-0' : 'opacity-100'}`}
-                      />
-                    )
-                  ) : null)}
-              </button>
-              {isDeveloping && (
-                <Tooltip id={`tooltip-${item.name.replace(/\s/g, '-')}`} className="z-50 font-quicksand" />
-              )}
+                {item.children && (isMobile || isDesktopHovered) && (
+                  <div className="relative z-10 opacity-50 group-hover:opacity-100 transition-opacity">
+                    {isOpenMenuItem ? <LuChevronDown size={16} /> : <LuChevronRight size={16} />}
+                  </div>
+                )}
+              </motion.button>
+              
+              {/* Submenu */}
               {item.children && (
-                <motion.div
-                  initial={false}
-                  animate={{ height: isOpenMenuItem ? 'auto' : 0, opacity: isOpenMenuItem ? 1 : 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30, duration: 0.3 }}
-                  className="ml-5 border-l border-gray-700 pl-4 overflow-hidden mt-2"
+                <motion.div 
+                    initial={false} 
+                    animate={{ height: isOpenMenuItem ? 'auto' : 0, opacity: isOpenMenuItem ? 1 : 0 }} 
+                    transition={iosSpring}
+                    className="overflow-hidden"
                 >
-                  {item.children.map((child) => {
-                    const childIsActive = isChildActive(child.path)
-                    const childButtonClass = `
-                      text-white transition-all duration-200
-                      ${isDeveloping ? 'opacity-40 cursor-not-allowed' : 'opacity-100 cursor-pointer'}
-                      ${childIsActive && !isDeveloping ? 'font-semibold text-white' : 'font-medium text-gray-300 hover:text-white hover:bg-white/5'}
-                    `;
-                    return (
-                      <button
+                  <div className="ml-5 pl-4 border-l-2 border-slate-200/60 mt-1.5 space-y-1 py-1 mb-2">
+                    {item.children.map((child) => (
+                      <motion.button
                         key={child.path}
-                        onClick={() => { 
-                          if (isDeveloping) return;
+                        whileHover={{ x: 3, color: "#007AFF" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
                           if (child.path !== pathname) {
-                            if (NO_LOADING_ANIMATION_PATHS.has(child.path)) {
-                              router.push(child.path);
-                            } else {
-                              setRedirectUrl(child.path);
-                            }
+                            NO_LOADING_ANIMATION_PATHS.has(child.path) ? router.push(child.path) : setRedirectUrl(child.path);
                             if (isOpen) toggleSidebar();
                           }
                         }}
-                        className={`block w-full text-left px-3 py-2 text-[13px] rounded-md transition-colors duration-200 mb-1 ${childButtonClass}`}
-                        type="button"
-                        data-tooltip-id={`tooltip-${child.path.replace(/\s/g, '-')}`}
-                        data-tooltip-content={tooltipContent}
-                        disabled={isDeveloping}
+                        className={`flex items-center justify-between w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold
+                          ${pathname.startsWith(child.path) 
+                             ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.03)]' 
+                             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                          }
+                        `}
                       >
-                        {child.name}
-                      </button>
-                    )
-                  })}
+                        <span>{child.name}</span>
+                        {child.badge && (
+                          <span className="ml-2 bg-indigo-100 text-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wide">
+                            {child.badge}
+                          </span>
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </motion.div>
@@ -400,129 +300,88 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         })}
       </motion.nav>
 
-      {/* --- PROFESSIONAL FOOTER SECTION --- */}
-      <motion.div
-        className={`px-4 py-4 border-t border-white/5 w-full mt-auto hidden lg:flex flex-col gap-4 transition-opacity duration-300 ${
-          isDesktopHovered ? "opacity-100" : "opacity-0"
-        }`}
-        variants={isDesktopHovered ? menuItemVariants : undefined}
-      >
-        {/* Ecosystem Downloads */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">
-            Ecosystem
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {/* Android */}
-            <a
-              href="https://drive.google.com/file/d/1AgSWuLtwlhmCxMTsDuHLxvmA8MuKDbTL/view?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center justify-center p-2 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-green-500/20 transition-all cursor-pointer"
-            >
-              <LuSmartphone size={18} className="text-gray-400 group-hover:text-green-500 transition-colors mb-1.5" />
-              <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-200">Android</span>
-            </a>
-
-            {/* Desktop */}
-            <a
-              href="https://drive.google.com/uc?export=download&id=1wsR2aYD_iW_dFCKuP-f2IwOusziUHQiK"
-              download
-              className="group flex flex-col items-center justify-center p-2 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-blue-500/20 transition-all cursor-pointer"
-            >
-              <LuMonitor size={18} className="text-gray-400 group-hover:text-blue-500 transition-colors mb-1.5" />
-              <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-200">Desktop</span>
-            </a>
-          </div>
-        </div>
-
-        {/* System Info & Credits - HIGHLIGHTED SECTION */}
-        <div className="space-y-2 px-1 pt-1">
-          <div className="flex items-center justify-between text-[10px] text-gray-500">
-             <div className="flex items-center gap-2 group">
-               <LuGitBranch size={12} className="text-gray-600 group-hover:text-gray-400 transition-colors" />
-               
-               {/* Version: Monospaced, matte gray, no glow */}
-               <span className="font-mono text-gray-500 group-hover:text-gray-300 transition-colors">
-                 v.1.08.25
-               </span>
-             </div>
-             
-             {/* BETA Tag: Flat, bordered, muted emerald (Professional style) */}
-             <span className="border border-emerald-900/30 bg-emerald-900/10 text-emerald-600 px-1.5 py-0.5 rounded-[3px] text-[9px] font-bold tracking-wider opacity-80">
-               BETA
-             </span>
-          </div>
-          
-          {/* Replaced Text with Professional Styling */}
-          <div className="flex items-center justify-center pt-2">
-             <span className="text-[10px] font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-gray-500 via-gray-200 to-gray-500 uppercase hover:from-white hover:to-white transition-all duration-500">
-               A CREATIVE OPERATIONS APPLICATION
-             </span>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-px w-full bg-white/5" />
-        <div className="flex justify-center">
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-3 px-1 py-1 text-xs font-medium text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
-            type="button"
-          >
-            <div className="flex items-center justify-center h-7 w-7 rounded-md bg-white/5 group-hover:bg-red-500/10 transition-colors text-inherit ">
-              <LuLogOut size={14} />
+      {/* --- FOOTER --- */}
+      {!isMobile && (
+        <motion.div 
+            className={`px-4 py-5 border-t border-slate-200/60 w-full mt-auto flex flex-col gap-4 shrink-0 transition-all duration-300 ${isDesktopHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}
+            transition={{ duration: 0.4, ease: "backOut" }}
+        >
+            <div>
+            <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1">Ecosystem</div>
+            <div className="grid grid-cols-2 gap-2">
+                <motion.a 
+                    href="#" 
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+                >
+                <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
+                <span className="text-[10px] font-bold text-slate-600">iOS App</span>
+                </motion.a>
+                <motion.a 
+                    href="#" 
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
+                >
+                <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
+                <span className="text-[10px] font-bold text-slate-600">Desktop</span>
+                </motion.a>
             </div>
-            <span>Sign Out</span>
-          </button>
-        </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-bold">
+            <span className="font-mono opacity-70">v.1.08.25</span>
+            <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
+            </div>
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={logout} 
+                className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50/80 hover:bg-red-100 rounded-[14px] transition-colors cursor-pointer"
+            >
+            <LuLogOut size={15} /> Sign Out
+            </motion.button>
+        </motion.div>
+      )}
 
-        
-      </motion.div>
+      {/* --- MOBILE SAFE AREA SPACER --- */}
+      {isMobile && <div className="h-safe-bottom shrink-0 w-full" style={{ height: 'env(safe-area-inset-bottom)' }} />}
     </aside>
   )
 
   return (
     <>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      {/* Changed to Quicksand - much cuter, lighter, and cleaner than Fredoka */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
-      {/* Desktop Sidebar */}
-      <div
-        className="hidden lg:block fixed top-0 left-0 h-screen z-30"
-        onMouseEnter={() => setIsHovered(true)}
+      <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+      
+      {/* --- DESKTOP VIEW --- */}
+      <div 
+        className="hidden lg:block fixed top-0 left-0 h-[100dvh] z-30" 
+        onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
         {renderSidebarContent(false, isHovered)}
       </div>
 
-      {/* Mobile Sidebar */}
+      {/* --- MOBILE VIEW --- */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
             className="fixed inset-0 z-40 lg:hidden"
-            aria-hidden={!isOpen}
           >
-            <div
-              className="absolute inset-0 bg-black/60"
-              onClick={toggleSidebar}
-              aria-label="Close sidebar overlay"
+            <div 
+                className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" 
+                onClick={toggleSidebar} 
             />
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: '0%' }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 250, damping: 35 }}
-              className="relative w-[85%] max-w-sm h-full"
+            
+            <motion.div 
+                initial={{ x: '-100%' }} 
+                animate={{ x: '0%' }} 
+                exit={{ x: '-100%' }} 
+                transition={iosSpring} 
+                className="relative w-[85%] max-w-[320px] h-[100dvh] shadow-2xl"
             >
               {renderSidebarContent(true)}
             </motion.div>
@@ -530,27 +389,14 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         )}
       </AnimatePresence>
 
-      {/* Render the loading screen if redirectUrl is set */}
-      <AnimatePresence>
-        {redirectUrl && (
-          <LoadingScreen redirectUrl={redirectUrl} />
-        )}
-      </AnimatePresence>
-
+      <AnimatePresence>{redirectUrl && <LoadingScreen redirectUrl={redirectUrl} />}</AnimatePresence>
+      
       <style>{`
         .font-quicksand {
           font-family: 'Quicksand', sans-serif;
         }
-        .shadow-glow {
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   )

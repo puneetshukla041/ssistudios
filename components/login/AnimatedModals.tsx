@@ -1,161 +1,195 @@
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AnimatedModalsProps {
-    isLoading: boolean;
-    showTick: boolean;
-    showWelcome: boolean;
-    username: string;
+  isLoading: boolean;
+  showTick: boolean;
+  showWelcome: boolean;
+  username: string;
 }
 
-/**
- * Renders the full-screen animated modals for login status (Loading, Success, Welcome).
- */
-export default function AnimatedModals({ isLoading, showTick, showWelcome, username }: AnimatedModalsProps) {
-    return (
-        <AnimatePresence>
-            {/* Loading Modal */}
-            {isLoading && (
-                <motion.div
-                    className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+// --- APPLE PHYSICS CONFIG ---
+// High stiffness + High damping = Snappy start, smooth end, no wobble.
+const springTransition = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 40,
+  mass: 1,
+};
+
+// iOS Activity Spinner
+const IOSSpinner = () => {
+  return (
+    <div className="relative w-12 h-12">
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-full h-full left-0 top-0"
+          style={{ rotate: `${i * 45}deg` }}
+        >
+          <motion.div
+            className="w-1.5 h-3.5 bg-white rounded-full mx-auto"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{
+              duration: 0.8,
+              repeat: Infinity,
+              delay: i * 0.1,
+              ease: "easeInOut",
+            }}
+          />
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+export default function AnimatedModals({
+  isLoading,
+  showTick,
+  showWelcome,
+  username,
+}: AnimatedModalsProps) {
+  const isVisible = isLoading || showTick || showWelcome;
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Smooth Blur Backdrop */}
+          <motion.div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+
+          {/* The "Morphing" Glass Card */}
+          <motion.div
+            layout
+            transition={springTransition}
+            className="relative bg-white/10 backdrop-blur-3xl border border-white/20 shadow-2xl overflow-hidden text-center z-10"
+            style={{ 
+              borderRadius: 36, // Slightly rounder for that "modern iOS" look
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" // Deep shadow for depth
+            }} 
+          >
+            <motion.div
+              layout="position"
+              className="p-10 flex flex-col items-center justify-center min-w-[300px] min-h-[200px]"
+            >
+              <AnimatePresence mode="wait">
+                
+                {/* 1. LOADING STATE */}
+                {isLoading && (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0, scale: 0.95, filter: "blur(5px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, scale: 1.05, filter: "blur(5px)" }}
                     transition={{ duration: 0.3 }}
-                >
-                    <motion.div
-                        className="text-center text-white"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 100 }}
+                    className="flex flex-col items-center gap-6"
+                  >
+                    <IOSSpinner />
+                    <motion.p
+                      className="text-white/90 font-medium text-[15px] tracking-wide antialiased"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
                     >
-                        <motion.div
-                            className="w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      Verifying credentials...
+                    </motion.p>
+                  </motion.div>
+                )}
+
+                {/* 2. SUCCESS STATE */}
+                {showTick && !isLoading && (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1, filter: "blur(5px)" }}
+                    transition={{ ...springTransition }}
+                    className="flex flex-col items-center gap-5"
+                  >
+                    {/* Icon Circle with "Pop" effect */}
+                    <motion.div 
+                      className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center shadow-lg shadow-white/10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.2, 1] }} // The "Pop" keyframes
+                      transition={{ duration: 0.5, times: [0, 0.6, 1], ease: "easeOut" }}
+                    >
+                      <svg
+                        className="w-9 h-9"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <motion.path
+                          d="M20 6L9 17l-5-5"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ delay: 0.2, duration: 0.4, ease: "easeOut" }}
                         />
-                        <p className="text-white text-lg tracking-wide font-semibold">
-                            Verifying credentials...
-                        </p>
+                      </svg>
                     </motion.div>
-                </motion.div>
-            )}
 
-            {/* Success Tick Modal */}
-            {showTick && (
-                <motion.div
-                    className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                >
                     <motion.div
-                        className="relative flex flex-col items-center justify-center rounded-3xl bg-white shadow-2xl p-10 w-[200px] h-[200px]"
-                        initial={{ scale: 0, rotate: 20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                        <AnimatePresence>
-                            {[...Array(14)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    className="absolute w-2 h-2 rounded-full bg-green-400"
-                                    initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                                    animate={{
-                                        opacity: 0,
-                                        x: Math.cos((i / 14) * 2 * Math.PI) * 100,
-                                        y: Math.sin((i / 14) * 2 * Math.PI) * 100,
-                                        scale: 0.5,
-                                    }}
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                />
-                            ))}
-                        </AnimatePresence>
-                        <motion.svg
-                            className="w-20 h-20 text-green-500 relative z-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                        >
-                            <motion.path
-                                d="M5 13l4 4L19 7"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ duration: 0.8, ease: "easeInOut" }}
-                            />
-                        </motion.svg>
-                        <motion.p
-                            className="text-green-600 font-extrabold mt-3 text-2xl tracking-wide relative z-10"
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.5, duration: 0.5 }}
-                        >
-                            Success!
-                        </motion.p>
+                      <h3 className="text-white font-bold text-xl tracking-tight">Success</h3>
+                      <p className="text-white/60 text-sm font-medium mt-1">Access Granted</p>
                     </motion.div>
-                </motion.div>
-            )}
+                  </motion.div>
+                )}
 
-            {/* Welcome Modal */}
-            {showWelcome && (
-                <motion.div
-                    className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center overflow-hidden"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                >
+                {/* 3. WELCOME STATE */}
+                {showWelcome && !showTick && !isLoading && (
+                  <motion.div
+                    key="welcome"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    transition={{ ...springTransition }}
+                    className="flex flex-col items-center gap-3 py-2"
+                  >
+                    {/* User Avatar with smooth scale in */}
+                    <motion.div 
+                      className="w-24 h-24 rounded-full bg-gradient-to-b from-gray-100 to-gray-300 mb-2 shadow-2xl border-[3px] border-white/40"
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                    />
+                    
                     <motion.div
-                        className="absolute w-full h-full"
-                        initial={{ scale: 0.8, opacity: 0.5 }}
-                        animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                      className="text-center"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
                     >
-                        <div className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-r from-green-400/40 via-blue-400/30 to-purple-400/40 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      <h2 className="text-3xl font-bold text-white tracking-tight drop-shadow-sm">
+                        Welcome, {username}
+                      </h2>
+                      <p className="text-blue-200/90 text-base font-medium mt-1">
+                        Entering workspace
+                      </p>
                     </motion.div>
-                    <AnimatePresence>
-                        {[...Array(20)].map((_, i) => (
-                            <motion.div
-                                key={i}
-                                className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-yellow-400"
-                                initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                                animate={{
-                                    opacity: 0,
-                                    x: Math.cos((i / 20) * 2 * Math.PI) * 400,
-                                    y: Math.sin((i / 20) * 2 * Math.PI) * 400,
-                                    scale: 0.5,
-                                }}
-                                transition={{ duration: 2, ease: "easeOut" }}
-                            />
-                        ))}
-                    </AnimatePresence>
-                    <motion.div
-                        className="relative bg-black/40 rounded-3xl p-12 text-center shadow-2xl border border-gray-700/60 backdrop-blur-3xl overflow-hidden"
-                        initial={{ scale: 0.5, rotateY: 90, opacity: 0 }}
-                        animate={{ scale: 1, rotateY: 0, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    >
-                        <motion.h2
-                            className="text-4xl font-extrabold mb-3 text-white relative inline-block"
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.6 }}
-                        >
-                            Welcome, <span className="text-pink-400">{username}!</span>
-                        </motion.h2>
-                        <motion.p
-                            className="text-gray-300 text-xl font-light mt-4"
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.5, duration: 0.6 }}
-                        >
-                            Glad to see you back.
-                        </motion.p>
-                        <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'radial-gradient(ellipse at center, rgba(255,255,255,0.1), transparent 70%)' }} />
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
