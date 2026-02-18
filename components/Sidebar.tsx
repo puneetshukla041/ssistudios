@@ -64,10 +64,15 @@ const menu: MenuItem[] = [
         path: '/invitation', 
         badge: 'NEW' 
       },
-      // --- UPDATE: Added Auto Invite here ---
       { 
         name: 'Auto Invite', 
         path: '/auto', // Routes to app/auto/page.tsx
+        badge: 'NEW' 
+      },
+      // --- UPDATE: Added Contact Saver here ---
+      { 
+        name: 'Contact Saver', 
+        path: '/contact', // Routes to app/contact/page.tsx
         badge: 'NEW' 
       },
     ],
