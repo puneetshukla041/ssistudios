@@ -2,7 +2,8 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import ClientRootLayout from './ClientRootLayout';
-import SecurityGuard from '@/components/SecurityGuard'; // 1. Import the guard
+import SecurityGuard from '@/components/SecurityGuard'; 
+import SmoothScroll from '@/components/SmoothScroll'; // ✅ Import SmoothScroll
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -13,15 +14,15 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // ✅ FIX: Apply suppressHydrationWarning directly to the <html> tag
-    <html lang="en" suppressHydrationWarning> 
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/logos/ssilogo.png" />
       </head>
-      {/* It's okay to keep the class here, but the warning prop is removed from body */}
-      <body className={inter.className}> 
-        <SecurityGuard /> {/* 2. Add the guard component here */}
-        <ClientRootLayout>{children}</ClientRootLayout>
+      <body className={inter.className}>
+        <SmoothScroll> {/* ✅ Wrapped everything inside SmoothScroll */}
+          <SecurityGuard /> 
+          <ClientRootLayout>{children}</ClientRootLayout>
+        </SmoothScroll>
       </body>
     </html>
   );

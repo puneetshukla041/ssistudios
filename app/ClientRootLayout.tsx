@@ -137,7 +137,9 @@ function AppLayout({ children }: { children: ReactNode }) {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   useEffect(() => {
-    document.body.style.overflow = isSidebarOpen || isCrashed ? "hidden" : "";
+    // Only lock body if sidebar is open on MOBILE or if crashed.
+    // Otherwise let Lenis handle the scroll.
+    document.body.style.overflow = (isSidebarOpen && window.innerWidth < 1024) || isCrashed ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isSidebarOpen, isCrashed]);
 
@@ -146,7 +148,7 @@ function AppLayout({ children }: { children: ReactNode }) {
     : pathname === "/poster" ? "bg-slate-100 text-slate-900"
     : pathname === "/idcard" ? "bg-slate-100 text-slate-900"
     : pathname === "/userprofile" ? "bg-[#F3F4F6] text-gray-900"
-    : "bg-[#F2F2F7] text-gray-900"; // Default to iOS Gray to match database page
+    : "bg-[#F2F2F7] text-gray-900"; // Default to iOS Gray
 
   if (isEditorPage) return <>{children}</>;
 
@@ -162,10 +164,13 @@ function AppLayout({ children }: { children: ReactNode }) {
         <div className={`flex relative z-10 min-h-screen ${themeBg}`}>
           <Sidebar forceActive={forceActive} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
           
-          {/* ✅ FIXED: Removed 'p-4 lg:p-8' so content can go full width/height */}
-          <main className="flex-1 overflow-y-auto transition-all duration-300 relative w-full h-screen">
+          {/* ✅ FIXED FOR LENIS: 
+            1. Removed 'overflow-y-auto' (This was killing Lenis)
+            2. Removed 'h-screen' (This was locking the window)
+            3. Added 'min-h-screen' to ensure full background
+          */}
+          <main className="flex-1 transition-all duration-300 relative w-full min-h-screen">
             
-            {/* ✅ FIXED: Added padding only to the mobile header */}
             <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit/90 backdrop-blur-sm">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
                 {pathname === "/dashboard" ? "" : "SSI Studios"}
@@ -178,7 +183,6 @@ function AppLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
             
-            {/* Children render edge-to-edge now */}
             {children}
           </main>
         </div>
