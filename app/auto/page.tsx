@@ -31,6 +31,7 @@ const HOSPITAL_MARGIN_LEFT = 72
 
 const SECOND_NAME_MARGIN_LEFT = 98
 // UPDATED: Increased from 206 to 220 to move it down
+
 const SECOND_NAME_MARGIN_TOP = 238
 
 // --- DATE CONFIGURATION (Single Line) ---
