@@ -37,13 +37,14 @@ export default function LoginPage() {
     mass: 1.2
   };
 
+  // Premium blur-to-focus slide for the inputs
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 15, filter: "blur(5px)" },
+    hidden: { opacity: 0, x: -10, filter: "blur(4px)" },
     visible: { 
       opacity: 1, 
-      y: 0, 
+      x: 0, 
       filter: "blur(0px)",
-      transition: { duration: 0.5, ease: "easeOut" }
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
     }
   };
 
@@ -139,10 +140,17 @@ export default function LoginPage() {
     <div className="w-full max-w-[360px] mx-auto">
       <AnimatedModals {...modalProps} />
 
-      {/* Mobile Header (Only shows on small screens, as left panel handles desktop) */}
-      <div className="md:hidden mb-10 text-center">
-        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">SSI Studios</h2>
-        <p className="text-slate-500 text-xs font-semibold uppercase mt-2 tracking-widest">Creative Ops</p>
+      {/* Mobile Header (Shows the Logo and text on mobile only) */}
+      <div className="md:hidden mb-10 flex flex-col items-center justify-center text-center mt-4">
+        <img 
+          src="/logos/ssilogo.png" 
+          alt="SSI Logo" 
+          className="w-16 h-16 object-contain mb-3 drop-shadow-sm"
+          onError={(e) => (e.currentTarget.style.display = 'none')} 
+        />
+        <p className="text-[#64748B] text-[11px] font-bold uppercase tracking-[0.15em]">
+          SSI Studios
+        </p>
       </div>
 
       <AnimatePresence>
@@ -161,12 +169,12 @@ export default function LoginPage() {
       <form onSubmit={handleLogin} className="space-y-7">
         
         <motion.div variants={itemVariants} className="space-y-2.5">
-          <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Login ID</label>
+          <label className="text-[12px] font-bold text-slate-400 ml-3 tracking-wider uppercase">Login ID</label>
           <div className="relative group">
             <input
               type="text"
-              placeholder="Enter Mail ID / SSI - 000"
-              className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
+              placeholder="Enter Mail ID"
+              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading || showTick || showWelcome}
@@ -175,12 +183,12 @@ export default function LoginPage() {
         </motion.div>
 
         <motion.div variants={itemVariants} className="space-y-2.5">
-          <label className="text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Password</label>
+          <label className="text-[12px] font-bold text-slate-400 ml-3 tracking-wider uppercase">Password</label>
           <div className="relative group">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 pr-14 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
+              placeholder="••••••••••"
+              className="w-full bg-[#F2F2F7] md:bg-[#F2F2F7]/80 text-slate-900 placeholder-slate-400/70 border-0 rounded-[22px] py-4 px-6 pr-14 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading || showTick || showWelcome}
@@ -195,13 +203,13 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pl-2">
+        <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pl-3">
           <button 
             type="button"
             onClick={() => setShowRequestModal(true)}
-            className="text-sm font-medium text-slate-400 hover:text-[#007AFF] transition-colors cursor-pointer"
+            className="text-[14px] font-semibold text-slate-400 hover:text-[#007AFF] transition-colors cursor-pointer"
           >
-            Forgot Password?
+            New User? Request Access
           </button>
 
           <motion.button
@@ -210,7 +218,7 @@ export default function LoginPage() {
             transition={iosSpring}
             type="submit"
             disabled={isLoading || showTick || showWelcome}
-            className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-500/30 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
+            className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-full flex items-center justify-center text-white shadow-[0_8px_16px_rgba(0,122,255,0.3)] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             {isLoading ? (

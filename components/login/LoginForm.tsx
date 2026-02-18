@@ -137,7 +137,7 @@ export default function LoginForm({
               onClick={() => setShowRequestModal(true)}
               disabled={disabled}
             >
-              Forgot Password or Need Access?
+              New User? Request Access
             </button>
           </div>
         </form>
