@@ -177,7 +177,7 @@ export default function LoginPage() {
           <div className="relative group">
             <input
               type="text"
-              placeholder="Enter Mail ID"
+              placeholder="Enter UserName / SSI-000"
               className="w-full bg-[#F4F5F8] text-[#1E293B] placeholder-[#94A3B8] border border-white/50 rounded-[22px] py-4 px-6 transition-all duration-400 text-[15px] font-medium outline-none shadow-[inset_4px_4px_10px_rgba(0,0,0,0.04),inset_-4px_-4px_10px_rgba(255,255,255,0.9)] focus:bg-white focus:shadow-[0_10px_30px_rgba(0,122,255,0.15),inset_0_0_0_rgba(0,0,0,0)] focus:border-[#007AFF]/40"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
