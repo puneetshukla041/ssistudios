@@ -35,7 +35,6 @@ const SECOND_NAME_MARGIN_TOP = 238
 
 // --- DATE CONFIGURATION (Single Line) ---
 const DATE_MARGIN_LEFT = 455    
-
 const DATE_MARGIN_TOP = 75      
 
 const FONT_SIZE = 10
