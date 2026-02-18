@@ -1,4 +1,8 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 
 interface AnimatedModalsProps {
   isLoading: boolean;
@@ -8,7 +12,6 @@ interface AnimatedModalsProps {
 }
 
 // --- APPLE PHYSICS CONFIG ---
-// High stiffness + High damping = Snappy start, smooth end, no wobble.
 const springTransition = {
   type: "spring" as const,
   stiffness: 400,
@@ -16,7 +19,6 @@ const springTransition = {
   mass: 1,
 };
 
-// iOS Activity Spinner
 const IOSSpinner = () => {
   return (
     <div className="relative w-12 h-12">
@@ -48,13 +50,21 @@ export default function AnimatedModals({
   showWelcome,
   username,
 }: AnimatedModalsProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isVisible = isLoading || showTick || showWelcome;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -74,8 +84,8 @@ export default function AnimatedModals({
             transition={springTransition}
             className="relative bg-white/10 backdrop-blur-3xl border border-white/20 shadow-2xl overflow-hidden text-center z-10"
             style={{ 
-              borderRadius: 36, // Slightly rounder for that "modern iOS" look
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" // Deep shadow for depth
+              borderRadius: 36,
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" 
             }} 
           >
             <motion.div
@@ -116,11 +126,10 @@ export default function AnimatedModals({
                     transition={{ ...springTransition }}
                     className="flex flex-col items-center gap-5"
                   >
-                    {/* Icon Circle with "Pop" effect */}
                     <motion.div 
                       className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center shadow-lg shadow-white/10"
                       initial={{ scale: 0 }}
-                      animate={{ scale: [0, 1.2, 1] }} // The "Pop" keyframes
+                      animate={{ scale: [0, 1.2, 1] }}
                       transition={{ duration: 0.5, times: [0, 0.6, 1], ease: "easeOut" }}
                     >
                       <svg
@@ -162,7 +171,6 @@ export default function AnimatedModals({
                     transition={{ ...springTransition }}
                     className="flex flex-col items-center gap-3 py-2"
                   >
-                    {/* User Avatar with smooth scale in */}
                     <motion.div 
                       className="w-24 h-24 rounded-full bg-gradient-to-b from-gray-100 to-gray-300 mb-2 shadow-2xl border-[3px] border-white/40"
                       initial={{ scale: 0, rotate: -20 }}
@@ -190,6 +198,7 @@ export default function AnimatedModals({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -1,6 +1,9 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon, PaperAirplaneIcon, PhotoIcon, DocumentIcon } from '@heroicons/react/24/outline';
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface RequestModalProps {
   showRequestModal: boolean;
@@ -22,19 +25,18 @@ interface RequestModalProps {
   MAX_FILE_SIZE_BYTES: number;
 }
 
-/**
- * Renders the modal for requesting access from the admin.
- * Redesigned to match the iOS/Glassmorphism Login Layout.
- * Fully responsive for mobile devices.
- */
 export default function RequestModal({
   showRequestModal, setShowRequestModal, requestName, setRequestName,
   requestPhone, setRequestPhone, requestIDFile, requestComment,
   setRequestComment, requestError, isRequestLoading, handleRequestAccess,
   handleIDFileChange, MAX_FILE_SIZE_MB
 }: RequestModalProps) {
+  const [mounted, setMounted] = useState(false);
 
-  // IOS-Style Spring Animation
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const iosSpring = {
     type: "spring" as const,
     stiffness: 300,
@@ -42,11 +44,13 @@ export default function RequestModal({
     mass: 1.2
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {showRequestModal && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md sm:bg-slate-900/20"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md sm:bg-slate-900/20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -87,7 +91,6 @@ export default function RequestModal({
             )}
 
             <form onSubmit={handleRequestAccess} className="space-y-4 sm:space-y-5">
-              
               {/* Full Name */}
               <div className="space-y-1.5 sm:space-y-2">
                 <label htmlFor="fullName" className="text-xs sm:text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">Full Name</label>
@@ -96,8 +99,7 @@ export default function RequestModal({
                   type="text"
                   value={requestName}
                   onChange={(e) => setRequestName(e.target.value)}
-                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 
-                             focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none"
+                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none"
                   placeholder="e.g., Puneet Shukla"
                   required
                 />
@@ -111,8 +113,7 @@ export default function RequestModal({
                   type="tel"
                   value={requestPhone}
                   onChange={(e) => setRequestPhone(e.target.value)}
-                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 
-                             focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none"
+                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none"
                   placeholder="+91-8527989270"
                   required
                 />
@@ -123,7 +124,6 @@ export default function RequestModal({
                 <label htmlFor="idCard" className="text-xs sm:text-[13px] font-semibold text-slate-400 ml-3 tracking-wide uppercase">
                   ID Card <span className="normal-case tracking-normal opacity-70">(Max {MAX_FILE_SIZE_MB}MB)</span>
                 </label>
-                
                 <div className="relative group">
                   <input
                     id="idCard"
@@ -163,8 +163,7 @@ export default function RequestModal({
                   rows={2}
                   value={requestComment}
                   onChange={(e) => setRequestComment(e.target.value)}
-                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 
-                             focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none resize-none"
+                  className="w-full bg-[#F2F2F7] text-slate-900 placeholder-slate-400/70 border-0 rounded-2xl sm:rounded-[22px] py-3 px-5 sm:py-4 sm:px-6 focus:ring-[3px] focus:ring-[#007AFF]/20 focus:bg-white transition-all duration-300 text-[15px] font-medium shadow-inner outline-none resize-none"
                   placeholder="Explain why you need access..."
                 />
               </div>
@@ -172,15 +171,11 @@ export default function RequestModal({
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                className="w-full py-3.5 sm:py-4 rounded-2xl sm:rounded-[22px] font-bold flex items-center justify-center space-x-2 mt-2 sm:mt-4
-                           bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-lg shadow-blue-500/30
-                           hover:shadow-blue-500/50 transition-all duration-300
-                           disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer relative overflow-hidden group"
+                className="w-full py-3.5 sm:py-4 rounded-2xl sm:rounded-[22px] font-bold flex items-center justify-center space-x-2 mt-2 sm:mt-4 bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer relative overflow-hidden group"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isRequestLoading}
               >
-                 {/* Shine Effect */}
                  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
                 <AnimatePresence mode="wait">
@@ -212,6 +207,7 @@ export default function RequestModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

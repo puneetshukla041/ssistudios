@@ -2,6 +2,12 @@
 
 import React from "react";
 import { motion, Variants } from "framer-motion";
+import localFont from "next/font/local";
+
+const manrope = localFont({
+  src: "../../../public/fonts/Manrope-VariableFont_wght.ttf",
+  display: "swap",
+});
 
 export default function AuthLayout({
   children,
@@ -14,14 +20,13 @@ export default function AuthLayout({
   const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
 
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.92, y: 30, filter: "blur(10px)" },
+    hidden: { opacity: 0, scale: 0.94, y: 20 },
     visible: { 
       opacity: 1, 
       scale: 1, 
       y: 0,
-      filter: "blur(0px)",
       transition: { 
-        duration: 1.2, 
+        duration: 0.9, 
         ease: premiumEase,
         when: "beforeChildren"
       }
@@ -33,39 +38,37 @@ export default function AuthLayout({
     visible: { 
       opacity: 1, 
       transition: { 
-        duration: 1.0, 
+        duration: 0.8, 
         ease: premiumEase,
         when: "beforeChildren",
-        staggerChildren: 0.12 
+        staggerChildren: 0.1 
       } 
     }
   };
 
   const rightPanelVariants: Variants = {
-    // Adding a subtle scale and blur to the slide makes it feel incredibly premium
-    hidden: { x: "-105%", scale: 0.95, filter: "blur(8px)" },
+    // Removed scale & blur here to prevent the GPU lag! Just a pure, clean slide.
+    hidden: { x: "-100%" },
     visible: { 
       x: 0,
-      scale: 1,
-      filter: "blur(0px)",
       transition: { 
-        duration: 1.1,
+        duration: 0.95,
         ease: premiumEase,
-        delay: 0.15, 
+        delay: 0.05, // Almost zero delay so it feels instantly responsive
         when: "beforeChildren",
-        staggerChildren: 0.1, 
-        delayChildren: 0.4 
+        staggerChildren: 0.08, 
+        delayChildren: 0.3 
       }
     }
   };
 
   const textVariants: Variants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
-    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: premiumEase } }
+    hidden: { opacity: 0, y: 15, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: premiumEase } }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 font-sans antialiased relative overflow-hidden">
+    <div className={`min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 antialiased relative overflow-hidden ${manrope.className}`}>
       
       {/* IOS DYNAMIC WALLPAPER BACKGROUND */}
       <div className="absolute inset-0 z-0">
@@ -95,14 +98,15 @@ export default function AuthLayout({
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl backdrop-saturate-150" />
           <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent opacity-60" />
-          {/* Subtle inner border for the glass */}
           <div className="absolute inset-0 rounded-[48px] border border-white/20" />
         </div>
 
-        {/* 2. SLIDING WHITE CARD (Z-10) */}
+        {/* 2. SLIDING WHITE CARD (Z-10) 
+            Removed backdrop-blur from here. It sits over the already blurred glass, completely fixing the stutter. */}
         <motion.div 
           variants={rightPanelVariants}
-          className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white/95 backdrop-blur-2xl flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)]"
+          // Added 'will-change-transform' to force hardware acceleration for a buttery glide
+          className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)] will-change-transform"
         >
           {children}
         </motion.div>
@@ -111,7 +115,6 @@ export default function AuthLayout({
         <motion.div variants={leftPanelVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
           
           <motion.div variants={textVariants} className="flex items-center gap-3 pointer-events-auto">
-            {/* Added a subtle continuous breathing animation to the logo */}
             <motion.div 
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
