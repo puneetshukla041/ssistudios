@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import localFont from "next/font/local";
 
@@ -15,39 +15,75 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const logoSrc = "/logos/ssilogo.png";
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Explicit type definition for Cubic Bezier tuple
-  const fastEase: [number, number, number, number] = [0.19, 1.0, 0.22, 1.0];
+  // 1. Mount Check to prevent "Stuck" Glitch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
+  const premiumEase: [number, number, number, number] = [0.16, 1.0, 0.3, 1.0];
+
+  // 1. The Main Glass Card
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.96, y: 10 },
-    visible: {
-      opacity: 1,
-      scale: 1,
+    hidden: { opacity: 0, scale: 0.96, y: 15 },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
       y: 0,
-      transition: {
-        duration: 0.5,
-        ease: fastEase,
-      },
-    },
+      transition: { 
+        duration: 0.8, 
+        ease: premiumEase,
+        when: "beforeChildren"
+      }
+    }
   };
 
-  const contentVariants: Variants = {
+  // 2. The Left Panel (Branding)
+  const leftPanelVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.4,
-        ease: "linear",
-        delay: 0.1,
-      },
+    visible: { 
+      opacity: 1, 
+      transition: { 
+        duration: 0.8, 
+        ease: premiumEase,
+        when: "beforeChildren",
+        staggerChildren: 0.1 
+      } 
+    }
+  };
+
+  // 3. THE WHITE CARD SLIDE (From Left Corner)
+  const rightPanelVariants: Variants = {
+    hidden: { 
+      x: "-100%",      // Starts at the far left edge of the container
+      opacity: 0,      // Invisible initially
+      filter: "blur(10px)" // High blur for speed sensation
     },
+    visible: { 
+      x: "0%",         // Slides to natural position
+      opacity: 1,
+      filter: "blur(0px)",
+      transition: { 
+        duration: 1.2,      // Long, luxurious slide
+        ease: premiumEase,
+        delay: 0.1,         
+        when: "beforeChildren",
+        staggerChildren: 0.1, 
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const textVariants: Variants = {
+    hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: premiumEase } }
   };
 
   return (
     <div className={`min-h-screen w-full flex items-center justify-center bg-[#F2F2F7] p-4 antialiased relative overflow-hidden ${manrope.className}`}>
       
-      {/* IOS DYNAMIC WALLPAPER BACKGROUND */}
+      {/* IOS DYNAMIC WALLPAPER */}
       <div className="absolute inset-0 z-0">
          <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] via-[#5856D6] to-[#AF52DE] opacity-90" />
          <motion.div 
@@ -71,25 +107,28 @@ export default function AuthLayout({
         className="relative flex w-full max-w-[960px] h-[600px] sm:h-[580px] rounded-[48px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden z-10"
       >
         
-        {/* 1. FULL WIDTH GLASS BASE (Z-0) */}
+        {/* 1. GLASS BASE */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl backdrop-saturate-150" />
           <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent opacity-60" />
           <div className="absolute inset-0 rounded-[48px] border border-white/20" />
         </div>
 
-        {/* 2. SLIDING WHITE CARD (Z-10) */}
-        <motion.div 
-          variants={contentVariants}
-          className="absolute inset-y-0 right-0 w-full md:w-[55%] h-full bg-[#F8F9FE] md:bg-white flex flex-col justify-center px-6 md:px-14 py-10 z-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)] will-change-transform"
-        >
-          {children}
-        </motion.div>
+        {/* 2. RIGHT PANEL (White Card) */}
+        {/* CSS Opacity Guard: Ensures card is invisible before JS loads to prevent "Stuck" look */}
+        <div className={`absolute inset-y-0 right-0 w-full md:w-[55%] h-full z-10 ${!isMounted ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
+          <motion.div 
+            variants={rightPanelVariants}
+            className="w-full h-full bg-[#F8F9FE] md:bg-white flex flex-col justify-center px-6 md:px-14 py-10 md:rounded-l-[44px] md:rounded-r-[48px] border-l border-white/80 shadow-[-10px_0_40px_rgba(0,0,0,0.08)] will-change-transform"
+          >
+            {children}
+          </motion.div>
+        </div>
 
-        {/* 3. LEFT CONTENT AREA (Z-20) */}
-        <motion.div variants={contentVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
+        {/* 3. LEFT CONTENT AREA */}
+        <motion.div variants={leftPanelVariants} className="hidden md:flex flex-col justify-between absolute inset-y-0 left-0 w-[45%] h-full p-12 text-white z-20 pointer-events-none">
           
-          <div className="flex items-center gap-3 pointer-events-auto">
+          <motion.div variants={textVariants} className="flex items-center gap-3 pointer-events-auto">
             <motion.div 
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -103,10 +142,10 @@ export default function AuthLayout({
               />
             </motion.div>
             <span className="text-xl font-bold tracking-tight text-white/95 drop-shadow-sm">SSI Studios</span>
-          </div>
+          </motion.div>
 
           <div className="mb-6 pointer-events-auto">
-            <div className="mb-6">
+            <motion.div variants={textVariants} className="mb-6">
               <p className="text-lg text-white/90 font-medium mb-1.5 tracking-wide drop-shadow-sm">Welcome to</p>
               <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tighter drop-shadow-md mb-5 text-transparent bg-clip-text bg-gradient-to-b from-white to-white/80">
                 SSI Studios
@@ -116,7 +155,7 @@ export default function AuthLayout({
                   Creative Operations
                 </span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
         </motion.div>
