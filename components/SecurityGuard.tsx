@@ -21,7 +21,6 @@ export default function SecurityGuard() {
     );
 
     let intervalId: any;
-
     const blockStalkers = () => {
       const threshold = 160;
       const widthDiff = window.outerWidth - window.innerWidth;
