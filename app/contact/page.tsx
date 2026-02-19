@@ -170,7 +170,6 @@ export default function SSIStudiosMessenger() {
           const parsedData = XLSX.utils.sheet_to_json<any>(sheet, { raw: false, defval: "" })
           if (parsedData.length === 0) continue
 
-          // FIXED: Corrected the mapping and filtering to satisfy TypeScript's strict type predicate rules
           const extracted = parsedData.map((row, index) => {
             const rowKeys = Object.keys(row)
             const nameKey = rowKeys.find(k => k.toLowerCase().includes('name') || k.toLowerCase().includes('doctor'))
@@ -220,7 +219,7 @@ export default function SSIStudiosMessenger() {
     let cleanPhone = contact.contactno.toString().replace(/[^0-9]/g, '')
     if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone
 
-    const greetings = ["Hi", "Hello", "Dear", "Greetings", "Namaste"]
+    const greetings = ["Hi", "Hello", "Dear", "Greetings"]
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)]
 
     let finalMessage = `${randomGreeting} ${contact.name},\n\n${messageTemplate}`
