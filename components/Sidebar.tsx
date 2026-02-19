@@ -57,22 +57,17 @@ const menu: MenuItem[] = [
     icon: LuAward,
     requiredAccess: 'certificateEditor',
     children: [
-      { name: 'Database', path: '/certificates/database' },
+      { name: 'Certificates', path: '/certificates/database' }, // Renamed from Database
       { name: 'Analysis', path: '/certificates/analysis' },
+      // Removed Invitation Letter
       { 
-        name: 'Invitation Letter', 
-        path: '/invitation', 
+        name: 'Faculty Invitation', // Renamed from Auto Invite
+        path: '/auto', 
         badge: 'NEW' 
       },
       { 
-        name: 'Auto Invite', 
-        path: '/auto', // Routes to app/auto/page.tsx
-        badge: 'NEW' 
-      },
-      // --- UPDATE: Added Contact Saver here ---
-      { 
-        name: 'Contact Saver', 
-        path: '/contact', // Routes to app/contact/page.tsx
+        name: 'WhatsApp Messenger', 
+        path: '/contact', 
         badge: 'NEW' 
       },
     ],
@@ -130,7 +125,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
-    if (window.innerWidth < 1024) { 
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) { 
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
   }, [isOpen]);

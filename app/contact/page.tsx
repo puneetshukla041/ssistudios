@@ -10,16 +10,16 @@ import {
   LuSend,
   LuCoffee,
   LuShieldCheck, 
-  LuChevronLeft,
+  LuChevronLeft, 
   LuChevronRight,
   LuSmartphone,
   LuSparkles,
   LuTrash2,
   LuDownload,
-  LuPieChart,
   LuActivity,
   LuClock,
-  LuZap
+  LuZap,
+  LuTerminal
 } from 'react-icons/lu'
 
 // --- TYPES ---
@@ -30,16 +30,14 @@ type ContactRow = {
   status: 'pending' | 'sent';
 }
 
-// --- SUB-COMPONENTS FOR "SUPER ADVANCED" UI ---
+// --- SUB-COMPONENTS ---
 
-// 1. IOS Style Card
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white/60 backdrop-blur-xl border border-white/50 shadow-lg rounded-[24px] ${className}`}>
     {children}
   </div>
 )
 
-// 2. Animated Circular Progress Chart
 const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: number, color?: string }) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
@@ -69,11 +67,10 @@ const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: numbe
   )
 }
 
-// 3. Stat Widget
 const StatWidget = ({ icon: Icon, label, value, color }: any) => (
   <motion.div 
     whileHover={{ scale: 1.02 }}
-    className="flex items-center gap-4 p-4 rounded-2xl bg-white/50 border border-white/60 shadow-sm cursor-default"
+    className="flex items-center gap-4 p-4 rounded-2xl bg-white/50 border border-white/60 shadow-sm cursor-pointer hover:shadow-md transition-all"
   >
     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md ${color}`}>
       <Icon size={20} />
@@ -88,34 +85,27 @@ const StatWidget = ({ icon: Icon, label, value, color }: any) => (
 // --- MAIN APPLICATION ---
 
 export default function SSIStudiosMessenger() {
-  // State
   const [contacts, setContacts] = useState<ContactRow[]>([])
   const [fileName, setFileName] = useState<string | null>(null)
   const [debugMsg, setDebugMsg] = useState<string>('')
   const [isLoaded, setIsLoaded] = useState(false)
+  const [logs, setLogs] = useState<string[]>([]) 
   
-  // Navigation & Core Logic
   const [activeTab, setActiveTab] = useState<'upload' | 'message' | 'analysis'>('upload')
   const [messageTemplate, setMessageTemplate] = useState("We are excited to invite you to the event...")
   
-  // Safety & Automation State
   const [isCooldown, setIsCooldown] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [sentCounter, setSentCounter] = useState(0)
   const [isCoffeeBreak, setIsCoffeeBreak] = useState(false)
 
-  // Batching
   const BATCH_SIZE = 50; 
   const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // ---------------------------------------------------------
-  // 1. ADVANCED PERSISTENCE (Iron-Clad Auto-Save)
-  // ---------------------------------------------------------
-  
+  // 1. PERSISTENCE
   useEffect(() => {
-    // Load everything on mount
     const savedContacts = localStorage.getItem('ssi_contacts')
     const savedTemplate = localStorage.getItem('ssi_template')
     const savedBatch = localStorage.getItem('ssi_batch')
@@ -136,61 +126,43 @@ export default function SSIStudiosMessenger() {
     if (savedFilename) setFileName(savedFilename)
     
     setIsLoaded(true)
+    addLog("System Initialized. Ready.")
   }, [])
 
-  // Auto-Save Workers
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem('ssi_contacts', JSON.stringify(contacts))
-  }, [contacts, isLoaded])
+  useEffect(() => { if (isLoaded) localStorage.setItem('ssi_contacts', JSON.stringify(contacts)) }, [contacts, isLoaded])
+  useEffect(() => { if (isLoaded) localStorage.setItem('ssi_template', messageTemplate) }, [messageTemplate, isLoaded])
+  useEffect(() => { if (isLoaded) localStorage.setItem('ssi_batch', currentBatchIndex.toString()) }, [currentBatchIndex, isLoaded])
+  useEffect(() => { if (isLoaded && fileName) localStorage.setItem('ssi_filename', fileName) }, [fileName, isLoaded])
 
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem('ssi_template', messageTemplate)
-  }, [messageTemplate, isLoaded])
+  const addLog = (msg: string) => {
+    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5))
+  }
 
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem('ssi_batch', currentBatchIndex.toString())
-  }, [currentBatchIndex, isLoaded])
-
-  useEffect(() => {
-    if (isLoaded && fileName) localStorage.setItem('ssi_filename', fileName)
-  }, [fileName, isLoaded])
-
-
-  // ---------------------------------------------------------
-  // 2. ANALYTICS ENGINE (Calculations)
-  // ---------------------------------------------------------
+  // 2. ANALYTICS
   const analytics = useMemo(() => {
     const total = contacts.length
     const sent = contacts.filter(c => c.status === 'sent').length
     const pending = total - sent
     const percent = total === 0 ? 0 : (sent / total) * 100
-    
-    // Estimate Time Remaining: Avg 15s per msg + breaks
     const minsRemaining = Math.ceil((pending * 15) / 60)
-    
     return { total, sent, pending, percent, minsRemaining }
   }, [contacts])
 
-
-  // ---------------------------------------------------------
   // 3. CORE LOGIC
-  // ---------------------------------------------------------
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setFileName(file.name)
-    setDebugMsg('Parsing data...')
-    setContacts([]) // Reset for new file to avoid conflicts
+    setDebugMsg('Scanning file structure...')
+    addLog(`File selected: ${file.name}`)
+    setContacts([]) 
 
     const reader = new FileReader()
     reader.onload = (event) => {
       try {
         const data = event.target?.result
         const workbook = XLSX.read(data, { type: 'binary' })
-        
-        // Advanced: Scan ALL sheets for data
         let foundData: ContactRow[] = []
         
         for (const sheetName of workbook.SheetNames) {
@@ -198,6 +170,7 @@ export default function SSIStudiosMessenger() {
           const parsedData = XLSX.utils.sheet_to_json<any>(sheet, { raw: false, defval: "" })
           if (parsedData.length === 0) continue
 
+          // FIXED: Corrected the mapping and filtering to satisfy TypeScript's strict type predicate rules
           const extracted = parsedData.map((row, index) => {
             const rowKeys = Object.keys(row)
             const nameKey = rowKeys.find(k => k.toLowerCase().includes('name') || k.toLowerCase().includes('doctor'))
@@ -205,12 +178,13 @@ export default function SSIStudiosMessenger() {
 
             if (!nameKey || !phoneKey) return null
 
-            return {
+            const newContact: ContactRow = {
               id: Date.now() + index, 
               name: row[nameKey],
               contactno: row[phoneKey],
-              status: 'pending' as const // Force type
-            }
+              status: 'pending'
+            };
+            return newContact;
           }).filter((c): c is ContactRow => {
              const cleanPhone = c?.contactno?.toString().replace(/[^0-9]/g, '') || '';
              return !!(c && c.name && cleanPhone.length >= 10)
@@ -225,13 +199,16 @@ export default function SSIStudiosMessenger() {
         if (foundData.length > 0) {
           setContacts(foundData)
           setDebugMsg(`Successfully imported ${foundData.length} contacts`)
-          setTimeout(() => setActiveTab('analysis'), 800) // Go to analysis first to show stats
+          addLog(`Imported ${foundData.length} contacts. Database updated.`)
+          setTimeout(() => setActiveTab('analysis'), 800) 
         } else {
           setDebugMsg('Error: No Name/Mobile columns found.')
+          addLog('Error: Column matching failed.')
         }
 
       } catch (err) {
         setDebugMsg('Error parsing file.')
+        addLog('Critical Error: File parsing failed.')
       }
     }
     reader.readAsArrayBuffer(file)
@@ -255,6 +232,7 @@ export default function SSIStudiosMessenger() {
 
     window.open(url, '_blank')
     setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'sent' } : c))
+    addLog(`Message sent to ${contact.name} (ID: ${uniqueId})`)
     handleSafetyTimers()
   }
 
@@ -265,6 +243,7 @@ export default function SSIStudiosMessenger() {
     if (newCount % 10 === 0) {
       setIsCoffeeBreak(true)
       setCountdown(20) 
+      addLog('Safety Protocol: Coffee Break Initiated.')
     } else {
       setIsCooldown(true)
       const randomDelay = Math.floor(Math.random() * (8 - 3 + 1) + 3)
@@ -289,6 +268,7 @@ export default function SSIStudiosMessenger() {
       setContacts([])
       setCurrentBatchIndex(0)
       setFileName(null)
+      setLogs([])
       localStorage.clear()
       setActiveTab('upload')
     }
@@ -299,6 +279,7 @@ export default function SSIStudiosMessenger() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Report")
     XLSX.writeFile(wb, `SSI_Report_${new Date().toISOString().slice(0,10)}.xlsx`)
+    addLog('Report downloaded successfully.')
   }
 
   const currentBatch = contacts.slice(currentBatchIndex * BATCH_SIZE, (currentBatchIndex + 1) * BATCH_SIZE);
@@ -316,7 +297,6 @@ export default function SSIStudiosMessenger() {
         .cursor-hand { cursor: pointer !important; }
       `}</style>
       
-      {/* --- MASTER CONTAINER --- */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -326,7 +306,7 @@ export default function SSIStudiosMessenger() {
         {/* --- HEADER --- */}
         <div className="flex-none px-8 py-5 border-b border-gray-200/50 flex items-center justify-between bg-white/50 backdrop-blur-md z-20">
            <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 overflow-hidden p-1">
+             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 overflow-hidden p-1 cursor-pointer">
                <img 
                  src="/logos/ssilogo.png" 
                  alt="SSI" 
@@ -338,8 +318,8 @@ export default function SSIStudiosMessenger() {
                </div>
              </div>
              <div>
-               <h1 className="text-xl font-bold tracking-tight text-gray-900">SSI Studios Messenger</h1>
-               <p className="text-[#86868B] text-xs font-medium flex items-center gap-1">
+               <h1 className="text-xl font-bold tracking-tight text-gray-900 cursor-default">SSI Studios Messenger</h1>
+               <p className="text-[#86868B] text-xs font-medium flex items-center gap-1 cursor-default">
                  <LuShieldCheck size={10} className="text-green-500"/> Advanced Safety Protocol Active
                </p>
              </div>
@@ -380,7 +360,6 @@ export default function SSIStudiosMessenger() {
         <div className="flex-1 overflow-hidden relative flex flex-col min-h-0 bg-white/30">
           <AnimatePresence mode="wait">
             
-            {/* VIEW 1: UPLOAD */}
             {activeTab === 'upload' && (
               <motion.div 
                 key="upload"
@@ -393,33 +372,32 @@ export default function SSIStudiosMessenger() {
                   className="w-full max-w-lg aspect-video bg-white/80 backdrop-blur-xl rounded-[32px] border-2 border-dashed border-[#C7C7CC] flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] hover:shadow-2xl transition-all duration-300 group"
                 >
                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
-                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner cursor-pointer">
                     <LuUpload size={36} className="text-[#007AFF]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800">
+                  <h3 className="text-2xl font-bold text-gray-800 cursor-pointer">
                     {contacts.length > 0 ? "Replace Contact List" : "Upload Data File"}
                   </h3>
-                  <p className="text-gray-400 mt-2 font-medium">Supports .xlsx / .csv</p>
+                  <p className="text-gray-400 mt-2 font-medium cursor-pointer">Supports .xlsx / .csv</p>
                 </motion.div>
-                {debugMsg && <p className="mt-6 text-gray-500 font-mono text-sm bg-white/50 px-4 py-2 rounded-full">{debugMsg}</p>}
+                {debugMsg && <p className="mt-6 text-gray-500 font-mono text-sm bg-white/50 px-4 py-2 rounded-full cursor-default">{debugMsg}</p>}
               </motion.div>
             )}
 
-            {/* VIEW 2: ANALYSIS DASHBOARD (New Feature) */}
             {activeTab === 'analysis' && (
               <motion.div 
                 key="analysis"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                className="w-full h-full p-8 overflow-y-auto"
+                className="w-full h-full p-8 overflow-y-auto ios-scrollbar"
               >
                 <div className="max-w-4xl mx-auto space-y-8">
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-8 cursor-default">
                     <h2 className="text-3xl font-bold text-gray-900">Mission Control</h2>
                     <p className="text-gray-500">Real-time status of your outreach campaign</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <GlassCard className="p-6 flex flex-col items-center justify-center col-span-1 md:col-span-1">
+                    <GlassCard className="p-6 flex flex-col items-center justify-center col-span-1 md:col-span-1 cursor-pointer hover:scale-[1.02] transition-transform">
                       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Progress</h3>
                       <CircularProgress percentage={analytics.percent} color="#34C759" />
                     </GlassCard>
@@ -432,42 +410,59 @@ export default function SSIStudiosMessenger() {
                     </div>
                   </div>
 
-                  <GlassCard className="p-8">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 bg-purple-100 text-purple-600 rounded-xl"><LuZap size={24} /></div>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800">System Efficiency</h3>
-                        <p className="text-xs text-gray-500">Current running metrics</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <GlassCard className="p-8 cursor-pointer hover:shadow-xl transition-all">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-purple-100 text-purple-600 rounded-xl"><LuZap size={24} /></div>
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-800">System Efficiency</h3>
+                          <p className="text-xs text-gray-500">Current running metrics</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }} animate={{ width: `${analytics.percent}%` }} 
-                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                      />
-                    </div>
-                    <div className="mt-4 flex justify-between text-sm text-gray-500 font-medium">
-                      <span>Batch Size: {BATCH_SIZE}</span>
-                      <span>Cooldown Mode: {isCooldown ? 'Active' : 'Standby'}</span>
-                    </div>
-                  </GlassCard>
+                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }} animate={{ width: `${analytics.percent}%` }} 
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        />
+                      </div>
+                      <div className="mt-4 flex justify-between text-sm text-gray-500 font-medium">
+                        <span>Batch Size: {BATCH_SIZE}</span>
+                        <span>Mode: {isCooldown ? 'Cooling' : 'Active'}</span>
+                      </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-6 bg-black/90 border-gray-800 cursor-text">
+                      <div className="flex items-center gap-3 mb-3 text-green-400 border-b border-gray-800 pb-2">
+                        <LuTerminal size={18} />
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider">Live System Logs</span>
+                      </div>
+                      <div className="font-mono text-xs text-gray-300 space-y-2 h-24 overflow-hidden relative">
+                        <AnimatePresence>
+                          {logs.map((log, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate">
+                              <span className="text-blue-400 mr-2">➜</span> {log}
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                        {logs.length === 0 && <span className="text-gray-600 italic">Waiting for events...</span>}
+                      </div>
+                    </GlassCard>
+                  </div>
                 </div>
               </motion.div>
             )}
 
-            {/* VIEW 3: MESSENGER */}
             {activeTab === 'message' && (
               <motion.div 
                 key="message"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="w-full h-full flex divide-x divide-gray-200/50"
               >
-                {/* Editor Sidebar */}
                 <div className="w-[350px] flex-none bg-white/40 h-full p-6 flex flex-col">
-                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2 cursor-default">
                     <LuSmartphone /> Message Composer
                   </h2>
-                  <div className="flex-1 bg-white rounded-[24px] p-2 shadow-sm border border-gray-100 relative group focus-within:ring-2 ring-blue-500/20 transition-all">
+                  <div className="flex-1 bg-white rounded-[24px] p-2 shadow-sm border border-gray-100 relative group focus-within:ring-2 ring-blue-500/20 transition-all cursor-text">
                     <textarea 
                       value={messageTemplate}
                       onChange={(e) => setMessageTemplate(e.target.value)}
@@ -475,7 +470,7 @@ export default function SSIStudiosMessenger() {
                       placeholder="Type your message here..."
                     />
                   </div>
-                  <div className="mt-6">
+                  <div className="mt-6 cursor-default">
                     <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-2 pl-2">Live Preview</h3>
                     <div className="bg-[#E9E9EB] p-4 rounded-2xl rounded-tr-sm text-sm text-black relative shadow-sm">
                        <p className="leading-snug">
@@ -487,12 +482,9 @@ export default function SSIStudiosMessenger() {
                   </div>
                 </div>
 
-                {/* Contact List Area */}
                 <div className="flex-1 flex flex-col h-full min-h-0 bg-white/20">
-                  
-                  {/* Toolbar */}
                   <div className="flex-none px-8 py-4 border-b border-gray-100/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 cursor-default">
                       <div className="flex flex-col">
                         <h2 className="text-xl font-bold text-gray-900">Batch {currentBatchIndex + 1}</h2>
                         <span className="text-xs text-gray-500 font-medium">Page {currentBatchIndex + 1} of {Math.ceil(contacts.length / BATCH_SIZE)}</span>
@@ -519,26 +511,24 @@ export default function SSIStudiosMessenger() {
                     </div>
                   </div>
 
-                  {/* Dynamic Status Bar */}
                   <div className="flex-none px-8 py-3">
                      <AnimatePresence mode="wait">
                        {isCoffeeBreak ? (
-                          <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-amber-500/10 text-amber-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-amber-100 shadow-sm">
+                          <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-amber-500/10 text-amber-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-amber-100 shadow-sm cursor-default">
                             <LuCoffee />Taking a coffee break... {countdown}s
                           </motion.div>
                        ) : isCooldown ? (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-blue-500/10 text-blue-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-blue-100 shadow-sm">
+                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-blue-500/10 text-blue-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-blue-100 shadow-sm cursor-default">
                            <LuShieldCheck />Safety Optimization... {countdown}s
                          </motion.div>
                        ) : (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-green-500/10 text-green-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-green-100 shadow-sm">
+                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-green-500/10 text-green-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-green-100 shadow-sm cursor-default">
                            <LuSparkles />Ready to Engage
                          </motion.div>
                        )}
                      </AnimatePresence>
                   </div>
 
-                  {/* The List */}
                   <div className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-3 ios-scrollbar min-h-0">
                     {currentBatch.map((contact, idx) => (
                       <motion.div 
@@ -547,7 +537,7 @@ export default function SSIStudiosMessenger() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.02 }}
                         key={contact.id} 
-                        className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${
+                        className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
                           contact.status === 'sent' 
                             ? 'bg-gray-50/50 border-transparent opacity-60 grayscale' 
                             : 'bg-white border-white shadow-sm hover:shadow-md hover:scale-[1.01] hover:border-blue-200'
@@ -566,13 +556,13 @@ export default function SSIStudiosMessenger() {
                         </div>
 
                         {contact.status === 'sent' ? (
-                          <div className="text-[#34C759] flex items-center gap-2 text-sm font-bold px-4 py-2 bg-green-50 rounded-full">
+                          <div className="text-[#34C759] flex items-center gap-2 text-sm font-bold px-4 py-2 bg-green-50 rounded-full cursor-default">
                             <LuCheck size={16} /> Sent
                           </div>
                         ) : (
                           <motion.button
                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={() => openWhatsApp(contact)}
+                            onClick={(e) => { e.stopPropagation(); openWhatsApp(contact); }}
                             disabled={isCooldown || isCoffeeBreak}
                             className={`px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer ${
                               isCooldown || isCoffeeBreak 
@@ -587,7 +577,6 @@ export default function SSIStudiosMessenger() {
                     ))}
                     <div className="h-8 w-full" />
                   </div>
-
                 </div>
               </motion.div>
             )}
