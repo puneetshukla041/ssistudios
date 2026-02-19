@@ -12,6 +12,7 @@ export default function SecurityGuard() {
 
       
 
+      
 
       
       "color: #EF4444; font-size: 40px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;"
