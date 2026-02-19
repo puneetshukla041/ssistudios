@@ -32,55 +32,60 @@ type ContactRow = {
 
 // --- SUB-COMPONENTS ---
 
+// Upgraded GlassCard for premium iOS feel
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-  <div className={`bg-white/60 backdrop-blur-xl border border-white/50 shadow-lg rounded-[24px] ${className}`}>
+  <div className={`bg-white/50 backdrop-blur-[40px] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[32px] relative z-10 ${className}`}>
     {children}
   </div>
 )
 
+// Upgraded Apple-style Stat Card (Tightened vertically for better fit)
+const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg }: any) => (
+  <motion.div 
+    whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.7)" }}
+    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+    className="bg-white/40 backdrop-blur-2xl border border-white/50 p-5 rounded-[28px] shadow-sm flex flex-col justify-between h-full cursor-pointer relative overflow-hidden"
+  >
+    <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center mb-4 ${iconBg}`}>
+      <Icon size={20} className={iconColor} />
+    </div>
+    <div>
+      <p className="text-[32px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1">{value}</p>
+      <p className="text-[13px] font-medium text-[#86868B] tracking-wide">{label}</p>
+    </div>
+  </motion.div>
+)
+
+// Slightly scaled-down to prevent pushing content down
 const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: number, color?: string }) => {
-  const radius = 40;
+  const radius = 50;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="relative w-32 h-32 flex items-center justify-center">
-      <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={radius} stroke="#E5E5EA" strokeWidth="10" fill="transparent" />
+    <div className="relative w-40 h-40 flex items-center justify-center">
+      <svg className="transform -rotate-90 w-full h-full drop-shadow-sm" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r={radius} stroke="rgba(0,0,0,0.05)" strokeWidth="10" fill="transparent" />
         <motion.circle
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          cx="50" cy="50" r={radius}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          cx="60" cy="60" r={radius}
           stroke={color}
           strokeWidth="10"
           fill="transparent"
           strokeDasharray={circumference}
           strokeLinecap="round"
+          className="drop-shadow-md"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-700">
-        <span className="text-xl font-bold">{Math.round(percentage)}%</span>
-        <span className="text-[10px] uppercase font-semibold text-gray-400">Complete</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-[#1D1D1F]">
+        <span className="text-3xl font-bold tracking-tighter">{Math.round(percentage)}%</span>
+        <span className="text-[10px] uppercase tracking-widest font-semibold text-[#86868B] mt-1">Complete</span>
       </div>
     </div>
   )
 }
-
-const StatWidget = ({ icon: Icon, label, value, color }: any) => (
-  <motion.div 
-    whileHover={{ scale: 1.02 }}
-    className="flex items-center gap-4 p-4 rounded-2xl bg-white/50 border border-white/60 shadow-sm cursor-pointer hover:shadow-md transition-all"
-  >
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md ${color}`}>
-      <Icon size={20} />
-    </div>
-    <div>
-      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{label}</p>
-      <p className="text-xl font-bold text-gray-800">{value}</p>
-    </div>
-  </motion.div>
-)
 
 // --- MAIN APPLICATION ---
 
@@ -126,7 +131,7 @@ export default function SSIStudiosMessenger() {
     if (savedFilename) setFileName(savedFilename)
     
     setIsLoaded(true)
-    addLog("System Initialized. Ready.")
+    addLog("System Initialized. Ready for operation.")
   }, [])
 
   useEffect(() => { if (isLoaded) localStorage.setItem('ssi_contacts', JSON.stringify(contacts)) }, [contacts, isLoaded])
@@ -135,7 +140,7 @@ export default function SSIStudiosMessenger() {
   useEffect(() => { if (isLoaded && fileName) localStorage.setItem('ssi_filename', fileName) }, [fileName, isLoaded])
 
   const addLog = (msg: string) => {
-    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5))
+    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 6))
   }
 
   // 2. ANALYTICS
@@ -201,7 +206,7 @@ export default function SSIStudiosMessenger() {
           addLog(`Imported ${foundData.length} contacts. Database updated.`)
           setTimeout(() => setActiveTab('analysis'), 800) 
         } else {
-          setDebugMsg('Error: No Name/Mobile columns found.')
+          setDebugMsg('Error: No valid Name/Mobile columns found.')
           addLog('Error: Column matching failed.')
         }
 
@@ -231,7 +236,7 @@ export default function SSIStudiosMessenger() {
 
     window.open(url, '_blank')
     setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'sent' } : c))
-    addLog(`Message sent to ${contact.name} (ID: ${uniqueId})`)
+    addLog(`Message delivered to ${contact.name} (ID: ${uniqueId})`)
     handleSafetyTimers()
   }
 
@@ -242,7 +247,7 @@ export default function SSIStudiosMessenger() {
     if (newCount % 10 === 0) {
       setIsCoffeeBreak(true)
       setCountdown(20) 
-      addLog('Safety Protocol: Coffee Break Initiated.')
+      addLog('Safety Protocol: Mandatory cool-down initiated.')
     } else {
       setIsCooldown(true)
       const randomDelay = Math.floor(Math.random() * (8 - 3 + 1) + 3)
@@ -278,34 +283,34 @@ export default function SSIStudiosMessenger() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Report")
     XLSX.writeFile(wb, `SSI_Report_${new Date().toISOString().slice(0,10)}.xlsx`)
-    addLog('Report downloaded successfully.')
+    addLog('Report exported successfully.')
   }
 
   const currentBatch = contacts.slice(currentBatchIndex * BATCH_SIZE, (currentBatchIndex + 1) * BATCH_SIZE);
   const totalBatches = Math.ceil(contacts.length / BATCH_SIZE);
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#F2F2F7] flex items-center justify-center text-slate-400">Initializing Core...</div>
+  if (!isLoaded) return <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center font-sans tracking-tight text-[#86868B]">Initializing Subsystems...</div>
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] font-sans text-[#1D1D1F] p-4 lg:p-8 flex justify-center items-center selection:bg-blue-100">
+    <div className="min-h-screen bg-[#F5F5F7] font-sans text-[#1D1D1F] p-4 lg:p-8 flex justify-center items-center selection:bg-blue-200">
       <style jsx global>{`
         .ios-scrollbar::-webkit-scrollbar { width: 6px; }
         .ios-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .ios-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.1); border-radius: 20px; }
-        .ios-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); }
-        .cursor-hand { cursor: pointer !important; }
+        .ios-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.15); border-radius: 20px; }
+        .ios-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.25); }
       `}</style>
       
+      {/* WIDENED MAIN CONTAINER: max-w-7xl instead of max-w-6xl for wider breadth */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-6xl w-full bg-white/85 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-white/60 flex flex-col h-[90vh] overflow-hidden"
+        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+        className="max-w-7xl w-full bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-white/80 flex flex-col h-[90vh] overflow-hidden relative"
       >
-        
         {/* --- HEADER --- */}
-        <div className="flex-none px-8 py-5 border-b border-gray-200/50 flex items-center justify-between bg-white/50 backdrop-blur-md z-20">
+        <div className="flex-none px-8 py-5 border-b border-gray-200/40 flex items-center justify-between bg-white/40 backdrop-blur-xl z-20">
            <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 overflow-hidden p-1 cursor-pointer">
+             <div className="w-12 h-12 bg-white rounded-[16px] flex items-center justify-center shadow-sm border border-gray-100/50 overflow-hidden p-1 cursor-pointer">
                <img 
                  src="/logos/ssilogo.png" 
                  alt="SSI" 
@@ -317,9 +322,9 @@ export default function SSIStudiosMessenger() {
                </div>
              </div>
              <div>
-               <h1 className="text-xl font-bold tracking-tight text-gray-900 cursor-default">SSI Studios Messenger</h1>
-               <p className="text-[#86868B] text-xs font-medium flex items-center gap-1 cursor-default">
-                 <LuShieldCheck size={10} className="text-green-500"/> Advanced Safety Protocol Active
+               <h1 className="text-[20px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1 cursor-default">SSI Messenger</h1>
+               <p className="text-[#86868B] text-[12px] font-medium flex items-center gap-1.5 cursor-default">
+                 <LuShieldCheck size={12} className="text-[#34C759]"/> Encrypted & Protected
                </p>
              </div>
            </div>
@@ -328,58 +333,59 @@ export default function SSIStudiosMessenger() {
              {contacts.length > 0 && (
                <>
                  <motion.button 
-                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                    onClick={handleReset}
-                   className="p-2 rounded-full text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                   className="p-2.5 rounded-full text-[#FF3B30] hover:bg-[#FF3B30]/10 transition-colors cursor-pointer"
                    title="Reset All Data"
                  >
-                   <LuTrash2 size={18} />
+                   <LuTrash2 size={20} />
                  </motion.button>
                  <motion.button 
-                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                    onClick={handleExport}
-                   className="p-2 rounded-full text-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer"
+                   className="p-2.5 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10 transition-colors cursor-pointer"
                    title="Export Report"
                  >
-                   <LuDownload size={18} />
+                   <LuDownload size={20} />
                  </motion.button>
-                 <div className="h-6 w-[1px] bg-gray-300 mx-1"></div>
+                 <div className="h-6 w-[1px] bg-gray-200 mx-2"></div>
                </>
              )}
 
-             <div className="bg-[#E5E5EA] p-1 rounded-full flex gap-1 shadow-inner">
-               <button onClick={() => setActiveTab('upload')} className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${activeTab === 'upload' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}>Import</button>
-               <button onClick={() => contacts.length > 0 && setActiveTab('analysis')} disabled={contacts.length === 0} className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${activeTab === 'analysis' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black disabled:opacity-30'}`}>Analysis</button>
-               <button onClick={() => contacts.length > 0 && setActiveTab('message')} disabled={contacts.length === 0} className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${activeTab === 'message' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black disabled:opacity-30'}`}>Messenger</button>
+             <div className="bg-gray-100/80 backdrop-blur-md p-1 rounded-[20px] flex gap-1 shadow-inner border border-black/5">
+               <button onClick={() => setActiveTab('upload')} className={`px-5 py-2 rounded-[16px] text-[13px] font-semibold tracking-wide transition-all cursor-pointer ${activeTab === 'upload' ? 'bg-white text-black shadow-sm' : 'text-[#86868B] hover:text-black'}`}>Import</button>
+               <button onClick={() => contacts.length > 0 && setActiveTab('analysis')} disabled={contacts.length === 0} className={`px-5 py-2 rounded-[16px] text-[13px] font-semibold tracking-wide transition-all cursor-pointer ${activeTab === 'analysis' ? 'bg-white text-black shadow-sm' : 'text-[#86868B] hover:text-black disabled:opacity-30'}`}>Analysis</button>
+               <button onClick={() => contacts.length > 0 && setActiveTab('message')} disabled={contacts.length === 0} className={`px-5 py-2 rounded-[16px] text-[13px] font-semibold tracking-wide transition-all cursor-pointer ${activeTab === 'message' ? 'bg-white text-black shadow-sm' : 'text-[#86868B] hover:text-black disabled:opacity-30'}`}>Engage</button>
              </div>
            </div>
         </div>
 
         {/* --- CONTENT AREA --- */}
-        <div className="flex-1 overflow-hidden relative flex flex-col min-h-0 bg-white/30">
+        <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+          
           <AnimatePresence mode="wait">
-            
             {activeTab === 'upload' && (
               <motion.div 
                 key="upload"
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                className="w-full h-full flex flex-col items-center justify-center p-12"
+                initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-full h-full flex flex-col items-center justify-center p-12 bg-white/20"
               >
                 <motion.div 
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full max-w-lg aspect-video bg-white/80 backdrop-blur-xl rounded-[32px] border-2 border-dashed border-[#C7C7CC] flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] hover:shadow-2xl transition-all duration-300 group"
+                  className="w-full max-w-lg aspect-video bg-white/60 backdrop-blur-2xl rounded-[40px] border-2 border-dashed border-[#C7C7CC] flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] hover:bg-white/80 transition-all duration-300 group shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
                 >
                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
-                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner cursor-pointer">
+                  <div className="w-24 h-24 bg-[#007AFF]/10 rounded-[28px] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner cursor-pointer">
                     <LuUpload size={36} className="text-[#007AFF]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800 cursor-pointer">
-                    {contacts.length > 0 ? "Replace Contact List" : "Upload Data File"}
+                  <h3 className="text-[22px] font-bold tracking-tight text-[#1D1D1F] cursor-pointer">
+                    {contacts.length > 0 ? "Replace Contact List" : "Upload Dataset"}
                   </h3>
-                  <p className="text-gray-400 mt-2 font-medium cursor-pointer">Supports .xlsx / .csv</p>
+                  <p className="text-[#86868B] text-[14px] mt-2 font-medium cursor-pointer">XLSX or CSV format</p>
                 </motion.div>
-                {debugMsg && <p className="mt-6 text-gray-500 font-mono text-sm bg-white/50 px-4 py-2 rounded-full cursor-default">{debugMsg}</p>}
+                {debugMsg && <p className="mt-8 text-[#86868B] font-mono text-[12px] uppercase tracking-widest bg-white/50 px-5 py-2 rounded-full shadow-sm border border-white/60 cursor-default">{debugMsg}</p>}
               </motion.div>
             )}
 
@@ -387,65 +393,97 @@ export default function SSIStudiosMessenger() {
               <motion.div 
                 key="analysis"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                className="w-full h-full p-8 overflow-y-auto ios-scrollbar"
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                // Reduced vertical padding (p-6 lg:p-8) to stop scrolling
+                className="w-full h-full p-6 lg:p-8 overflow-y-auto ios-scrollbar relative"
               >
-                <div className="max-w-4xl mx-auto space-y-8">
-                  <div className="text-center mb-8 cursor-default">
-                    <h2 className="text-3xl font-bold text-gray-900">Mission Control</h2>
-                    <p className="text-gray-500">Real-time status of your outreach campaign</p>
+                {/* Ambient Glows for Glassmorphism Background */}
+                <div className="absolute top-10 left-10 w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+                <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-purple-400/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
+                {/* Widened to max-w-7xl, space tightened to space-y-6 */}
+                <div className="max-w-7xl mx-auto space-y-5 z-10 relative">
+                  
+                  {/* Reduced bottom margin */}
+                  <div className="mb-5 cursor-default">
+                    <h2 className="text-[32px] font-bold tracking-tight text-[#1D1D1F]">Analytics Overview</h2>
+                    <p className="text-[16px] text-[#86868B] font-medium mt-1">Real-time engagement tracking</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <GlassCard className="p-6 flex flex-col items-center justify-center col-span-1 md:col-span-1 cursor-pointer hover:scale-[1.02] transition-transform">
-                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Progress</h3>
-                      <CircularProgress percentage={analytics.percent} color="#34C759" />
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    {/* Progress Card */}
+                    <GlassCard className="lg:col-span-4 p-6 flex flex-col items-center justify-center">
+                      <div className="w-full flex justify-start mb-4">
+                        <h3 className="text-[12px] font-bold text-[#86868B] uppercase tracking-widest">Master Progress</h3>
+                      </div>
+                      <CircularProgress percentage={analytics.percent} color="#007AFF" />
+                      <div className="mt-6 text-center w-full pt-4 border-t border-black/5">
+                        <p className="text-[#1D1D1F] font-semibold text-[14px]">Campaign Status</p>
+                        <p className="text-[12px] text-[#86868B] mt-1">{analytics.pending === 0 ? "Fully Executed" : "Processing Active"}</p>
+                      </div>
                     </GlassCard>
 
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-2 gap-4">
-                      <StatWidget icon={LuSmartphone} label="Total Contacts" value={analytics.total} color="bg-blue-500" />
-                      <StatWidget icon={LuCheck} label="Sent Successfully" value={analytics.sent} color="bg-green-500" />
-                      <StatWidget icon={LuClock} label="Pending" value={analytics.pending} color="bg-gray-400" />
-                      <StatWidget icon={LuActivity} label="Est. Time Left" value={`~${analytics.minsRemaining} mins`} color="bg-amber-500" />
+                    {/* Stats Grid - Now visually wider mapping to col-span-8 */}
+                    <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-5">
+                      <AppleStatCard icon={LuSmartphone} label="Total Records" value={analytics.total} iconColor="text-[#007AFF]" iconBg="bg-[#007AFF]/10" />
+                      <AppleStatCard icon={LuCheck} label="Success" value={analytics.sent} iconColor="text-[#34C759]" iconBg="bg-[#34C759]/10" />
+                      <AppleStatCard icon={LuClock} label="Pending" value={analytics.pending} iconColor="text-[#FF9500]" iconBg="bg-[#FF9500]/10" />
+                      <AppleStatCard icon={LuActivity} label="Est. Time" value={`~${analytics.minsRemaining}m`} iconColor="text-[#AF52DE]" iconBg="bg-[#AF52DE]/10" />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <GlassCard className="p-8 cursor-pointer hover:shadow-xl transition-all">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-purple-100 text-purple-600 rounded-xl"><LuZap size={24} /></div>
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-800">System Efficiency</h3>
-                          <p className="text-xs text-gray-500">Current running metrics</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Efficiency Module */}
+                    <GlassCard className="p-6 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="p-3 bg-[#5856D6]/10 text-[#5856D6] rounded-[14px]"><LuZap size={22} /></div>
+                          <div>
+                            <h3 className="text-[18px] font-bold tracking-tight text-[#1D1D1F]">System Efficiency</h3>
+                            <p className="text-[12px] text-[#86868B] mt-0.5">Live delivery optimization metrics</p>
+                          </div>
+                        </div>
+                        <div className="h-3.5 w-full bg-black/5 rounded-full overflow-hidden shadow-inner relative">
+                          <motion.div 
+                            initial={{ width: 0 }} animate={{ width: `${analytics.percent}%` }} 
+                            transition={{ duration: 1 }}
+                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#007AFF] to-[#AF52DE] rounded-full"
+                          />
                         </div>
                       </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }} animate={{ width: `${analytics.percent}%` }} 
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                        />
-                      </div>
-                      <div className="mt-4 flex justify-between text-sm text-gray-500 font-medium">
-                        <span>Batch Size: {BATCH_SIZE}</span>
-                        <span>Mode: {isCooldown ? 'Cooling' : 'Active'}</span>
+                      <div className="mt-6 flex justify-between items-center px-2">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Batch Size</span>
+                          <span className="text-[16px] font-semibold text-[#1D1D1F]">{BATCH_SIZE} Units</span>
+                        </div>
+                        <div className="h-8 w-[1px] bg-black/10"></div>
+                        <div className="flex flex-col text-right">
+                          <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Current State</span>
+                          <span className={`text-[16px] font-semibold ${isCooldown ? 'text-[#FF9500]' : 'text-[#34C759]'}`}>
+                            {isCooldown ? 'Cooling Down' : 'Active'}
+                          </span>
+                        </div>
                       </div>
                     </GlassCard>
 
-                    <GlassCard className="p-6 bg-black/90 border-gray-800 cursor-text">
-                      <div className="flex items-center gap-3 mb-3 text-green-400 border-b border-gray-800 pb-2">
-                        <LuTerminal size={18} />
-                        <span className="text-xs font-mono font-bold uppercase tracking-wider">Live System Logs</span>
+                    {/* Developer Logs (Dark Apple Pro Mode) - Tightened height */}
+                    <div className="bg-[#1C1C1E]/80 backdrop-blur-[40px] rounded-[32px] p-6 shadow-2xl flex flex-col h-full border border-white/10 cursor-text">
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10 text-white/80">
+                        <LuTerminal size={16} />
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/50">Runtime Logs</span>
                       </div>
-                      <div className="font-mono text-xs text-gray-300 space-y-2 h-24 overflow-hidden relative">
+                      <div className="font-mono text-[12px] text-white/70 space-y-2 h-[100px] overflow-hidden relative">
                         <AnimatePresence>
                           {logs.map((log, i) => (
-                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate">
-                              <span className="text-blue-400 mr-2">➜</span> {log}
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate flex items-center gap-3">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#007AFF] flex-none" /> 
+                              {log}
                             </motion.div>
                           ))}
                         </AnimatePresence>
-                        {logs.length === 0 && <span className="text-gray-600 italic">Waiting for events...</span>}
+                        {logs.length === 0 && <span className="text-white/30 italic">Awaiting operations...</span>}
                       </div>
-                    </GlassCard>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -455,126 +493,129 @@ export default function SSIStudiosMessenger() {
               <motion.div 
                 key="message"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="w-full h-full flex divide-x divide-gray-200/50"
+                transition={{ duration: 0.3 }}
+                className="w-full h-full flex divide-x divide-gray-200/50 bg-white/20"
               >
-                <div className="w-[350px] flex-none bg-white/40 h-full p-6 flex flex-col">
-                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2 cursor-default">
-                    <LuSmartphone /> Message Composer
+                {/* Composer Sidebar */}
+                <div className="w-[380px] flex-none h-full p-8 flex flex-col bg-white/30 backdrop-blur-md">
+                  <h2 className="text-[13px] font-bold text-[#86868B] uppercase tracking-widest mb-6 flex items-center gap-2 cursor-default">
+                    <LuSmartphone size={16}/> Protocol Composer
                   </h2>
-                  <div className="flex-1 bg-white rounded-[24px] p-2 shadow-sm border border-gray-100 relative group focus-within:ring-2 ring-blue-500/20 transition-all cursor-text">
+                  <div className="flex-1 bg-white/80 backdrop-blur-xl rounded-[32px] p-3 shadow-sm border border-white relative group focus-within:ring-4 ring-[#007AFF]/10 transition-all cursor-text mb-8">
                     <textarea 
                       value={messageTemplate}
                       onChange={(e) => setMessageTemplate(e.target.value)}
-                      className="w-full h-full p-4 rounded-[20px] resize-none focus:outline-none text-[#1D1D1F] text-base leading-relaxed placeholder:text-gray-300 bg-transparent"
-                      placeholder="Type your message here..."
+                      className="w-full h-full p-5 rounded-[24px] resize-none focus:outline-none text-[#1D1D1F] text-[15px] leading-relaxed placeholder:text-gray-400 bg-transparent ios-scrollbar"
+                      placeholder="Enter your transmission payload..."
                     />
                   </div>
-                  <div className="mt-6 cursor-default">
-                    <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-2 pl-2">Live Preview</h3>
-                    <div className="bg-[#E9E9EB] p-4 rounded-2xl rounded-tr-sm text-sm text-black relative shadow-sm">
+                  <div className="cursor-default">
+                    <h3 className="text-[11px] font-bold text-[#86868B] uppercase tracking-widest mb-3 pl-2">Client Preview</h3>
+                    <div className="bg-[#E5E5EA]/80 backdrop-blur-md p-5 rounded-[24px] rounded-bl-sm text-[14px] text-black relative shadow-sm border border-white/50">
                        <p className="leading-snug">
-                         Hi {contacts[0]?.name.split(' ')[0] || "Doctor"}, <br/><br/>
+                         Hello {contacts[0]?.name.split(' ')[0] || "Client"}, <br/><br/>
                          {messageTemplate}
                        </p>
-                       <div className="mt-2 text-[10px] text-gray-500 font-mono">Ref: #8392</div>
+                       <div className="mt-3 pt-3 border-t border-black/5 text-[11px] text-[#86868B] font-mono">Ref: #8392</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex-1 flex flex-col h-full min-h-0 bg-white/20">
-                  <div className="flex-none px-8 py-4 border-b border-gray-100/50 flex items-center justify-between bg-white/30 backdrop-blur-md">
+                {/* Engagement Area */}
+                <div className="flex-1 flex flex-col h-full min-h-0 relative">
+                  <div className="flex-none px-10 py-6 border-b border-white/40 flex items-center justify-between bg-white/40 backdrop-blur-xl z-10">
                     <div className="flex items-center gap-4 cursor-default">
                       <div className="flex flex-col">
-                        <h2 className="text-xl font-bold text-gray-900">Batch {currentBatchIndex + 1}</h2>
-                        <span className="text-xs text-gray-500 font-medium">Page {currentBatchIndex + 1} of {Math.ceil(contacts.length / BATCH_SIZE)}</span>
+                        <h2 className="text-[22px] font-bold tracking-tight text-[#1D1D1F]">Batch Execution {currentBatchIndex + 1}</h2>
+                        <span className="text-[13px] text-[#86868B] font-medium mt-1">Segment {currentBatchIndex + 1} of {Math.ceil(contacts.length / BATCH_SIZE)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white/50 rounded-full p-1 border border-white">
+                    <div className="flex items-center gap-2 bg-white/60 backdrop-blur-xl rounded-[20px] p-1.5 shadow-sm border border-white">
                        <motion.button 
-                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                          disabled={currentBatchIndex === 0}
                          onClick={() => setCurrentBatchIndex(i => i - 1)}
-                         className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-gray-600"
+                         className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-[#1D1D1F]"
                        >
-                         <LuChevronLeft />
+                         <LuChevronLeft size={20} />
                        </motion.button>
                        <motion.button 
-                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                          disabled={currentBatchIndex === Math.ceil(contacts.length / BATCH_SIZE) - 1}
                          onClick={() => setCurrentBatchIndex(i => i + 1)}
-                         className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-gray-600"
+                         className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-[#1D1D1F]"
                        >
-                         <LuChevronRight />
+                         <LuChevronRight size={20} />
                        </motion.button>
                     </div>
                   </div>
 
-                  <div className="flex-none px-8 py-3">
+                  <div className="flex-none px-10 py-4 relative z-10">
                      <AnimatePresence mode="wait">
                        {isCoffeeBreak ? (
-                          <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-amber-500/10 text-amber-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-amber-100 shadow-sm cursor-default">
-                            <LuCoffee />Taking a coffee break... {countdown}s
+                          <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#FF9500]/10 text-[#FF9500] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#FF9500]/20 shadow-sm cursor-default backdrop-blur-md">
+                            <LuCoffee size={18} /> Mandatory Cool-down Period... {countdown}s
                           </motion.div>
                        ) : isCooldown ? (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-blue-500/10 text-blue-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-blue-100 shadow-sm cursor-default">
-                           <LuShieldCheck />Safety Optimization... {countdown}s
+                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#007AFF]/10 text-[#007AFF] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#007AFF]/20 shadow-sm cursor-default backdrop-blur-md">
+                           <LuShieldCheck size={18} /> Rate Limit Protection Active... {countdown}s
                          </motion.div>
                        ) : (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full bg-green-500/10 text-green-600 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm border border-green-100 shadow-sm cursor-default">
-                           <LuSparkles />Ready to Engage
+                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#34C759]/10 text-[#34C759] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#34C759]/20 shadow-sm cursor-default backdrop-blur-md">
+                           <LuSparkles size={18} /> Systems Go. Ready to Engage.
                          </motion.div>
                        )}
                      </AnimatePresence>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-3 ios-scrollbar min-h-0">
+                  <div className="flex-1 overflow-y-auto px-10 pb-10 pt-2 space-y-4 ios-scrollbar min-h-0 relative">
                     {currentBatch.map((contact, idx) => (
                       <motion.div 
                         layout
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.02 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: idx * 0.015, duration: 0.2 }}
                         key={contact.id} 
-                        className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                        className={`group flex items-center justify-between p-5 rounded-[24px] border transition-all duration-300 cursor-pointer ${
                           contact.status === 'sent' 
-                            ? 'bg-gray-50/50 border-transparent opacity-60 grayscale' 
-                            : 'bg-white border-white shadow-sm hover:shadow-md hover:scale-[1.01] hover:border-blue-200'
+                            ? 'bg-white/30 border-white/20 opacity-60 grayscale' 
+                            : 'bg-white/80 backdrop-blur-xl border-white shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
                         }`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-inner ${
-                            contact.status === 'sent' ? 'bg-gray-200 text-gray-500' : 'bg-gradient-to-br from-[#007AFF] to-[#5AC8FA] text-white'
+                        <div className="flex items-center gap-5">
+                          <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center font-bold text-[20px] shadow-sm ${
+                            contact.status === 'sent' ? 'bg-[#E5E5EA] text-[#86868B]' : 'bg-gradient-to-br from-[#007AFF] to-[#5AC8FA] text-white'
                           }`}>
                             {contact.name.charAt(0)}
                           </div>
                           <div>
-                            <h3 className="font-bold text-gray-900 text-base">{contact.name}</h3>
-                            <p className="text-xs text-gray-500 font-mono tracking-wide">{contact.contactno}</p>
+                            <h3 className="font-semibold text-[#1D1D1F] text-[16px] tracking-tight">{contact.name}</h3>
+                            <p className="text-[13px] text-[#86868B] font-mono tracking-wide mt-1">{contact.contactno}</p>
                           </div>
                         </div>
 
                         {contact.status === 'sent' ? (
-                          <div className="text-[#34C759] flex items-center gap-2 text-sm font-bold px-4 py-2 bg-green-50 rounded-full cursor-default">
-                            <LuCheck size={16} /> Sent
+                          <div className="text-[#34C759] flex items-center gap-2 text-[14px] font-semibold px-5 py-2.5 bg-[#34C759]/10 rounded-[16px] cursor-default">
+                            <LuCheck size={18} /> Delivered
                           </div>
                         ) : (
                           <motion.button
                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                             onClick={(e) => { e.stopPropagation(); openWhatsApp(contact); }}
                             disabled={isCooldown || isCoffeeBreak}
-                            className={`px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer ${
+                            className={`px-7 py-3 rounded-[18px] font-semibold text-[14px] flex items-center gap-2 transition-all shadow-md cursor-pointer ${
                               isCooldown || isCoffeeBreak 
-                                ? 'bg-gray-100 text-gray-400 shadow-none cursor-not-allowed'
-                                : 'bg-[#007AFF] hover:bg-[#0071E3] text-white shadow-blue-500/30'
+                                ? 'bg-[#E5E5EA] text-[#86868B] shadow-none cursor-not-allowed'
+                                : 'bg-[#007AFF] text-white shadow-[#007AFF]/20 hover:shadow-[#007AFF]/40'
                             }`}
                           >
-                            {isCooldown || isCoffeeBreak ? 'Wait...' : <>Invite <LuSend size={14}/></>}
+                            {isCooldown || isCoffeeBreak ? 'Standby' : <>Transmit <LuSend size={16} className="ml-1"/></>}
                           </motion.button>
                         )}
                       </motion.div>
                     ))}
-                    <div className="h-8 w-full" />
+                    <div className="h-10 w-full" />
                   </div>
                 </div>
               </motion.div>
