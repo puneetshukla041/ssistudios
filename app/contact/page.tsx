@@ -32,60 +32,112 @@ type ContactRow = {
 
 // --- SUB-COMPONENTS ---
 
-// Upgraded GlassCard for premium iOS feel
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white/50 backdrop-blur-[40px] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[32px] relative z-10 ${className}`}>
     {children}
   </div>
 )
 
-// Upgraded Apple-style Stat Card (Tightened vertically for better fit)
-const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg }: any) => (
-  <motion.div 
-    whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.7)" }}
-    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-    className="bg-white/40 backdrop-blur-2xl border border-white/50 p-5 rounded-[28px] shadow-sm flex flex-col justify-between h-full cursor-pointer relative overflow-hidden"
+// ── ENHANCED STAT CARD ──────────────────────────────────────────────────────
+const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg, delay = 0 }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 24, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.5, delay, ease: [0.23, 1, 0.32, 1] }}
+    whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.08)' }}
+    className="bg-white/60 backdrop-blur-2xl border border-white/70 p-6 rounded-[28px] shadow-sm flex flex-col justify-between h-full cursor-default relative overflow-hidden group"
+    style={{ transition: 'box-shadow 0.3s ease' }}
   >
-    <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center mb-4 ${iconBg}`}>
-      <Icon size={20} className={iconColor} />
+    {/* Subtle shimmer on hover */}
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.5) 0%, transparent 60%)' }} />
+    
+    <div className={`w-11 h-11 rounded-[16px] flex items-center justify-center mb-5 ${iconBg} shadow-sm`}>
+      <Icon size={22} className={iconColor} />
     </div>
     <div>
-      <p className="text-[32px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1">{value}</p>
+      <motion.p
+        key={value}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="text-[36px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1.5"
+        style={{ fontVariantNumeric: 'tabular-nums' }}
+      >
+        {value}
+      </motion.p>
       <p className="text-[13px] font-medium text-[#86868B] tracking-wide">{label}</p>
     </div>
   </motion.div>
 )
 
-// Slightly scaled-down to prevent pushing content down
+// ── ENHANCED CIRCULAR PROGRESS ───────────────────────────────────────────────
 const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: number, color?: string }) => {
-  const radius = 50;
+  const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="relative w-40 h-40 flex items-center justify-center">
-      <svg className="transform -rotate-90 w-full h-full drop-shadow-sm" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r={radius} stroke="rgba(0,0,0,0.05)" strokeWidth="10" fill="transparent" />
+    <div className="relative flex items-center justify-center" style={{ width: 172, height: 172 }}>
+      {/* Glow ring behind */}
+      <div className="absolute inset-0 rounded-full opacity-20 blur-xl"
+        style={{ background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }} />
+
+      <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 120 120">
+        {/* Track */}
+        <circle cx="60" cy="60" r={radius} stroke="rgba(0,0,0,0.06)" strokeWidth="9" fill="transparent" />
+        {/* Animated fill */}
         <motion.circle
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+          transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
           cx="60" cy="60" r={radius}
           stroke={color}
-          strokeWidth="10"
+          strokeWidth="9"
           fill="transparent"
           strokeDasharray={circumference}
           strokeLinecap="round"
-          className="drop-shadow-md"
+          style={{ filter: `drop-shadow(0 0 6px ${color}66)` }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-[#1D1D1F]">
-        <span className="text-3xl font-bold tracking-tighter">{Math.round(percentage)}%</span>
+
+      {/* Centre label */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <motion.span
+          key={Math.round(percentage)}
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="text-[34px] font-bold tracking-tighter text-[#1D1D1F]"
+        >
+          {Math.round(percentage)}%
+        </motion.span>
         <span className="text-[10px] uppercase tracking-widest font-semibold text-[#86868B] mt-1">Complete</span>
       </div>
     </div>
   )
 }
+
+// ── ANIMATED PROGRESS BAR ────────────────────────────────────────────────────
+const GradientBar = ({ percent }: { percent: number }) => (
+  <div className="relative h-3 w-full bg-black/5 rounded-full overflow-hidden shadow-inner">
+    <motion.div
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: `${percent}%`, opacity: 1 }}
+      transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+      className="absolute top-0 left-0 h-full rounded-full"
+      style={{ background: 'linear-gradient(90deg, #007AFF 0%, #5AC8FA 50%, #AF52DE 100%)' }}
+    />
+    {/* Shimmer sweep */}
+    <motion.div
+      initial={{ x: '-100%' }}
+      animate={{ x: '200%' }}
+      transition={{ duration: 1.8, ease: 'easeInOut', delay: 0.6 }}
+      className="absolute inset-0 w-1/3 h-full"
+      style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)' }}
+    />
+  </div>
+)
 
 // --- MAIN APPLICATION ---
 
@@ -300,7 +352,6 @@ export default function SSIStudiosMessenger() {
         .ios-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.25); }
       `}</style>
       
-      {/* WIDENED MAIN CONTAINER: max-w-7xl instead of max-w-6xl for wider breadth */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -364,6 +415,8 @@ export default function SSIStudiosMessenger() {
         <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
           
           <AnimatePresence mode="wait">
+
+            {/* ══════════════════ UPLOAD TAB ══════════════════ */}
             {activeTab === 'upload' && (
               <motion.div 
                 key="upload"
@@ -389,106 +442,199 @@ export default function SSIStudiosMessenger() {
               </motion.div>
             )}
 
+            {/* ══════════════════ ANALYSIS TAB — ENHANCED ══════════════════ */}
             {activeTab === 'analysis' && (
               <motion.div 
                 key="analysis"
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                // Reduced vertical padding (p-6 lg:p-8) to stop scrolling
-                className="w-full h-full p-6 lg:p-8 overflow-y-auto ios-scrollbar relative"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="w-full h-full p-7 lg:p-8 overflow-y-auto ios-scrollbar relative"
               >
-                {/* Ambient Glows for Glassmorphism Background */}
-                <div className="absolute top-10 left-10 w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
-                <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-purple-400/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+                {/* ── Ambient background glows ── */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                  className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full pointer-events-none -z-10"
+                  style={{ background: 'radial-gradient(circle, rgba(0,122,255,0.08) 0%, transparent 65%)', transform: 'translate(-20%, -20%)' }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 1.2, ease: 'easeOut', delay: 0.15 }}
+                  className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full pointer-events-none -z-10"
+                  style={{ background: 'radial-gradient(circle, rgba(175,82,222,0.07) 0%, transparent 65%)', transform: 'translate(20%, 20%)' }}
+                />
 
-                {/* Widened to max-w-7xl, space tightened to space-y-6 */}
-                <div className="max-w-7xl mx-auto space-y-5 z-10 relative">
-                  
-                  {/* Reduced bottom margin */}
-                  <div className="mb-5 cursor-default">
-                    <h2 className="text-[32px] font-bold tracking-tight text-[#1D1D1F]">Analytics Overview</h2>
-                    <p className="text-[16px] text-[#86868B] font-medium mt-1">Real-time engagement tracking</p>
-                  </div>
+                <div className="max-w-7xl mx-auto space-y-6 relative z-10">
 
+                  {/* ── Page heading with stagger ── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                    className="cursor-default"
+                  >
+                    <h2 className="text-[34px] font-bold tracking-tight text-[#1D1D1F]">Analytics Overview</h2>
+                    <p className="text-[15px] text-[#86868B] font-medium mt-1">Real-time engagement tracking</p>
+                  </motion.div>
+
+                  {/* ── TOP ROW: Progress Ring + Stat Cards ── */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    {/* Progress Card */}
-                    <GlassCard className="lg:col-span-4 p-6 flex flex-col items-center justify-center">
-                      <div className="w-full flex justify-start mb-4">
-                        <h3 className="text-[12px] font-bold text-[#86868B] uppercase tracking-widest">Master Progress</h3>
-                      </div>
-                      <CircularProgress percentage={analytics.percent} color="#007AFF" />
-                      <div className="mt-6 text-center w-full pt-4 border-t border-black/5">
-                        <p className="text-[#1D1D1F] font-semibold text-[14px]">Campaign Status</p>
-                        <p className="text-[12px] text-[#86868B] mt-1">{analytics.pending === 0 ? "Fully Executed" : "Processing Active"}</p>
-                      </div>
-                    </GlassCard>
 
-                    {/* Stats Grid - Now visually wider mapping to col-span-8 */}
-                    <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-5">
-                      <AppleStatCard icon={LuSmartphone} label="Total Records" value={analytics.total} iconColor="text-[#007AFF]" iconBg="bg-[#007AFF]/10" />
-                      <AppleStatCard icon={LuCheck} label="Success" value={analytics.sent} iconColor="text-[#34C759]" iconBg="bg-[#34C759]/10" />
-                      <AppleStatCard icon={LuClock} label="Pending" value={analytics.pending} iconColor="text-[#FF9500]" iconBg="bg-[#FF9500]/10" />
-                      <AppleStatCard icon={LuActivity} label="Est. Time" value={`~${analytics.minsRemaining}m`} iconColor="text-[#AF52DE]" iconBg="bg-[#AF52DE]/10" />
+                    {/* Progress card */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.05 }}
+                      className="lg:col-span-4"
+                    >
+                      <GlassCard className="p-7 flex flex-col items-center justify-center h-full gap-6">
+                        <div className="w-full flex items-center justify-between">
+                          <h3 className="text-[11px] font-bold text-[#86868B] uppercase tracking-widest">Master Progress</h3>
+                          <span className={`text-[11px] font-semibold px-3 py-1 rounded-full ${analytics.pending === 0 ? 'bg-[#34C759]/12 text-[#34C759]' : 'bg-[#007AFF]/10 text-[#007AFF]'}`}>
+                            {analytics.pending === 0 ? '✓ Done' : '● Live'}
+                          </span>
+                        </div>
+
+                        <CircularProgress percentage={analytics.percent} color="#007AFF" />
+
+                        <div className="w-full pt-5 border-t border-black/5 flex justify-between items-center">
+                          <div className="text-center">
+                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.sent}</p>
+                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Sent</p>
+                          </div>
+                          <div className="h-8 w-px bg-black/8" />
+                          <div className="text-center">
+                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.pending}</p>
+                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Pending</p>
+                          </div>
+                          <div className="h-8 w-px bg-black/8" />
+                          <div className="text-center">
+                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.total}</p>
+                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Total</p>
+                          </div>
+                        </div>
+                      </GlassCard>
+                    </motion.div>
+
+                    {/* Stat cards — staggered entry */}
+                    <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-2 gap-5">
+                      <AppleStatCard icon={LuSmartphone} label="Total Records"   value={analytics.total}                  iconColor="text-[#007AFF]" iconBg="bg-[#007AFF]/10" delay={0.10} />
+                      <AppleStatCard icon={LuCheck}      label="Successfully Sent" value={analytics.sent}                iconColor="text-[#34C759]" iconBg="bg-[#34C759]/10" delay={0.17} />
+                      <AppleStatCard icon={LuClock}      label="Pending"          value={analytics.pending}              iconColor="text-[#FF9500]" iconBg="bg-[#FF9500]/10" delay={0.24} />
+                      <AppleStatCard icon={LuActivity}   label="Est. Remaining"   value={`~${analytics.minsRemaining}m`} iconColor="text-[#AF52DE]" iconBg="bg-[#AF52DE]/10" delay={0.31} />
                     </div>
                   </div>
 
+                  {/* ── BOTTOM ROW: Efficiency + Logs ── */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
                     {/* Efficiency Module */}
-                    <GlassCard className="p-6 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="p-3 bg-[#5856D6]/10 text-[#5856D6] rounded-[14px]"><LuZap size={22} /></div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+                    >
+                      <GlassCard className="p-7 flex flex-col gap-6 h-full">
+                        <div className="flex items-center gap-4">
+                          <motion.div
+                            whileHover={{ rotate: 15, scale: 1.1 }}
+                            transition={{ type: 'spring', stiffness: 400 }}
+                            className="p-3 bg-[#5856D6]/10 text-[#5856D6] rounded-[14px]"
+                          >
+                            <LuZap size={22} />
+                          </motion.div>
                           <div>
                             <h3 className="text-[18px] font-bold tracking-tight text-[#1D1D1F]">System Efficiency</h3>
-                            <p className="text-[12px] text-[#86868B] mt-0.5">Live delivery optimization metrics</p>
+                            <p className="text-[12px] text-[#86868B] mt-0.5">Live delivery optimisation metrics</p>
                           </div>
                         </div>
-                        <div className="h-3.5 w-full bg-black/5 rounded-full overflow-hidden shadow-inner relative">
-                          <motion.div 
-                            initial={{ width: 0 }} animate={{ width: `${analytics.percent}%` }} 
-                            transition={{ duration: 1 }}
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#007AFF] to-[#AF52DE] rounded-full"
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-6 flex justify-between items-center px-2">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Batch Size</span>
-                          <span className="text-[16px] font-semibold text-[#1D1D1F]">{BATCH_SIZE} Units</span>
-                        </div>
-                        <div className="h-8 w-[1px] bg-black/10"></div>
-                        <div className="flex flex-col text-right">
-                          <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Current State</span>
-                          <span className={`text-[16px] font-semibold ${isCooldown ? 'text-[#FF9500]' : 'text-[#34C759]'}`}>
-                            {isCooldown ? 'Cooling Down' : 'Active'}
-                          </span>
-                        </div>
-                      </div>
-                    </GlassCard>
 
-                    {/* Developer Logs (Dark Apple Pro Mode) - Tightened height */}
-                    <div className="bg-[#1C1C1E]/80 backdrop-blur-[40px] rounded-[32px] p-6 shadow-2xl flex flex-col h-full border border-white/10 cursor-text">
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10 text-white/80">
-                        <LuTerminal size={16} />
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/50">Runtime Logs</span>
+                        {/* Animated progress bar */}
+                        <GradientBar percent={analytics.percent} />
+
+                        {/* Metrics row */}
+                        <div className="flex justify-between items-center pt-2">
+                          {[
+                            { label: 'Batch Size',    value: `${BATCH_SIZE} Units` },
+                            { label: 'Batch No.',     value: `${currentBatchIndex + 1} / ${totalBatches || 1}` },
+                            { label: 'System State',  value: isCooldown ? 'Cooling Down' : 'Active', accent: isCooldown ? 'text-[#FF9500]' : 'text-[#34C759]' },
+                          ].map((m, i) => (
+                            <div key={i} className="flex flex-col items-center gap-1">
+                              <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{m.label}</span>
+                              <span className={`text-[16px] font-semibold text-[#1D1D1F] ${m.accent ?? ''}`}>{m.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </GlassCard>
+                    </motion.div>
+
+                    {/* Terminal Logs — premium dark card */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.28 }}
+                      className="bg-[#1A1A1C] rounded-[32px] p-6 flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-white/8 cursor-text overflow-hidden relative"
+                    >
+                      {/* Subtle inner glow */}
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+                      {/* Terminal header */}
+                      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/8">
+                        <div className="flex gap-1.5">
+                          {['#FF5F57','#FFBD2E','#28C840'].map((c, i) => (
+                            <div key={i} style={{ background: c }} className="w-3 h-3 rounded-full opacity-80" />
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 ml-2 text-white/40">
+                          <LuTerminal size={13} />
+                          <span className="text-[11px] font-bold uppercase tracking-widest">Runtime Logs</span>
+                        </div>
+                        {/* Blinking cursor indicator */}
+                        <motion.div
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ repeat: Infinity, duration: 1.2 }}
+                          className="ml-auto w-1.5 h-3.5 rounded-sm bg-[#007AFF]/60"
+                        />
                       </div>
-                      <div className="font-mono text-[12px] text-white/70 space-y-2 h-[100px] overflow-hidden relative">
+
+                      {/* Log entries */}
+                      <div className="flex-1 font-mono text-[12px] text-white/60 space-y-2.5 overflow-hidden">
                         <AnimatePresence>
                           {logs.map((log, i) => (
-                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate flex items-center gap-3">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#007AFF] flex-none" /> 
-                              {log}
+                            <motion.div
+                              key={log}
+                              initial={{ opacity: 0, x: -12, height: 0 }}
+                              animate={{ opacity: 1, x: 0, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3, ease: 'easeOut' }}
+                              className="flex items-start gap-3 leading-relaxed"
+                            >
+                              <span className="text-[#007AFF] mt-0.5 flex-none text-[10px]">▸</span>
+                              <span className="truncate">{log}</span>
                             </motion.div>
                           ))}
                         </AnimatePresence>
-                        {logs.length === 0 && <span className="text-white/30 italic">Awaiting operations...</span>}
+                        {logs.length === 0 && (
+                          <motion.span
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            className="text-white/25 italic"
+                          >
+                            Awaiting operations...
+                          </motion.span>
+                        )}
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
+
                 </div>
               </motion.div>
             )}
 
+            {/* ══════════════════ ENGAGE TAB ══════════════════ */}
             {activeTab === 'message' && (
               <motion.div 
                 key="message"
