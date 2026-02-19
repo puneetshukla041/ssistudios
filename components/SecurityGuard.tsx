@@ -9,6 +9,7 @@ export default function SecurityGuard() {
     console.clear();
     console.log(
       "%cSTOP",
+      
       "color: #EF4444; font-size: 40px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;"
     );
     console.log(
