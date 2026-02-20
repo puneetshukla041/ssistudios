@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as XLSX from 'xlsx'
-import { QRCodeSVG } from 'qrcode.react' // Required for QR rendering
 import { 
   LuUpload, 
   LuCheck, 
@@ -22,8 +21,7 @@ import {
   LuZap,
   LuTerminal,
   LuBot,
-  LuServer,
-  LuLogOut // Added logout icon
+  LuServer
 } from 'react-icons/lu'
 
 // --- TYPES ---
@@ -35,6 +33,7 @@ type ContactRow = {
 }
 
 // --- SUB-COMPONENTS ---
+// ... [Keep your existing GlassCard, AppleStatCard, CircularProgress, GradientBar components here exactly as they are] ...
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white/50 backdrop-blur-[40px] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[32px] relative z-10 ${className}`}>
     {children}
@@ -152,7 +151,6 @@ export default function SSIStudiosMessenger() {
 
   // Server state
   const [serverReady, setServerReady] = useState(false)
-  const [qrCode, setQrCode] = useState<string | null>(null) // New State for QR
 
   // Automation Engine States
   const [isAutomating, setIsAutomating] = useState(false)
@@ -166,18 +164,13 @@ export default function SSIStudiosMessenger() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // --- 🌐 LIVE BACKEND URL CONFIGURED HERE ---
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ssi-whatsapp-backend-production.up.railway.app';
-
   // 0. SERVER CHECK POLLER
   useEffect(() => {
     const checkServer = async () => {
       try {
-        // We hit the new endpoint that returns status AND the QR code if needed
-        const res = await fetch(`${BACKEND_URL}/api/get-qr`);
+        const res = await fetch('http://localhost:3001/api/status');
         const data = await res.json();
         setServerReady(data.ready);
-        setQrCode(data.qr); 
       } catch (e) {
         setServerReady(false);
       }
@@ -210,7 +203,7 @@ export default function SSIStudiosMessenger() {
     if (savedFilename) setFileName(savedFilename)
     
     setIsLoaded(true)
-    addLog(`System Initialized. Checking live server connection to Railway...`)
+    addLog("System Initialized. Checking server connection...")
   }, [])
 
   useEffect(() => { liveSentCounter.current = sentCounter }, [sentCounter])
@@ -314,7 +307,7 @@ export default function SSIStudiosMessenger() {
     finalMessage += `\n\nRef: #${uniqueId}`
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/send`, {
+      const response = await fetch('http://localhost:3001/api/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -338,18 +331,6 @@ export default function SSIStudiosMessenger() {
       setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'failed' } : c))
       addLog(`API Error sending to ${contact.name}`)
       return false;
-    }
-  }
-
-  const handleLogout = async () => {
-    if (confirm("Are you sure you want to disconnect WhatsApp?")) {
-        try {
-            await fetch(`${BACKEND_URL}/api/logout`, { method: 'POST' });
-            setServerReady(false);
-            addLog("WhatsApp Disconnected.");
-        } catch (e) {
-            addLog("Failed to logout backend.");
-        }
     }
   }
 
@@ -387,7 +368,7 @@ export default function SSIStudiosMessenger() {
     }, 1000)
   }
 
-  // 4. AUTOMATION ENGINE
+  // 4. AUTOMATION ENGINE (Updated for API)
   const toggleAutomation = async () => {
     if (!serverReady) {
        alert("Cannot run batch. Node.js backend is offline or WhatsApp is not scanned.");
@@ -501,6 +482,7 @@ export default function SSIStudiosMessenger() {
                <div className="absolute inset-0 flex items-center justify-center text-blue-500">
                   <LuMessageSquare size={24} />
                </div>
+               {/* Server Status Indicator */}
                <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${serverReady ? 'bg-green-500' : 'bg-red-500'}`} title={serverReady ? "Server Connected" : "Server Disconnected"} />
              </div>
              <div>
@@ -512,17 +494,6 @@ export default function SSIStudiosMessenger() {
            </div>
 
            <div className="flex items-center gap-3">
-             {serverReady && (
-                 <motion.button 
-                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                   onClick={handleLogout}
-                   className="px-4 py-2 bg-red-50 rounded-full text-red-500 hover:bg-red-100 transition-colors flex items-center gap-2 text-[12px] font-bold"
-                   title="Disconnect WhatsApp"
-                 >
-                   <LuLogOut size={16} /> Logout Engine
-                 </motion.button>
-             )}
-             
              {contacts.length > 0 && (
                <>
                  <motion.button 
@@ -565,47 +536,25 @@ export default function SSIStudiosMessenger() {
                 transition={{ duration: 0.3 }}
                 className="w-full h-full flex flex-col items-center justify-center p-12 bg-white/20"
               >
-                {!serverReady && !qrCode && (
+                {!serverReady && (
                    <div className="absolute top-8 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm">
-                      <LuServer size={18} /> Engine Offline. Checking connection...
+                      <LuServer size={18} /> Backend is missing. Please run `node server.js` in your terminal.
                    </div>
                 )}
-
-                {/* THE NEW QR CODE DISPLAY */}
-                <AnimatePresence>
-                  {qrCode && !serverReady && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="mb-8 p-6 bg-white/80 backdrop-blur-xl rounded-[32px] shadow-sm border border-white flex flex-col items-center gap-4"
-                    >
-                      <h3 className="text-[16px] font-bold text-[#1D1D1F] tracking-tight">Scan to Link WhatsApp</h3>
-                      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100/50">
-                        <QRCodeSVG value={qrCode} size={220} />
-                      </div>
-                      <p className="text-[12px] font-medium text-[#86868B] flex items-center gap-2">
-                        <LuSmartphone size={16}/> Open WhatsApp &gt; Linked Devices
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
                 
                 <motion.div 
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`w-full max-w-lg aspect-video backdrop-blur-2xl rounded-[40px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group shadow-[0_8px_30px_rgba(0,0,0,0.04)] ${
-                      !serverReady ? 'bg-gray-50/50 border-gray-300 opacity-50 cursor-not-allowed' : 'bg-white/60 border-[#C7C7CC] hover:border-[#007AFF] hover:bg-white/80'
-                  }`}
+                  className="w-full max-w-lg aspect-video bg-white/60 backdrop-blur-2xl rounded-[40px] border-2 border-dashed border-[#C7C7CC] flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] hover:bg-white/80 transition-all duration-300 group shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
                 >
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" disabled={!serverReady} />
-                  <div className={`w-24 h-24 rounded-[28px] flex items-center justify-center mb-6 transition-transform shadow-inner ${!serverReady ? 'bg-gray-200/50 text-gray-400' : 'bg-[#007AFF]/10 text-[#007AFF] group-hover:scale-110 cursor-pointer'}`}>
-                    <LuUpload size={36} />
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
+                  <div className="w-24 h-24 bg-[#007AFF]/10 rounded-[28px] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner cursor-pointer">
+                    <LuUpload size={36} className="text-[#007AFF]" />
                   </div>
-                  <h3 className="text-[22px] font-bold tracking-tight text-[#1D1D1F]">
-                    {!serverReady ? "Connect Engine First" : contacts.length > 0 ? "Replace Contact List" : "Upload Dataset"}
+                  <h3 className="text-[22px] font-bold tracking-tight text-[#1D1D1F] cursor-pointer">
+                    {contacts.length > 0 ? "Replace Contact List" : "Upload Dataset"}
                   </h3>
-                  <p className="text-[#86868B] text-[14px] mt-2 font-medium">XLSX or CSV format</p>
+                  <p className="text-[#86868B] text-[14px] mt-2 font-medium cursor-pointer">XLSX or CSV format</p>
                 </motion.div>
                 {debugMsg && <p className="mt-8 text-[#86868B] font-mono text-[12px] uppercase tracking-widest bg-white/50 px-5 py-2 rounded-full shadow-sm border border-white/60 cursor-default">{debugMsg}</p>}
               </motion.div>
