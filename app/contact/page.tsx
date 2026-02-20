@@ -19,7 +19,9 @@ import {
   LuActivity,
   LuClock,
   LuZap,
-  LuTerminal
+  LuTerminal,
+  LuBot,
+  LuServer
 } from 'react-icons/lu'
 
 // --- TYPES ---
@@ -27,18 +29,16 @@ type ContactRow = {
   id: number;
   name: string;
   contactno: string | number;
-  status: 'pending' | 'sent';
+  status: 'pending' | 'sent' | 'failed';
 }
 
 // --- SUB-COMPONENTS ---
-
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white/50 backdrop-blur-[40px] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[32px] relative z-10 ${className}`}>
     {children}
   </div>
 )
 
-// ── ENHANCED STAT CARD ──────────────────────────────────────────────────────
 const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg, delay = 0 }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 24, scale: 0.95 }}
@@ -48,7 +48,6 @@ const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg, delay = 0 
     className="bg-white/60 backdrop-blur-2xl border border-white/70 p-6 rounded-[28px] shadow-sm flex flex-col justify-between h-full cursor-default relative overflow-hidden group"
     style={{ transition: 'box-shadow 0.3s ease' }}
   >
-    {/* Subtle shimmer on hover */}
     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.5) 0%, transparent 60%)' }} />
     
@@ -71,7 +70,6 @@ const AppleStatCard = ({ icon: Icon, label, value, iconColor, iconBg, delay = 0 
   </motion.div>
 )
 
-// ── ENHANCED CIRCULAR PROGRESS ───────────────────────────────────────────────
 const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: number, color?: string }) => {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
@@ -79,14 +77,11 @@ const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: numbe
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: 172, height: 172 }}>
-      {/* Glow ring behind */}
       <div className="absolute inset-0 rounded-full opacity-20 blur-xl"
         style={{ background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }} />
 
       <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 120 120">
-        {/* Track */}
         <circle cx="60" cy="60" r={radius} stroke="rgba(0,0,0,0.06)" strokeWidth="9" fill="transparent" />
-        {/* Animated fill */}
         <motion.circle
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
@@ -101,7 +96,6 @@ const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: numbe
         />
       </svg>
 
-      {/* Centre label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
           key={Math.round(percentage)}
@@ -118,7 +112,6 @@ const CircularProgress = ({ percentage, color = "#007AFF" }: { percentage: numbe
   )
 }
 
-// ── ANIMATED PROGRESS BAR ────────────────────────────────────────────────────
 const GradientBar = ({ percent }: { percent: number }) => (
   <div className="relative h-3 w-full bg-black/5 rounded-full overflow-hidden shadow-inner">
     <motion.div
@@ -128,7 +121,6 @@ const GradientBar = ({ percent }: { percent: number }) => (
       className="absolute top-0 left-0 h-full rounded-full"
       style={{ background: 'linear-gradient(90deg, #007AFF 0%, #5AC8FA 50%, #AF52DE 100%)' }}
     />
-    {/* Shimmer sweep */}
     <motion.div
       initial={{ x: '-100%' }}
       animate={{ x: '200%' }}
@@ -156,10 +148,40 @@ export default function SSIStudiosMessenger() {
   const [sentCounter, setSentCounter] = useState(0)
   const [isCoffeeBreak, setIsCoffeeBreak] = useState(false)
 
+  // Server state
+  const [serverReady, setServerReady] = useState(false)
+
+  // Automation Engine States
+  const [isAutomating, setIsAutomating] = useState(false)
+  const abortAutomation = useRef(false)
+  const liveSentCounter = useRef(sentCounter)
+
   const BATCH_SIZE = 50; 
   const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
+  const currentBatch = contacts.slice(currentBatchIndex * BATCH_SIZE, (currentBatchIndex + 1) * BATCH_SIZE);
+  const totalBatches = Math.ceil(contacts.length / BATCH_SIZE);
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // --- 🌐 LIVE BACKEND URL CONFIGURED HERE ---
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ssi-whatsapp-backend-production.up.railway.app';
+
+  // 0. SERVER CHECK POLLER
+  useEffect(() => {
+    const checkServer = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/status`);
+        const data = await res.json();
+        setServerReady(data.ready);
+      } catch (e) {
+        setServerReady(false);
+      }
+    };
+    
+    checkServer();
+    const interval = setInterval(checkServer, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 1. PERSISTENCE
   useEffect(() => {
@@ -183,8 +205,10 @@ export default function SSIStudiosMessenger() {
     if (savedFilename) setFileName(savedFilename)
     
     setIsLoaded(true)
-    addLog("System Initialized. Ready for operation.")
+    addLog(`System Initialized. Checking live server connection to Railway...`)
   }, [])
+
+  useEffect(() => { liveSentCounter.current = sentCounter }, [sentCounter])
 
   useEffect(() => { if (isLoaded) localStorage.setItem('ssi_contacts', JSON.stringify(contacts)) }, [contacts, isLoaded])
   useEffect(() => { if (isLoaded) localStorage.setItem('ssi_template', messageTemplate) }, [messageTemplate, isLoaded])
@@ -270,11 +294,12 @@ export default function SSIStudiosMessenger() {
     reader.readAsArrayBuffer(file)
   }
 
-  const openWhatsApp = (contact: ContactRow) => {
-    if (isCooldown || isCoffeeBreak) return 
-
-    let cleanPhone = contact.contactno.toString().replace(/[^0-9]/g, '')
-    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone
+  // --- NEW: API BASED SENDING ---
+  const sendViaAPI = async (contact: ContactRow) => {
+    if (!serverReady) {
+      addLog("Error: Server not connected.");
+      return false;
+    }
 
     const greetings = ["Hi", "Hello", "Dear", "Greetings"]
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)]
@@ -283,13 +308,40 @@ export default function SSIStudiosMessenger() {
     const uniqueId = Math.floor(1000 + Math.random() * 9000); 
     finalMessage += `\n\nRef: #${uniqueId}`
 
-    const encodedMessage = encodeURIComponent(finalMessage)
-    const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`
+    try {
+      // 🌐 LIVE BACKEND URL USED HERE
+      const response = await fetch(`${BACKEND_URL}/api/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: contact.contactno,
+          message: finalMessage
+        }),
+      });
 
-    window.open(url, '_blank')
-    setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'sent' } : c))
-    addLog(`Message delivered to ${contact.name} (ID: ${uniqueId})`)
-    handleSafetyTimers()
+      const data = await response.json();
+
+      if (data.success) {
+        setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'sent' } : c))
+        addLog(`Transmitted silently to ${contact.name}`)
+        return true;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'failed' } : c))
+      addLog(`API Error sending to ${contact.name}`)
+      return false;
+    }
+  }
+
+  // Manual trigger button
+  const triggerManualSend = async (contact: ContactRow) => {
+    if (isCooldown || isCoffeeBreak) return;
+    await sendViaAPI(contact);
+    handleSafetyTimers();
   }
 
   const handleSafetyTimers = () => {
@@ -319,8 +371,79 @@ export default function SSIStudiosMessenger() {
     }, 1000)
   }
 
+  // 4. AUTOMATION ENGINE (Updated for API)
+  const toggleAutomation = async () => {
+    if (!serverReady) {
+       alert("Cannot run batch. Node.js backend is offline or WhatsApp is not scanned.");
+       return;
+    }
+
+    if (isAutomating) {
+      abortAutomation.current = true;
+      setIsAutomating(false);
+      addLog("Automation Terminated by User.");
+      return;
+    }
+
+    abortAutomation.current = false;
+    setIsAutomating(true);
+    addLog("Initializing Silent Turbo-Automation Engine...");
+    
+    const pendingInBatch = currentBatch.filter(c => c.status === 'pending' || c.status === 'failed');
+    
+    if (pendingInBatch.length === 0) {
+      addLog("No pending contacts in this batch.");
+      setIsAutomating(false);
+      return;
+    }
+
+    for (let i = 0; i < pendingInBatch.length; i++) {
+      if (abortAutomation.current) break;
+      const contact = pendingInBatch[i];
+
+      // 1. Check if we need a break
+      if (liveSentCounter.current > 0 && liveSentCounter.current % 10 === 0) {
+        addLog("System on scheduled rest. Standing by...");
+        let breakWaited = 0;
+        while(breakWaited < 20000 && !abortAutomation.current) {
+            await new Promise(r => setTimeout(r, 1000));
+            breakWaited += 1000;
+        }
+      }
+
+      if (abortAutomation.current) break;
+
+      // 2. Send via Backend API
+      addLog(`Auto-Routing: ${contact.name}`);
+      const success = await sendViaAPI(contact);
+      
+      if (success) {
+        liveSentCounter.current += 1;
+      }
+      
+      // 3. HUMAN-LIKE DELAY
+      if (i < pendingInBatch.length - 1 && !abortAutomation.current) {
+        const waitTime = Math.floor(Math.random() * (12000 - 6000 + 1) + 6000); 
+        addLog(`Sleeping ${(waitTime/1000).toFixed(1)}s to avoid rate limits...`);
+        
+        let waitElapsed = 0;
+        while(waitElapsed < waitTime && !abortAutomation.current) {
+           await new Promise(r => setTimeout(r, 500));
+           waitElapsed += 500;
+        }
+      }
+    }
+    
+    if (!abortAutomation.current) {
+      addLog("Batch Execution Completed.");
+      setIsAutomating(false);
+    }
+  };
+
   const handleReset = () => {
     if (confirm("Reset everything? This cannot be undone.")) {
+      abortAutomation.current = true;
+      setIsAutomating(false);
       setContacts([])
       setCurrentBatchIndex(0)
       setFileName(null)
@@ -337,9 +460,6 @@ export default function SSIStudiosMessenger() {
     XLSX.writeFile(wb, `SSI_Report_${new Date().toISOString().slice(0,10)}.xlsx`)
     addLog('Report exported successfully.')
   }
-
-  const currentBatch = contacts.slice(currentBatchIndex * BATCH_SIZE, (currentBatchIndex + 1) * BATCH_SIZE);
-  const totalBatches = Math.ceil(contacts.length / BATCH_SIZE);
 
   if (!isLoaded) return <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center font-sans tracking-tight text-[#86868B]">Initializing Subsystems...</div>
 
@@ -361,21 +481,17 @@ export default function SSIStudiosMessenger() {
         {/* --- HEADER --- */}
         <div className="flex-none px-8 py-5 border-b border-gray-200/40 flex items-center justify-between bg-white/40 backdrop-blur-xl z-20">
            <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-white rounded-[16px] flex items-center justify-center shadow-sm border border-gray-100/50 overflow-hidden p-1 cursor-pointer">
-               <img 
-                 src="/logos/ssilogo.png" 
-                 alt="SSI" 
-                 className="w-full h-full object-contain"
-                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} 
-               />
-               <div className="absolute inset-0 flex items-center justify-center -z-10 text-blue-500">
+             <div className="w-12 h-12 bg-white rounded-[16px] flex items-center justify-center shadow-sm border border-gray-100/50 overflow-hidden p-1 cursor-pointer relative">
+               <div className="absolute inset-0 flex items-center justify-center text-blue-500">
                   <LuMessageSquare size={24} />
                </div>
+               {/* Server Status Indicator */}
+               <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${serverReady ? 'bg-green-500' : 'bg-red-500'}`} title={serverReady ? "Server Connected" : "Server Disconnected"} />
              </div>
              <div>
-               <h1 className="text-[20px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1 cursor-default">SSI Messenger</h1>
+               <h1 className="text-[20px] font-bold tracking-tight text-[#1D1D1F] leading-none mb-1 cursor-default">SSI Messenger Pro</h1>
                <p className="text-[#86868B] text-[12px] font-medium flex items-center gap-1.5 cursor-default">
-                 <LuShieldCheck size={12} className="text-[#34C759]"/> Encrypted & Protected
+                 {serverReady ? <><LuServer size={12} className="text-[#34C759]"/> Local Backend Online</> : <><LuServer size={12} className="text-[#FF3B30]"/> Local Backend Offline</>}
                </p>
              </div>
            </div>
@@ -413,10 +529,9 @@ export default function SSIStudiosMessenger() {
 
         {/* --- CONTENT AREA --- */}
         <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
-          
           <AnimatePresence mode="wait">
-
-            {/* ══════════════════ UPLOAD TAB ══════════════════ */}
+            
+            {/* UPLOAD TAB */}
             {activeTab === 'upload' && (
               <motion.div 
                 key="upload"
@@ -424,6 +539,12 @@ export default function SSIStudiosMessenger() {
                 transition={{ duration: 0.3 }}
                 className="w-full h-full flex flex-col items-center justify-center p-12 bg-white/20"
               >
+                {!serverReady && (
+                   <div className="absolute top-8 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm">
+                      <LuServer size={18} /> Backend is missing. Please ensure your Railway server is live.
+                   </div>
+                )}
+                
                 <motion.div 
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   onClick={() => fileInputRef.current?.click()}
@@ -442,199 +563,71 @@ export default function SSIStudiosMessenger() {
               </motion.div>
             )}
 
-            {/* ══════════════════ ANALYSIS TAB — ENHANCED ══════════════════ */}
+            {/* ANALYSIS TAB */}
             {activeTab === 'analysis' && (
               <motion.div 
                 key="analysis"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
                 className="w-full h-full p-7 lg:p-8 overflow-y-auto ios-scrollbar relative"
               >
-                {/* ── Ambient background glows ── */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
-                  className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full pointer-events-none -z-10"
-                  style={{ background: 'radial-gradient(circle, rgba(0,122,255,0.08) 0%, transparent 65%)', transform: 'translate(-20%, -20%)' }}
-                />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeOut', delay: 0.15 }}
-                  className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full pointer-events-none -z-10"
-                  style={{ background: 'radial-gradient(circle, rgba(175,82,222,0.07) 0%, transparent 65%)', transform: 'translate(20%, 20%)' }}
-                />
-
                 <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-
-                  {/* ── Page heading with stagger ── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: -12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-                    className="cursor-default"
-                  >
+                  <motion.div className="cursor-default">
                     <h2 className="text-[34px] font-bold tracking-tight text-[#1D1D1F]">Analytics Overview</h2>
-                    <p className="text-[15px] text-[#86868B] font-medium mt-1">Real-time engagement tracking</p>
                   </motion.div>
-
-                  {/* ── TOP ROW: Progress Ring + Stat Cards ── */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-
-                    {/* Progress card */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.05 }}
-                      className="lg:col-span-4"
-                    >
+                    <motion.div className="lg:col-span-4">
                       <GlassCard className="p-7 flex flex-col items-center justify-center h-full gap-6">
                         <div className="w-full flex items-center justify-between">
                           <h3 className="text-[11px] font-bold text-[#86868B] uppercase tracking-widest">Master Progress</h3>
-                          <span className={`text-[11px] font-semibold px-3 py-1 rounded-full ${analytics.pending === 0 ? 'bg-[#34C759]/12 text-[#34C759]' : 'bg-[#007AFF]/10 text-[#007AFF]'}`}>
-                            {analytics.pending === 0 ? '✓ Done' : '● Live'}
-                          </span>
                         </div>
-
                         <CircularProgress percentage={analytics.percent} color="#007AFF" />
-
                         <div className="w-full pt-5 border-t border-black/5 flex justify-between items-center">
                           <div className="text-center">
-                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.sent}</p>
-                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Sent</p>
+                            <p className="text-[22px] font-bold text-[#1D1D1F]">{analytics.sent}</p>
+                            <p className="text-[11px] text-[#86868B]">Sent</p>
                           </div>
-                          <div className="h-8 w-px bg-black/8" />
                           <div className="text-center">
-                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.pending}</p>
-                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Pending</p>
+                            <p className="text-[22px] font-bold text-[#1D1D1F]">{analytics.pending}</p>
+                            <p className="text-[11px] text-[#86868B]">Pending</p>
                           </div>
-                          <div className="h-8 w-px bg-black/8" />
                           <div className="text-center">
-                            <p className="text-[22px] font-bold text-[#1D1D1F]" style={{ fontVariantNumeric: 'tabular-nums' }}>{analytics.total}</p>
-                            <p className="text-[11px] text-[#86868B] font-medium mt-0.5">Total</p>
+                            <p className="text-[22px] font-bold text-[#1D1D1F]">{analytics.total}</p>
+                            <p className="text-[11px] text-[#86868B]">Total</p>
                           </div>
                         </div>
                       </GlassCard>
                     </motion.div>
-
-                    {/* Stat cards — staggered entry */}
                     <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-2 gap-5">
-                      <AppleStatCard icon={LuSmartphone} label="Total Records"   value={analytics.total}                  iconColor="text-[#007AFF]" iconBg="bg-[#007AFF]/10" delay={0.10} />
-                      <AppleStatCard icon={LuCheck}      label="Successfully Sent" value={analytics.sent}                iconColor="text-[#34C759]" iconBg="bg-[#34C759]/10" delay={0.17} />
-                      <AppleStatCard icon={LuClock}      label="Pending"          value={analytics.pending}              iconColor="text-[#FF9500]" iconBg="bg-[#FF9500]/10" delay={0.24} />
-                      <AppleStatCard icon={LuActivity}   label="Est. Remaining"   value={`~${analytics.minsRemaining}m`} iconColor="text-[#AF52DE]" iconBg="bg-[#AF52DE]/10" delay={0.31} />
+                      <AppleStatCard icon={LuSmartphone} label="Total Records" value={analytics.total} iconColor="text-[#007AFF]" iconBg="bg-[#007AFF]/10" delay={0.10} />
+                      <AppleStatCard icon={LuCheck} label="Successfully Sent" value={analytics.sent} iconColor="text-[#34C759]" iconBg="bg-[#34C759]/10" delay={0.17} />
                     </div>
                   </div>
-
-                  {/* ── BOTTOM ROW: Efficiency + Logs ── */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-                    {/* Efficiency Module */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
-                    >
-                      <GlassCard className="p-7 flex flex-col gap-6 h-full">
+                    <GlassCard className="p-7 flex flex-col gap-6 h-full">
                         <div className="flex items-center gap-4">
-                          <motion.div
-                            whileHover={{ rotate: 15, scale: 1.1 }}
-                            transition={{ type: 'spring', stiffness: 400 }}
-                            className="p-3 bg-[#5856D6]/10 text-[#5856D6] rounded-[14px]"
-                          >
-                            <LuZap size={22} />
-                          </motion.div>
-                          <div>
-                            <h3 className="text-[18px] font-bold tracking-tight text-[#1D1D1F]">System Efficiency</h3>
-                            <p className="text-[12px] text-[#86868B] mt-0.5">Live delivery optimisation metrics</p>
-                          </div>
+                          <div className="p-3 bg-[#5856D6]/10 text-[#5856D6] rounded-[14px]"><LuZap size={22} /></div>
+                          <div><h3 className="text-[18px] font-bold text-[#1D1D1F]">System Efficiency</h3></div>
                         </div>
-
-                        {/* Animated progress bar */}
                         <GradientBar percent={analytics.percent} />
-
-                        {/* Metrics row */}
-                        <div className="flex justify-between items-center pt-2">
-                          {[
-                            { label: 'Batch Size',    value: `${BATCH_SIZE} Units` },
-                            { label: 'Batch No.',     value: `${currentBatchIndex + 1} / ${totalBatches || 1}` },
-                            { label: 'System State',  value: isCooldown ? 'Cooling Down' : 'Active', accent: isCooldown ? 'text-[#FF9500]' : 'text-[#34C759]' },
-                          ].map((m, i) => (
-                            <div key={i} className="flex flex-col items-center gap-1">
-                              <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{m.label}</span>
-                              <span className={`text-[16px] font-semibold text-[#1D1D1F] ${m.accent ?? ''}`}>{m.value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </GlassCard>
-                    </motion.div>
-
-                    {/* Terminal Logs — premium dark card */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.28 }}
-                      className="bg-[#1A1A1C] rounded-[32px] p-6 flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-white/8 cursor-text overflow-hidden relative"
-                    >
-                      {/* Subtle inner glow */}
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-
-                      {/* Terminal header */}
+                    </GlassCard>
+                    <div className="bg-[#1A1A1C] rounded-[32px] p-6 flex flex-col shadow-lg cursor-text overflow-hidden relative">
                       <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/8">
-                        <div className="flex gap-1.5">
-                          {['#FF5F57','#FFBD2E','#28C840'].map((c, i) => (
-                            <div key={i} style={{ background: c }} className="w-3 h-3 rounded-full opacity-80" />
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2 ml-2 text-white/40">
-                          <LuTerminal size={13} />
-                          <span className="text-[11px] font-bold uppercase tracking-widest">Runtime Logs</span>
-                        </div>
-                        {/* Blinking cursor indicator */}
-                        <motion.div
-                          animate={{ opacity: [1, 0, 1] }}
-                          transition={{ repeat: Infinity, duration: 1.2 }}
-                          className="ml-auto w-1.5 h-3.5 rounded-sm bg-[#007AFF]/60"
-                        />
+                         <LuTerminal size={13} className="text-white/40"/>
+                         <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">Terminal Logs</span>
                       </div>
-
-                      {/* Log entries */}
                       <div className="flex-1 font-mono text-[12px] text-white/60 space-y-2.5 overflow-hidden">
-                        <AnimatePresence>
-                          {logs.map((log, i) => (
-                            <motion.div
-                              key={log}
-                              initial={{ opacity: 0, x: -12, height: 0 }}
-                              animate={{ opacity: 1, x: 0, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3, ease: 'easeOut' }}
-                              className="flex items-start gap-3 leading-relaxed"
-                            >
-                              <span className="text-[#007AFF] mt-0.5 flex-none text-[10px]">▸</span>
-                              <span className="truncate">{log}</span>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                        {logs.length === 0 && (
-                          <motion.span
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            className="text-white/25 italic"
-                          >
-                            Awaiting operations...
-                          </motion.span>
-                        )}
+                        {logs.map((log, i) => (
+                           <div key={i} className="flex gap-2"><span className="text-[#007AFF]">▸</span>{log}</div>
+                        ))}
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
-
                 </div>
               </motion.div>
             )}
 
-            {/* ══════════════════ ENGAGE TAB ══════════════════ */}
+            {/* ENGAGE TAB */}
             {activeTab === 'message' && (
               <motion.div 
                 key="message"
@@ -651,7 +644,8 @@ export default function SSIStudiosMessenger() {
                     <textarea 
                       value={messageTemplate}
                       onChange={(e) => setMessageTemplate(e.target.value)}
-                      className="w-full h-full p-5 rounded-[24px] resize-none focus:outline-none text-[#1D1D1F] text-[15px] leading-relaxed placeholder:text-gray-400 bg-transparent ios-scrollbar"
+                      disabled={isAutomating}
+                      className="w-full h-full p-5 rounded-[24px] resize-none focus:outline-none text-[#1D1D1F] text-[15px] leading-relaxed placeholder:text-gray-400 bg-transparent ios-scrollbar disabled:opacity-50"
                       placeholder="Enter your transmission payload..."
                     />
                   </div>
@@ -662,7 +656,6 @@ export default function SSIStudiosMessenger() {
                          Hello {contacts[0]?.name.split(' ')[0] || "Client"}, <br/><br/>
                          {messageTemplate}
                        </p>
-                       <div className="mt-3 pt-3 border-t border-black/5 text-[11px] text-[#86868B] font-mono">Ref: #8392</div>
                     </div>
                   </div>
                 </div>
@@ -677,91 +670,81 @@ export default function SSIStudiosMessenger() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white/60 backdrop-blur-xl rounded-[20px] p-1.5 shadow-sm border border-white">
+                    <div className="flex items-center gap-4">
                        <motion.button 
                          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                         disabled={currentBatchIndex === 0}
-                         onClick={() => setCurrentBatchIndex(i => i - 1)}
-                         className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-[#1D1D1F]"
+                         onClick={toggleAutomation}
+                         disabled={!serverReady}
+                         className={`px-5 py-2.5 rounded-[18px] font-bold text-[14px] flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                           isAutomating 
+                             ? 'bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20' 
+                             : 'bg-gradient-to-r from-[#AF52DE] to-[#5856D6] text-white shadow-[#AF52DE]/30 border border-white/20'
+                         }`}
                        >
-                         <LuChevronLeft size={20} />
+                         {isAutomating ? (
+                           <>Stop Automation <div className="w-2 h-2 rounded-full bg-[#FF3B30] animate-pulse" /></>
+                         ) : (
+                           <><LuBot size={18} /> {serverReady ? 'Silent Auto-Run' : 'Backend Offline'}</>
+                         )}
                        </motion.button>
-                       <motion.button 
-                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                         disabled={currentBatchIndex === Math.ceil(contacts.length / BATCH_SIZE) - 1}
-                         onClick={() => setCurrentBatchIndex(i => i + 1)}
-                         className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-[#1D1D1F]"
-                       >
-                         <LuChevronRight size={20} />
-                       </motion.button>
+                       <div className="h-6 w-px bg-black/10 mx-1" />
+
+                       <div className="flex items-center gap-2 bg-white/60 backdrop-blur-xl rounded-[20px] p-1.5 shadow-sm border border-white">
+                         <motion.button 
+                           onClick={() => setCurrentBatchIndex(i => i - 1)} disabled={currentBatchIndex === 0 || isAutomating}
+                           className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                         ><LuChevronLeft size={20} /></motion.button>
+                         <motion.button 
+                           onClick={() => setCurrentBatchIndex(i => i + 1)} disabled={currentBatchIndex === Math.ceil(contacts.length / BATCH_SIZE) - 1 || isAutomating}
+                           className="w-10 h-10 rounded-[14px] bg-white shadow-sm flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                         ><LuChevronRight size={20} /></motion.button>
+                       </div>
                     </div>
                   </div>
 
-                  <div className="flex-none px-10 py-4 relative z-10">
-                     <AnimatePresence mode="wait">
-                       {isCoffeeBreak ? (
-                          <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#FF9500]/10 text-[#FF9500] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#FF9500]/20 shadow-sm cursor-default backdrop-blur-md">
-                            <LuCoffee size={18} /> Mandatory Cool-down Period... {countdown}s
-                          </motion.div>
-                       ) : isCooldown ? (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#007AFF]/10 text-[#007AFF] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#007AFF]/20 shadow-sm cursor-default backdrop-blur-md">
-                           <LuShieldCheck size={18} /> Rate Limit Protection Active... {countdown}s
-                         </motion.div>
-                       ) : (
-                         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="w-full bg-[#34C759]/10 text-[#34C759] py-3.5 px-6 rounded-[20px] flex items-center justify-center gap-3 font-semibold text-[14px] border border-[#34C759]/20 shadow-sm cursor-default backdrop-blur-md">
-                           <LuSparkles size={18} /> Systems Go. Ready to Engage.
-                         </motion.div>
-                       )}
-                     </AnimatePresence>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto px-10 pb-10 pt-2 space-y-4 ios-scrollbar min-h-0 relative">
+                  <div className="flex-1 overflow-y-auto px-10 pb-10 pt-6 space-y-4 ios-scrollbar min-h-0 relative">
                     {currentBatch.map((contact, idx) => (
                       <motion.div 
-                        layout
-                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ delay: idx * 0.015, duration: 0.2 }}
                         key={contact.id} 
-                        className={`group flex items-center justify-between p-5 rounded-[24px] border transition-all duration-300 cursor-pointer ${
-                          contact.status === 'sent' 
-                            ? 'bg-white/30 border-white/20 opacity-60 grayscale' 
-                            : 'bg-white/80 backdrop-blur-xl border-white shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
+                        className={`group flex items-center justify-between p-5 rounded-[24px] border transition-all duration-300 ${
+                          contact.status === 'sent' ? 'bg-white/30 border-white/20 opacity-60' : 
+                          contact.status === 'failed' ? 'bg-red-50 border-red-200' : 'bg-white/80 border-white shadow-sm'
                         }`}
                       >
                         <div className="flex items-center gap-5">
                           <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center font-bold text-[20px] shadow-sm ${
-                            contact.status === 'sent' ? 'bg-[#E5E5EA] text-[#86868B]' : 'bg-gradient-to-br from-[#007AFF] to-[#5AC8FA] text-white'
+                            contact.status === 'sent' ? 'bg-[#E5E5EA] text-[#86868B]' : 
+                            contact.status === 'failed' ? 'bg-red-500 text-white' : 'bg-[#007AFF] text-white'
                           }`}>
                             {contact.name.charAt(0)}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-[#1D1D1F] text-[16px] tracking-tight">{contact.name}</h3>
-                            <p className="text-[13px] text-[#86868B] font-mono tracking-wide mt-1">{contact.contactno}</p>
+                            <h3 className="font-semibold text-[#1D1D1F] text-[16px]">{contact.name}</h3>
+                            <p className="text-[13px] text-[#86868B] font-mono mt-1">{contact.contactno}</p>
                           </div>
                         </div>
 
                         {contact.status === 'sent' ? (
-                          <div className="text-[#34C759] flex items-center gap-2 text-[14px] font-semibold px-5 py-2.5 bg-[#34C759]/10 rounded-[16px] cursor-default">
+                          <div className="text-[#34C759] flex items-center gap-2 text-[14px] font-semibold px-5 py-2.5 bg-[#34C759]/10 rounded-[16px]">
                             <LuCheck size={18} /> Delivered
+                          </div>
+                        ) : contact.status === 'failed' ? (
+                           <div className="text-red-500 flex items-center gap-2 text-[14px] font-semibold px-5 py-2.5 bg-red-100 rounded-[16px]">
+                            Failed
                           </div>
                         ) : (
                           <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={(e) => { e.stopPropagation(); openWhatsApp(contact); }}
-                            disabled={isCooldown || isCoffeeBreak}
-                            className={`px-7 py-3 rounded-[18px] font-semibold text-[14px] flex items-center gap-2 transition-all shadow-md cursor-pointer ${
-                              isCooldown || isCoffeeBreak 
-                                ? 'bg-[#E5E5EA] text-[#86868B] shadow-none cursor-not-allowed'
-                                : 'bg-[#007AFF] text-white shadow-[#007AFF]/20 hover:shadow-[#007AFF]/40'
+                            onClick={(e) => { e.stopPropagation(); triggerManualSend(contact); }}
+                            disabled={isCooldown || isCoffeeBreak || isAutomating || !serverReady}
+                            className={`px-7 py-3 rounded-[18px] font-semibold text-[14px] flex items-center gap-2 transition-all ${
+                              isAutomating || !serverReady ? 'bg-[#E5E5EA] text-[#86868B] cursor-not-allowed' : 'bg-white border border-[#007AFF] text-[#007AFF] hover:bg-[#007AFF] hover:text-white'
                             }`}
                           >
-                            {isCooldown || isCoffeeBreak ? 'Standby' : <>Transmit <LuSend size={16} className="ml-1"/></>}
+                            Send
                           </motion.button>
                         )}
                       </motion.div>
                     ))}
-                    <div className="h-10 w-full" />
                   </div>
                 </div>
               </motion.div>
