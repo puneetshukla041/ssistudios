@@ -18,7 +18,8 @@ import {
   LuChevronRight,
   LuSparkles,
   LuGlobe,
-  LuFlag
+  LuFlag,
+  LuLayers
 } from 'react-icons/lu'
 
 // --- PDF MARGIN CONFIGURATION ---
@@ -30,8 +31,6 @@ const SECOND_NAME_MARGIN_TOP = 238
 const DATE_MARGIN_LEFT = 455    
 const DATE_MARGIN_TOP = 75      
 
-// --- INTERNATIONAL PDF MARGINS ---
-// Adjust these specifically for the international.pdf template
 const INTL_CONFIG = {
   NAME_LEFT: 72,
   NAME_TOP: 133,
@@ -67,8 +66,13 @@ export default function BulkInvitationPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false) 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  
+  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
+  
   const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '', type: 'national' as 'national' | 'international' })
+  const [bulkType, setBulkType] = useState<'national' | 'international'>('national')
 
   const filteredData = useMemo(() => {
     const lowerQuery = searchQuery.toLowerCase();
@@ -80,7 +84,6 @@ export default function BulkInvitationPage() {
 
   const generatePdfBlob = async (name: string, hospital: string, type: 'national' | 'international'): Promise<Uint8Array> => {
     const templatePath = type === 'international' ? '/invitation/international.pdf' : '/invitation/Invitation.pdf';
-    
     const existingPdfBytes = await fetch(templatePath).then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
@@ -90,15 +93,10 @@ export default function BulkInvitationPage() {
     const firstPage = pages[0]
     const { height: pageHeight } = firstPage.getSize()
 
-    // Select Margins
     const cfg = type === 'international' ? INTL_CONFIG : {
-      NAME_LEFT: NAME_MARGIN_LEFT,
-      NAME_TOP: NAME_MARGIN_TOP,
-      HOSPITAL_LEFT: HOSPITAL_MARGIN_LEFT,
-      SECOND_NAME_LEFT: SECOND_NAME_MARGIN_LEFT,
-      SECOND_NAME_TOP: SECOND_NAME_MARGIN_TOP,
-      DATE_LEFT: DATE_MARGIN_LEFT,
-      DATE_TOP: DATE_MARGIN_TOP
+      NAME_LEFT: NAME_MARGIN_LEFT, NAME_TOP: NAME_MARGIN_TOP,
+      HOSPITAL_LEFT: HOSPITAL_MARGIN_LEFT, SECOND_NAME_LEFT: SECOND_NAME_MARGIN_LEFT,
+      SECOND_NAME_TOP: SECOND_NAME_MARGIN_TOP, DATE_LEFT: DATE_MARGIN_LEFT, DATE_TOP: DATE_MARGIN_TOP
     };
 
     const nameY = pageHeight - cfg.NAME_TOP
@@ -130,8 +128,31 @@ export default function BulkInvitationPage() {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
     } catch (error) {
-      console.error(error)
-      alert("Template not found. Check /public/invitation/")
+      alert("Template Error. Check /public/invitation/")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleBulkDownload = async () => {
+    setIsProcessing(true)
+    try {
+      for (const item of data) {
+        const pdfBytes = await generatePdfBlob(item.name, item.hospital, bulkType);
+        const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${bulkType.toUpperCase()}_Invitation_${item.name.replace(/\s+/g, '_')}.pdf`;
+        link.click();
+        // Small delay to prevent browser download blocking
+        await new Promise(r => setTimeout(r, 300));
+      }
+      setIsBulkModalOpen(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      alert("Bulk Generation Error");
     } finally {
       setIsProcessing(false)
     }
@@ -159,7 +180,6 @@ export default function BulkInvitationPage() {
 
           if (!nK) return; 
           allExtractedData = [...allExtractedData, ...rawData.map((row: any, index: number) => {
-            // CASTING TO FIX BUILD ERROR
             const rowType = (row[tK!]?.toString().toLowerCase().includes('inter') ? 'international' : 'national') as 'national' | 'international';
             return {
                 id: `${sheetName}-${index}-${Date.now()}`,
@@ -187,23 +207,16 @@ export default function BulkInvitationPage() {
       <AnimatePresence>
         {showSuccess && (
           <motion.div 
-            initial={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
-            animate={{ y: 32, opacity: 1, x: '-50%', scale: 1 }}
-            exit={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
+            initial={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }} animate={{ y: 32, opacity: 1, x: '-50%', scale: 1 }} exit={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
             className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-xl rounded-full"
           >
             <LuSparkles className="text-[#818CF8]" size={18} />
-            <span className="text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent">
-              Document beautifully crafted!
-            </span>
+            <span className="text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent">Document beautifully crafted!</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <motion.div 
-        initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-        className="w-full lg:w-[320px] h-full bg-white/50 backdrop-blur-3xl border-r border-white/50 z-20 flex flex-col p-8"
-      >
+      <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full lg:w-[320px] h-full bg-white/50 backdrop-blur-3xl border-r border-white/50 z-20 flex flex-col p-8">
         <div className="mb-12">
           <div className="mb-6 relative w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#F0F2F5] cursor-pointer">
             <Image src="/logos/ssilogo.png" alt="Logo" width={28} height={28} />
@@ -218,24 +231,22 @@ export default function BulkInvitationPage() {
         <div className="space-y-6 flex-1">
             <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-between p-4.5 rounded-3xl bg-[#F5F8FF] border border-white hover:bg-white transition-all group cursor-pointer">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-white rounded-xl text-[#6366F1] group-hover:bg-[#6366F1] group-hover:text-white transition-colors cursor-pointer">
-                        <LuUserPlus size={18} />
-                    </div>
+                    <div className="p-2.5 bg-white rounded-xl text-[#6366F1] group-hover:bg-[#6366F1] group-hover:text-white transition-colors cursor-pointer"><LuUserPlus size={18} /></div>
                     <span className="text-[14px] font-medium text-[#4B5563]">Individual Entry</span>
                 </div>
                 <LuChevronRight size={16} className="text-[#C7D2FE]" />
             </button>
 
             <div className="relative group cursor-pointer">
-                <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="Upload spreadsheet" />
-                <div className="w-full border-2 border-dashed border-[#E5E7EB] rounded-[32px] p-10 flex flex-col items-center justify-center gap-3 bg-white/20 group-hover:bg-white group-hover:border-[#C7D2FE] transition-all cursor-pointer">
+                <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <div className="w-full border-2 border-dashed border-[#E5E7EB] rounded-[32px] p-10 flex flex-col items-center justify-center gap-3 bg-white/20 group-hover:bg-white transition-all cursor-pointer">
                     <LuUpload size={20} className="text-[#818CF8]" />
-                    <span className="text-[12px] font-semibold text-[#94A3B8] uppercase tracking-wider">Spreadsheet Sync</span>
+                    <span className="text-[12px] font-semibold text-[#94A3B8] uppercase">Spreadsheet Sync</span>
                 </div>
             </div>
 
             <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase tracking-wide">Target Date</label>
+                <label className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase">Target Date</label>
                 <div className="relative cursor-pointer">
                     <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#818CF8]" size={15} />
                     <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full pl-11 pr-4 py-4 bg-white/50 border border-white rounded-[20px] text-[13px] outline-none cursor-pointer" />
@@ -244,13 +255,19 @@ export default function BulkInvitationPage() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-[#F0F2F5] space-y-3">
-          <button className="w-full py-4 rounded-2xl bg-[#1F2937] text-white text-[13px] font-medium cursor-pointer hover:bg-black transition-colors">Finalize All</button>
+          <button 
+            disabled={data.length === 0}
+            onClick={() => setIsBulkModalOpen(true)}
+            className="w-full py-4 rounded-2xl bg-[#1F2937] text-white text-[13px] font-medium cursor-pointer hover:bg-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Finalize All ({data.length})
+          </button>
           <button onClick={() => setData([])} className="w-full py-3 rounded-2xl text-red-500 text-[12px] font-semibold cursor-pointer hover:bg-red-50 transition-colors">Clear Workspace</button>
         </div>
       </motion.div>
 
       <div className="flex-1 h-full flex flex-col overflow-hidden">
-        <header className="h-20 bg-white/30 backdrop-blur-md border-b border-white flex items-center px-10 justify-between shrink-0">
+        <header className="h-20 bg-white/30 backdrop-blur-md border-b border-white flex items-center px-10 justify-between">
             <h2 className="text-[17px] font-semibold text-[#1F2937]">Archive Preview</h2>
             <div className="relative flex-1 max-w-sm ml-8">
                 <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={15} />
@@ -259,12 +276,9 @@ export default function BulkInvitationPage() {
         </header>
 
         <main className="flex-1 overflow-auto p-10">
-            <AnimatePresence mode='wait'>
             {data.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-[#94A3B8]">
-                    <div className="w-24 h-24 bg-white rounded-[35px] shadow-sm flex items-center justify-center mb-6">
-                      <LuFileSpreadsheet size={40} className="opacity-10" />
-                    </div>
+                    <div className="w-24 h-24 bg-white rounded-[35px] shadow-sm flex items-center justify-center mb-6"><LuFileSpreadsheet size={40} className="opacity-10" /></div>
                     <p className="text-[15px] font-medium">System Idle</p>
                 </div>
             ) : (
@@ -288,9 +302,7 @@ export default function BulkInvitationPage() {
                                     </td>
                                     <td className="px-10 py-5 text-[14px] font-medium text-[#374151]">{row.name}</td>
                                     <td className="px-10 py-5 text-right">
-                                        <button onClick={() => handleDownloadSingle(row.name, row.hospital, row.type)} className="p-3 text-[#6366F1] bg-[#F5F8FF] rounded-2xl hover:bg-[#6366F1] hover:text-white transition-all cursor-pointer">
-                                            <LuDownload size={16} />
-                                        </button>
+                                        <button onClick={() => handleDownloadSingle(row.name, row.hospital, row.type)} className="p-3 text-[#6366F1] bg-[#F5F8FF] rounded-2xl hover:bg-[#6366F1] hover:text-white transition-all cursor-pointer"><LuDownload size={16} /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -298,17 +310,51 @@ export default function BulkInvitationPage() {
                     </table>
                 </div>
             )}
-            </AnimatePresence>
         </main>
       </div>
 
+      {/* --- BULK DOWNLOAD SELECTOR MODAL --- */}
+      <AnimatePresence>
+        {isBulkModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#1F2937]/10 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-2xl border border-white">
+               <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><LuLayers size={18}/></div>
+                    <h3 className="text-xl font-semibold">Batch Config</h3>
+                  </div>
+                  <button onClick={() => setIsBulkModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer"><LuX size={20}/></button>
+              </div>
+              <p className="text-[13px] text-gray-500 mb-6 leading-relaxed">Select the invitation template to apply for all <span className="font-bold text-gray-900">{data.length} records</span> in this batch.</p>
+              <div className="space-y-6">
+                <div className="flex p-1 bg-[#F9FAFB] rounded-[20px] border">
+                  {(['national', 'international'] as const).map((t) => (
+                    <button key={t} onClick={() => setBulkType(t)} className={`flex-1 py-3 text-[12px] font-bold rounded-[15px] capitalize cursor-pointer transition-all ${bulkType === t ? 'bg-white text-[#6366F1] shadow-sm' : 'text-[#94A3B8]'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  onClick={handleBulkDownload}
+                  disabled={isProcessing}
+                  className="w-full py-4.5 bg-[#1F2937] text-white font-semibold rounded-[24px] cursor-pointer shadow-lg hover:bg-black transition-all flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? <LuLoader className="animate-spin" /> : <><LuDownload size={18}/> Download All</>}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- QUICK ADD MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#1F2937]/10 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-2xl border border-white">
               <div className="flex justify-between items-center mb-8">
                   <h3 className="text-xl font-semibold">Quick Add</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer transition-colors"><LuX size={20}/></button>
+                  <button onClick={() => setIsModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer"><LuX size={20}/></button>
               </div>
               <div className="space-y-5">
                 <div className="flex p-1 bg-[#F9FAFB] rounded-[20px] border">
@@ -320,7 +366,7 @@ export default function BulkInvitationPage() {
                 </div>
                 <input type="text" placeholder="Full Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all" />
                 <input type="text" placeholder="Institution" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all" />
-                <button disabled={!singleEntry.name || isProcessing} onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital, singleEntry.type); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '', type: 'national' }) }} className="w-full py-4.5 bg-[#6366F1] text-white font-semibold rounded-[24px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-indigo-200 transition-all">
+                <button disabled={!singleEntry.name || isProcessing} onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital, singleEntry.type); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '', type: 'national' }) }} className="w-full py-4.5 bg-[#6366F1] text-white font-semibold rounded-[24px] cursor-pointer disabled:opacity-50 shadow-lg hover:shadow-indigo-200 transition-all">
                   {isProcessing ? <LuLoader className="animate-spin" /> : "Generate PDF"}
                 </button>
               </div>
