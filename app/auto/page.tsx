@@ -20,8 +20,7 @@ import {
   LuCalendar, 
   LuUserPlus, 
   LuChevronRight,
-  LuSparkles,
-  LuMenu
+  LuSparkles
 } from 'react-icons/lu'
 
 // --- PDF CONFIGURATION ---
@@ -36,8 +35,10 @@ const DATE_MARGIN_TOP = 75
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
 
+// --- SMART ANIMATIONS ---
 const softSpring = { type: "spring", stiffness: 300, damping: 28 } as const;
 
+// --- TYPES ---
 interface InvitationData {
   id: string;
   name: string;
@@ -59,7 +60,6 @@ export default function BulkInvitationPage() {
   const [showSuccess, setShowSuccess] = useState(false) 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Mobile Sidebar State
   const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '' })
 
   const filteredData = useMemo(() => {
@@ -142,7 +142,6 @@ export default function BulkInvitationPage() {
           }))];
         });
         setData(allExtractedData);
-        setIsSidebarOpen(false); // Close sidebar on mobile after upload
       } catch (error) {
         alert("Smart Sync Error: Please check your spreadsheet format.")
       } finally {
@@ -153,18 +152,8 @@ export default function BulkInvitationPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7FB] text-[#5C6370] font-sans overflow-hidden selection:bg-[#818CF8]/30">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7FB] text-[#5C6370] lg:pl-[88px] font-sans overflow-hidden selection:bg-[#818CF8]/30">
       
-      {/* --- MOBILE HEADER --- */}
-      <div className="lg:hidden h-16 bg-white/80 backdrop-blur-md border-b border-[#F0F2F5] flex items-center justify-between px-6 z-50">
-        <div className="relative w-8 h-8">
-          <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
-        </div>
-        <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-[#F5F8FF] rounded-xl text-[#6366F1]">
-          <LuMenu size={20} />
-        </button>
-      </div>
-
       {/* --- SMART GLOW TOAST --- */}
       <AnimatePresence>
         {showSuccess && (
@@ -172,207 +161,205 @@ export default function BulkInvitationPage() {
             initial={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
             animate={{ y: 32, opacity: 1, x: '-50%', scale: 1 }}
             exit={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
-            className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-4 sm:px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-[0_20px_40px_rgba(99,102,241,0.15)] rounded-full w-[90%] sm:w-auto"
+            className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-[0_20px_40px_rgba(99,102,241,0.15)] rounded-full"
           >
-            <LuSparkles className="text-[#818CF8] animate-pulse shrink-0" size={18} />
-            <span className="text-[13px] sm:text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent truncate">
+            <LuSparkles className="text-[#818CF8] animate-pulse" size={18} />
+            <span className="text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent">
               Document beautifully crafted!
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* --- SIDEBAR (Responsive Overlay) --- */}
-      <AnimatePresence>
-        {(isSidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
-          <>
-            {/* Mobile Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-[#1F2937]/20 backdrop-blur-sm z-[100] lg:hidden"
-            />
-            
-            <motion.div 
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={softSpring}
-              className="fixed lg:relative top-0 left-0 bottom-0 w-[280px] sm:w-[320px] h-full bg-white lg:bg-white/50 backdrop-blur-3xl border-r border-white/50 z-[101] lg:z-20 flex flex-col p-6 sm:p-8 shadow-[10px_0_30px_rgba(0,0,0,0.02)]"
+      {/* --- SIDEBAR --- */}
+      <motion.div 
+        initial={{ x: -30, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={softSpring}
+        className="w-full lg:w-[320px] h-full bg-white/50 backdrop-blur-3xl border-r border-white/50 z-20 flex flex-col p-8 shadow-[10px_0_30px_rgba(0,0,0,0.02)]"
+      >
+        <div className="mb-12">
+          <motion.div 
+            whileHover={{ rotate: 5, scale: 1.05 }}
+            className="mb-6 relative w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#F0F2F5] cursor-pointer"
+          >
+            <Image src="/logos/ssilogo.png" alt="Logo" width={28} height={28} className="object-contain" />
+          </motion.div>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#1F2937]">Invitations</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
+            <p className="text-[11px] text-[#94A3B8] font-semibold uppercase tracking-[0.15em]">System Live</p>
+          </div>
+        </div>
+
+        <div className="space-y-6 flex-1">
+            <motion.button 
+                whileHover={{ y: -3, backgroundColor: "white", boxShadow: "0 10px 20px rgba(99,102,241,0.08)" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setIsModalOpen(true)}
+                className="w-full flex items-center justify-between p-4.5 rounded-3xl bg-[#F5F8FF] border border-white/80 transition-all cursor-pointer group"
             >
-              <div className="flex justify-between items-center mb-10 lg:mb-12">
-                <div>
-                  <motion.div 
-                    whileHover={{ rotate: 5, scale: 1.05 }}
-                    className="mb-4 relative w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-[#F0F2F5] cursor-pointer"
-                  >
-                    <Image src="/logos/ssilogo.png" alt="Logo" width={24} height={24} className="object-contain" />
-                  </motion.div>
-                  <h1 className="text-xl font-semibold tracking-tight text-[#1F2937]">Invitations</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
-                    <p className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-[0.15em]">System Live</p>
-                  </div>
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-white rounded-xl text-[#6366F1] shadow-sm group-hover:bg-[#6366F1] group-hover:text-white transition-colors">
+                        <LuUserPlus size={18} />
+                    </div>
+                    <span className="text-[14px] font-medium text-[#4B5563]">Individual Entry</span>
                 </div>
-                <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-[#94A3B8]">
-                  <LuX size={20} />
-                </button>
-              </div>
+                <LuChevronRight size={16} className="text-[#C7D2FE]" />
+            </motion.button>
 
-              <div className="space-y-4 sm:space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                  <motion.button 
-                      whileHover={{ y: -3, backgroundColor: "white" }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => { setIsModalOpen(true); setIsSidebarOpen(false); }}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-[#F5F8FF] border border-white/80 transition-all cursor-pointer group"
-                  >
-                      <div className="flex items-center gap-3">
-                          <div className="p-2 bg-white rounded-lg text-[#6366F1] shadow-sm">
-                              <LuUserPlus size={18} />
-                          </div>
-                          <span className="text-[14px] font-medium text-[#4B5563]">Individual Entry</span>
-                      </div>
-                      <LuChevronRight size={16} className="text-[#C7D2FE]" />
-                  </motion.button>
+            <div className="relative group">
+                <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <motion.div 
+                    whileHover={{ scale: 1.02, borderColor: "#C7D2FE", backgroundColor: "white" }}
+                    className="w-full border-2 border-dashed border-[#E5E7EB] rounded-[32px] p-10 flex flex-col items-center justify-center gap-3 bg-white/20 transition-all cursor-pointer"
+                >
+                    <div className="w-10 h-10 rounded-full bg-[#EEF2FF] flex items-center justify-center">
+                        <LuUpload size={20} className="text-[#818CF8]" />
+                    </div>
+                    <span className="text-[12px] font-semibold text-[#94A3B8] uppercase tracking-wider">Spreadsheet Sync</span>
+                </motion.div>
+            </div>
 
-                  <div className="relative group">
-                      <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                      <motion.div 
-                          whileHover={{ scale: 1.02, borderColor: "#C7D2FE", backgroundColor: "white" }}
-                          className="w-full border-2 border-dashed border-[#E5E7EB] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center gap-3 bg-white/20 transition-all cursor-pointer"
-                      >
-                          <div className="w-10 h-10 rounded-full bg-[#EEF2FF] flex items-center justify-center">
-                              <LuUpload size={18} className="text-[#818CF8]" />
-                          </div>
-                          <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider text-center">Spreadsheet Sync</span>
-                      </motion.div>
-                  </div>
+            <div className="space-y-2">
+                <label className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase tracking-[0.1em]">Target Date</label>
+                <div className="relative">
+                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#818CF8]" size={15} />
+                    <input 
+                      type="date" 
+                      value={selectedDate} 
+                      onChange={(e) => setSelectedDate(e.target.value)} 
+                      className="w-full pl-11 pr-4 py-4 bg-white/50 border border-white rounded-[20px] text-[13px] font-medium outline-none focus:ring-2 focus:ring-[#6366F1]/10 transition-all cursor-pointer shadow-sm" 
+                    />
+                </div>
+            </div>
+        </div>
 
-                  <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-[#94A3B8] ml-2 uppercase tracking-[0.1em]">Target Date</label>
-                      <div className="relative">
-                          <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#818CF8]" size={14} />
-                          <input 
-                            type="date" 
-                            value={selectedDate} 
-                            onChange={(e) => setSelectedDate(e.target.value)} 
-                            className="w-full pl-10 pr-4 py-3 bg-white/50 border border-white rounded-xl text-[12px] font-medium outline-none focus:ring-2 focus:ring-[#6366F1]/10 transition-all cursor-pointer" 
-                          />
-                      </div>
-                  </div>
-              </div>
-
-              <div className="mt-6 space-y-2 pt-6 border-t border-[#F0F2F5]">
-                <button className="w-full py-3.5 rounded-xl bg-[#1F2937] text-white text-[12px] font-medium cursor-pointer">Finalize All</button>
-                <button onClick={() => setData([])} className="w-full py-3 rounded-xl text-[#EF4444] text-[11px] font-semibold cursor-pointer">Clear Workspace</button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+        <div className="mt-8 space-y-3 pt-8 border-t border-[#F0F2F5]">
+          <motion.button whileHover={{ scale: 1.02 }} className="w-full py-4 rounded-2xl bg-[#1F2937] text-white text-[13px] font-medium shadow-lg shadow-gray-200 cursor-pointer">
+            Finalize All
+          </motion.button>
+          <motion.button onClick={() => setData([])} whileHover={{ backgroundColor: "rgba(239,68,68,0.05)" }} className="w-full py-3 rounded-2xl text-[#EF4444] text-[12px] font-semibold cursor-pointer transition-all">
+            Clear Workspace
+          </motion.button>
+        </div>
+      </motion.div>
 
       {/* --- MAIN PREVIEW AREA --- */}
-      <div className="flex-1 h-full flex flex-col overflow-hidden relative">
-        <header className="h-16 lg:h-20 bg-white/30 backdrop-blur-md border-b border-white flex items-center px-6 lg:px-10 justify-between shrink-0 gap-4 lg:gap-8">
-            <h2 className="hidden sm:block text-[16px] lg:text-[17px] font-semibold text-[#1F2937]">Archive Preview</h2>
+      <div className="flex-1 h-full flex flex-col overflow-hidden">
+        <header className="h-20 bg-white/30 backdrop-blur-md border-b border-white flex items-center px-10 justify-between shrink-0 gap-8">
+            <h2 className="text-[17px] font-semibold text-[#1F2937]">Archive Preview</h2>
             <div className="relative flex-1 max-w-sm">
-                <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={15} />
                 <input 
                     type="text" 
-                    placeholder="Search name..." 
+                    placeholder="Search by name or facility..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white/80 rounded-full text-[12px] lg:text-[13px] outline-none border border-transparent focus:border-[#C7D2FE] shadow-sm transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white/80 rounded-full text-[13px] outline-none border border-transparent focus:border-[#C7D2FE] shadow-sm transition-all focus:bg-white"
                 />
             </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-10">
+        <main className="flex-1 overflow-auto p-10">
             <AnimatePresence mode='wait'>
             {data.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex flex-col items-center justify-center text-[#94A3B8] text-center px-4">
-                    <div className="w-20 h-20 bg-white rounded-[30px] shadow-sm border border-[#F0F2F5] flex items-center justify-center mb-6">
-                      <LuFileSpreadsheet size={32} className="opacity-10" />
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="h-full flex flex-col items-center justify-center text-[#94A3B8]"
+                >
+                    <div className="w-24 h-24 bg-white rounded-[35px] shadow-sm border border-[#F0F2F5] flex items-center justify-center mb-6">
+                      <LuFileSpreadsheet size={40} className="opacity-10" />
                     </div>
-                    <p className="text-[14px] font-medium text-[#6B7280]">System Idle</p>
-                    <p className="text-[12px] mt-1">Ready to receive your recipient data.</p>
+                    <p className="text-[15px] font-medium text-[#6B7280]">System Idle</p>
+                    <p className="text-[13px] mt-1">Awaiting data injection...</p>
                 </motion.div>
             ) : (
                 <motion.div 
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/80 backdrop-blur-md rounded-2xl lg:rounded-[32px] border border-white shadow-sm overflow-hidden"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/80 backdrop-blur-md rounded-[32px] border border-white shadow-[0_10px_50px_rgba(0,0,0,0.03)] overflow-hidden"
                 >
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left min-w-[600px] lg:min-w-full">
-                          <thead className="bg-[#F9FBFF]/50 border-b border-[#F0F2F5]">
-                              <tr className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.1em]">
-                                  <th className="px-6 lg:px-10 py-4 lg:py-5">Status</th>
-                                  <th className="px-6 lg:px-10 py-4 lg:py-5">Name</th>
-                                  <th className="px-6 lg:px-10 py-4 lg:py-5">Facility</th>
-                                  <th className="px-6 lg:px-10 py-4 lg:py-5 text-right">Actions</th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#F0F2F5]">
-                              {filteredData.map((row) => (
-                                  <motion.tr layout key={row.id} className="hover:bg-white transition-colors cursor-default">
-                                      <td className="px-6 lg:px-10 py-4">
-                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#ECFDF5] text-[#10B981] text-[10px] font-bold">
-                                            <div className="w-1 h-1 rounded-full bg-[#10B981]" /> Valid
-                                          </span>
-                                      </td>
-                                      <td className="px-6 lg:px-10 py-4 text-[13px] lg:text-[14px] font-medium text-[#374151]">{row.name}</td>
-                                      <td className="px-6 lg:px-10 py-4 text-[12px] lg:text-[13px] text-[#6B7280]">{row.hospital || '—'}</td>
-                                      <td className="px-6 lg:px-10 py-4 text-right">
-                                          <motion.button 
-                                              whileTap={{ scale: 0.9 }}
-                                              onClick={() => handleDownloadSingle(row.name, row.hospital)}
-                                              className="p-2 lg:p-3 text-[#6366F1] bg-[#F5F8FF] rounded-xl cursor-pointer"
-                                          >
-                                              <LuDownload size={14} />
-                                          </motion.button>
-                                      </td>
-                                  </motion.tr>
-                              ))}
-                          </tbody>
-                      </table>
-                    </div>
+                    <table className="w-full text-left">
+                        <thead className="bg-[#F9FBFF]/50 border-b border-[#F0F2F5]">
+                            <tr className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-[0.1em]">
+                                <th className="px-10 py-5">Status</th>
+                                <th className="px-10 py-5">Name</th>
+                                <th className="px-10 py-5">Facility</th>
+                                <th className="px-10 py-5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#F0F2F5]">
+                            {filteredData.map((row) => (
+                                <motion.tr layout key={row.id} className="hover:bg-white transition-colors cursor-default group">
+                                    <td className="px-10 py-5">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] text-[#10B981] text-[11px] font-bold">
+                                          <div className="w-1 h-1 rounded-full bg-[#10B981]" /> Validated
+                                        </span>
+                                    </td>
+                                    <td className="px-10 py-5 text-[14px] font-medium text-[#374151]">{row.name}</td>
+                                    <td className="px-10 py-5 text-[13px] text-[#6B7280]">{row.hospital || '—'}</td>
+                                    <td className="px-10 py-5 text-right">
+                                        <motion.button 
+                                            whileHover={{ scale: 1.1, backgroundColor: "#6366F1", color: "white" }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={() => handleDownloadSingle(row.name, row.hospital)}
+                                            className="p-3 text-[#6366F1] bg-[#F5F8FF] rounded-2xl transition-all cursor-pointer"
+                                        >
+                                            <LuDownload size={16} />
+                                        </motion.button>
+                                    </td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </motion.div>
             )}
             </AnimatePresence>
         </main>
       </div>
 
-      {/* --- CUTE SMART MODAL (Responsive Sizing) --- */}
+      {/* --- CUTE SMART MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-[#1F2937]/10 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#1F2937]/10 backdrop-blur-md">
             <motion.div 
-              initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
-              className="relative w-full sm:max-w-sm bg-white rounded-t-[32px] sm:rounded-[40px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:shadow-[0_30px_60px_rgba(0,0,0,0.12)] border-t sm:border border-white p-8 sm:p-10"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[40px] shadow-[0_30px_60px_rgba(0,0,0,0.12)] border border-white p-10"
             >
-              <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mb-6 sm:hidden" /> {/* Drag Handle for Mobile */}
               <div className="flex justify-between items-center mb-8">
                   <h3 className="text-xl font-semibold text-[#1F2937]">Quick Add</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="p-2.5 bg-[#F9FAFB] text-[#94A3B8] rounded-full cursor-pointer"><LuX size={18} /></button>
+                  <button onClick={() => setIsModalOpen(false)} className="p-2.5 bg-[#F9FAFB] hover:bg-[#FEE2E2] hover:text-[#EF4444] text-[#94A3B8] rounded-full transition-all cursor-pointer"><LuX size={18} /></button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold text-[#94A3B8] ml-2 uppercase tracking-wider">Full Name</p>
-                  <input type="text" placeholder="Recipient name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-5 py-4 bg-[#F9FAFB] rounded-2xl text-[14px] font-medium outline-none focus:bg-white transition-all shadow-inner" />
+                  <p className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase">Full Name</p>
+                  <input 
+                    type="text" 
+                    placeholder="First Middle Last" 
+                    value={singleEntry.name} 
+                    onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} 
+                    className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] text-[14px] font-medium outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all shadow-inner" 
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold text-[#94A3B8] ml-2 uppercase tracking-wider">Institution</p>
-                  <input type="text" placeholder="Hospital / University" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-5 py-4 bg-[#F9FAFB] rounded-2xl text-[14px] font-medium outline-none focus:bg-white transition-all shadow-inner" />
+                  <p className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase">Institution</p>
+                  <input 
+                    type="text" 
+                    placeholder="Medical Center" 
+                    value={singleEntry.hospital} 
+                    onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} 
+                    className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] text-[14px] font-medium outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all shadow-inner" 
+                  />
                 </div>
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(99,102,241,0.2)" }} 
+                  whileTap={{ scale: 0.98 }} 
                   disabled={!singleEntry.name || isProcessing}
                   onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '' }) }}
-                  className="w-full mt-4 py-4.5 bg-gradient-to-r from-[#6366F1] to-[#818CF8] text-white text-[14px] font-semibold rounded-2xl shadow-lg shadow-indigo-100 flex items-center justify-center cursor-pointer disabled:opacity-30"
+                  className="w-full mt-6 py-4.5 bg-gradient-to-r from-[#6366F1] to-[#818CF8] text-white text-[15px] font-semibold rounded-[24px] shadow-lg shadow-indigo-100 flex items-center justify-center cursor-pointer disabled:opacity-30"
                 >
                   {isProcessing ? <LuLoader className="animate-spin" /> : "Generate PDF"}
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           </div>
