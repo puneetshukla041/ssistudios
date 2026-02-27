@@ -33,8 +33,8 @@ const INTL_CONFIG = {
   NAME_LEFT: 72,
   NAME_TOP: 133,
   HOSPITAL_LEFT: 72,
-  SECOND_NAME_LEFT: 98,
-  SECOND_NAME_TOP: 238,
+  SECOND_NAME_LEFT: 72,
+  SECOND_NAME_TOP: 205,
   DATE_LEFT: 455,
   DATE_TOP: 75
 }
@@ -65,11 +65,9 @@ export default function BulkInvitationPage() {
   const [showSuccess, setShowSuccess] = useState(false) 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   
-  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   
-  // State for the item being processed
   const [downloadTarget, setDownloadTarget] = useState<{mode: 'single' | 'bulk' | 'instant', entry?: Partial<InvitationData>}>({ mode: 'bulk' })
   const [selectedTemplate, setSelectedTemplate] = useState<'national' | 'international'>('national')
   const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '' })
@@ -106,7 +104,12 @@ export default function BulkInvitationPage() {
 
     if (name) firstPage.drawText(name, { x: cfg.NAME_LEFT, y: nameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
     if (hospital) firstPage.drawText(hospital, { x: cfg.HOSPITAL_LEFT, y: hospitalY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
-    if (name) firstPage.drawText(`${name},`, { x: cfg.SECOND_NAME_LEFT, y: secondNameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
+    
+    // Updated Logic: Only add "Dear " if type is international
+    if (name) {
+        const greeting = type === 'international' ? `Dear ${name},` : `${name},`;
+        firstPage.drawText(greeting, { x: cfg.SECOND_NAME_LEFT, y: secondNameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
+    }
 
     const now = new Date(selectedDate + 'T12:00:00') 
     const dateLine = `${now.toLocaleString('en-US', { month: 'short' })} ${String(now.getDate()).padStart(2, '0')}, ${now.getFullYear()}` 
@@ -133,13 +136,11 @@ export default function BulkInvitationPage() {
         link.download = `${selectedTemplate.toUpperCase()}_Invitation_${name?.replace(/\s+/g, '_')}.pdf`;
         link.click();
         
-        // If it was an instant individual entry, clear the form
         if (downloadTarget.mode === 'instant') {
           setSingleEntry({ name: '', hospital: '' });
           setIsModalOpen(false);
         }
       } else {
-        // Bulk Mode
         for (const item of data) {
           const pdfBytes = await generatePdfBlob(item.name, item.hospital, selectedTemplate);
           const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
@@ -155,7 +156,7 @@ export default function BulkInvitationPage() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      alert("Process failed. Please check your template files.");
+      alert("Process failed. Check template files.");
     } finally {
       setIsProcessing(false)
     }
@@ -206,7 +207,6 @@ export default function BulkInvitationPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7FB] text-[#5C6370] lg:pl-[88px] font-sans overflow-hidden">
-      
       <AnimatePresence>
         {showSuccess && (
           <motion.div initial={{ y: -60, opacity: 0, x: '-50%' }} animate={{ y: 32, opacity: 1, x: '-50%' }} exit={{ y: -60, opacity: 0, x: '-50%' }} className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-xl rounded-full">
@@ -216,7 +216,6 @@ export default function BulkInvitationPage() {
         )}
       </AnimatePresence>
 
-      {/* --- SIDEBAR --- */}
       <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full lg:w-[320px] h-full bg-white/50 backdrop-blur-3xl border-r border-white/50 z-20 flex flex-col p-8">
         <div className="mb-12">
           <div className="mb-6 relative w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#F0F2F5] cursor-pointer">
