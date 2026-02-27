@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image' // Added for the logo
 import { 
   LuUpload, 
   LuFileImage, 
@@ -42,20 +43,18 @@ export default function ConverterPage() {
 
     let directoryHandle: any = null;
 
-    // 1. Try to open the Folder Picker (File Explorer)
     try {
       if ('showDirectoryPicker' in window) {
         directoryHandle = await (window as any).showDirectoryPicker();
       }
     } catch (err) {
-      // User cancelled the folder picker
       setIsConverting(false);
       return;
     }
 
     try {
       for (const file of files) {
-        const image = new Image()
+        const image = new window.Image()
         image.src = URL.createObjectURL(file)
         
         await new Promise((resolve, reject) => {
@@ -70,7 +69,6 @@ export default function ConverterPage() {
             const fileName = `${file.name.split('.')[0]}.${targetFormat.toLowerCase()}`;
 
             if (directoryHandle) {
-              // 2. SAVE DIRECTLY TO CHOSEN FOLDER (Modern API)
               try {
                 const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
                 const writable = await fileHandle.createWritable();
@@ -86,7 +84,6 @@ export default function ConverterPage() {
                 reject(e);
               }
             } else {
-              // 3. FALLBACK: Standard Download (Older Browsers)
               const dataUrl = canvas.toDataURL(mimeType)
               const link = document.createElement('a')
               link.download = fileName
@@ -120,11 +117,19 @@ export default function ConverterPage() {
       </div>
 
       <header className="max-w-6xl mx-auto mb-10">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-[#1C1C1E] tracking-tight">Image Format Converter</h1>
-            <p className="text-[#8E8E93] mt-2 font-medium text-lg">Local, secure, and fast.</p>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            {/* LOGO IMPORTED HERE */}
+            <div className="w-16 h-16 bg-white rounded-[20px] flex items-center justify-center shadow-sm border border-white/60 shrink-0">
+               <Image src="/logos/ssilogo.png" alt="Logo" width={38} height={38} className="object-contain" />
+            </div>
+            
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-[#1C1C1E] tracking-tight">Image Format Converter</h1>
+              <p className="text-[#8E8E93] mt-1 font-bold text-lg">ssistudios application</p>
+            </div>
           </div>
+          
           <div className="flex bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/40 shadow-sm overflow-x-auto no-scrollbar">
             {SUPPORTED_FORMATS.map((fmt) => (
               <button key={fmt} onClick={() => setTargetFormat(fmt)} className={`px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer whitespace-nowrap ${targetFormat === fmt ? 'bg-white text-[#007AFF] shadow-sm' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}>
