@@ -204,7 +204,7 @@ export default function BulkInvitationPage() {
             <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
           </motion.div>
           <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
-          <p className="text-[11px] text-[#86868B] mt-0.5 font-black uppercase tracking-[0.2em]">Automated v5.0</p>
+          <p className="text-[11px] text-[#86868B] mt-0.5 font-black uppercase tracking-[0.2em]">Automated </p>
         </div>
 
         <div className="space-y-6 flex-1">
