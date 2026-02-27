@@ -98,7 +98,7 @@ const menu: MenuItem[] = [
       { name: 'Profile & Preferences', path: '/userprofile' },
     ],
   },
-  { name: 'Report a Bug', icon: LuBug, path: "/reportbug", requiredAccess: 'bugReport' },
+
   { name: 'Logout', icon: LuLogOut, mobileOnly: true },
 ]
 
