@@ -169,7 +169,6 @@ function AppLayout({ children }: { children: ReactNode }) {
             2. Removed 'h-screen' (This was locking the window)
             3. Added 'min-h-screen' to ensure full background
           */}
-          
           <main className="flex-1 transition-all duration-300 relative w-full min-h-screen">
             
             <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit/90 backdrop-blur-sm">
