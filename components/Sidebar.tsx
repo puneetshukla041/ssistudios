@@ -82,13 +82,13 @@ const menu: MenuItem[] = [
   { name: 'ID Card Maker', icon: LuIdCard, path: "/idcard", requiredAccess: 'idCard' },
   { name: 'Posters', icon: LuLayoutTemplate, path: "/poster", requiredAccess: 'posterEditor' },
   
-  {
+  /*{
     name: 'Branding Assets',
     icon: LuPalette,
     requiredAccess: 'assets',
     isUnderDevelopment: true,
     children: [{ name: 'Logo Library', path: '/logo' }],
-  },
+  },*/
   {
     name: 'Settings',
     icon: LuSettings,
