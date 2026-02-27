@@ -17,9 +17,7 @@ import {
   LuUserPlus, 
   LuChevronRight,
   LuSparkles,
-  LuGlobe,
-  LuFlag,
-  LuLayers
+  LuDatabase
 } from 'react-icons/lu'
 
 // --- PDF MARGIN CONFIGURATION ---
@@ -71,10 +69,10 @@ export default function BulkInvitationPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   
-  // Download Target State
-  const [downloadTarget, setDownloadTarget] = useState<{mode: 'single' | 'bulk', entry?: InvitationData}>({ mode: 'bulk' })
+  // State for the item being processed
+  const [downloadTarget, setDownloadTarget] = useState<{mode: 'single' | 'bulk' | 'instant', entry?: Partial<InvitationData>}>({ mode: 'bulk' })
   const [selectedTemplate, setSelectedTemplate] = useState<'national' | 'international'>('national')
-  const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '', type: 'national' as 'national' | 'international' })
+  const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '' })
 
   const filteredData = useMemo(() => {
     const lowerQuery = searchQuery.toLowerCase();
@@ -117,8 +115,7 @@ export default function BulkInvitationPage() {
     return await pdfDoc.save()
   }
 
-  // Triggered when clicking individual row download or Finalize All
-  const initiateDownload = (mode: 'single' | 'bulk', entry?: InvitationData) => {
+  const initiateDownload = (mode: 'single' | 'bulk' | 'instant', entry?: Partial<InvitationData>) => {
     setDownloadTarget({ mode, entry });
     setIsDownloadModalOpen(true);
   }
@@ -126,15 +123,21 @@ export default function BulkInvitationPage() {
   const handleExecuteDownload = async () => {
     setIsProcessing(true)
     try {
-      if (downloadTarget.mode === 'single' && downloadTarget.entry) {
+      if ((downloadTarget.mode === 'single' || downloadTarget.mode === 'instant') && downloadTarget.entry) {
         const { name, hospital } = downloadTarget.entry;
-        const pdfBytes = await generatePdfBlob(name, hospital, selectedTemplate);
+        const pdfBytes = await generatePdfBlob(name!, hospital!, selectedTemplate);
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${selectedTemplate.toUpperCase()}_Invitation_${name.replace(/\s+/g, '_')}.pdf`;
+        link.download = `${selectedTemplate.toUpperCase()}_Invitation_${name?.replace(/\s+/g, '_')}.pdf`;
         link.click();
+        
+        // If it was an instant individual entry, clear the form
+        if (downloadTarget.mode === 'instant') {
+          setSingleEntry({ name: '', hospital: '' });
+          setIsModalOpen(false);
+        }
       } else {
         // Bulk Mode
         for (const item of data) {
@@ -145,7 +148,7 @@ export default function BulkInvitationPage() {
           link.href = url;
           link.download = `${selectedTemplate.toUpperCase()}_Invitation_${item.name.replace(/\s+/g, '_')}.pdf`;
           link.click();
-          await new Promise(r => setTimeout(r, 350)); // Sequential delay
+          await new Promise(r => setTimeout(r, 350));
         }
       }
       setIsDownloadModalOpen(false);
@@ -213,6 +216,7 @@ export default function BulkInvitationPage() {
         )}
       </AnimatePresence>
 
+      {/* --- SIDEBAR --- */}
       <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full lg:w-[320px] h-full bg-white/50 backdrop-blur-3xl border-r border-white/50 z-20 flex flex-col p-8">
         <div className="mb-12">
           <div className="mb-6 relative w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#F0F2F5] cursor-pointer">
@@ -256,7 +260,7 @@ export default function BulkInvitationPage() {
           >
             Finalize All ({data.length})
           </button>
-          <button onClick={() => setData([])} className="w-full py-3 rounded-2xl text-red-500 text-[12px] font-semibold cursor-pointer hover:bg-red-50 transition-colors">Clear</button>
+          <button onClick={() => setData([])} className="w-full py-3 rounded-2xl text-red-500 text-[12px] font-semibold cursor-pointer hover:bg-red-50 transition-colors">Clear Workspace</button>
         </div>
       </motion.div>
 
@@ -280,7 +284,7 @@ export default function BulkInvitationPage() {
                     <table className="w-full text-left">
                         <thead className="bg-[#F9FBFF]/50 border-b border-[#F0F2F5]">
                             <tr className="text-[11px] font-bold text-[#94A3B8] uppercase">
-                                <th className="px-10 py-5">Status</th>
+                                <th className="px-10 py-5">System Status</th>
                                 <th className="px-10 py-5">Name</th>
                                 <th className="px-10 py-5 text-right">Actions</th>
                             </tr>
@@ -289,8 +293,9 @@ export default function BulkInvitationPage() {
                             {filteredData.map((row) => (
                                 <tr key={row.id} className="hover:bg-white transition-colors">
                                     <td className="px-10 py-5">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${row.type === 'international' ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                          {row.type}
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100/50">
+                                          <LuDatabase size={10} />
+                                          Synced to DB
                                         </span>
                                     </td>
                                     <td className="px-10 py-5 text-[14px] font-medium text-[#374151]">{row.name}</td>
@@ -306,7 +311,7 @@ export default function BulkInvitationPage() {
         </main>
       </div>
 
-      {/* --- CHOICE POPUP CARD (The Card you asked for) --- */}
+      {/* --- CHOICE POPUP CARD --- */}
       <AnimatePresence>
         {isDownloadModalOpen && (
           <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-[#1F2937]/20 backdrop-blur-sm">
@@ -340,23 +345,18 @@ export default function BulkInvitationPage() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#1F2937]/10 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-2xl border border-white">
               <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-semibold">Quick Add</h3>
+                  <h3 className="text-xl font-semibold">Individual Entry</h3>
                   <button onClick={() => setIsModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer"><LuX size={20}/></button>
               </div>
               <div className="space-y-4">
                 <input type="text" placeholder="Full Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[22px] outline-none focus:bg-white border focus:border-indigo-200 transition-all" />
                 <input type="text" placeholder="Institution" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[22px] outline-none focus:bg-white border focus:border-indigo-200 transition-all" />
                 <button 
-                  disabled={!singleEntry.name} 
-                  onClick={() => {
-                    const newEntry: InvitationData = { id: Date.now().toString(), name: singleEntry.name, hospital: singleEntry.hospital, sourceSheet: 'manual', status: 'uploaded', type: 'national' };
-                    setData([...data, newEntry]);
-                    setIsModalOpen(false);
-                    setSingleEntry({name:'', hospital:'', type:'national'});
-                  }} 
+                  disabled={!singleEntry.name || !singleEntry.hospital} 
+                  onClick={() => initiateDownload('instant', { name: singleEntry.name, hospital: singleEntry.hospital })} 
                   className="w-full py-4.5 bg-indigo-600 text-white font-bold rounded-[22px] cursor-pointer shadow-lg shadow-indigo-100"
                 >
-                  Add to Workspace
+                  Generate Invitation
                 </button>
               </div>
             </motion.div>
