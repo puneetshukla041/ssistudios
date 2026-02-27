@@ -171,7 +171,8 @@ function AppLayout({ children }: { children: ReactNode }) {
           */}
           <main className="flex-1 transition-all duration-300 relative w-full min-h-screen">
             
-            <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit/90 backdrop-blur-sm">
+            {/* Change backdrop-blur-sm to backdrop-blur-none or simply remove it */}
+<div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
                 {pathname === "/dashboard" ? "" : ""}
               </h1>
