@@ -73,6 +73,7 @@ const menu: MenuItem[] = [
     // No requiredAccess here means it's available to everyone
     children: [
       { name: 'Image Converter', path: '/converter/image', badge: 'NEW' },
+      { name: 'Docs Converter', path: '/converter/docs', badge: 'NEW' },
     ],
   },
   
