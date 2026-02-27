@@ -23,6 +23,7 @@ import {
   LuSmartphone,
   LuMonitor,
   LuX,
+  LuFiles, // Icon for File Converter
 } from 'react-icons/lu'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -60,16 +61,26 @@ const menu: MenuItem[] = [
       { name: 'Certificates', path: '/certificates/database' }, 
       { name: 'Analysis', path: '/certificates/analysis' },
       { name: 'Faculty Invitation', path: '/auto', badge: 'NEW' },
-      
-      { name: 'Excel Filter', path: '/filter', badge: 'NEW' },
       { name: 'Excel Filter', path: '/filter', badge: 'NEW' },
     ],
   },
   { name: 'Bg Remover', icon: LuEraser, path: "/bgremover", requiredAccess: 'bgRemover' },
+  
+  // --- FILE CONVERTER (PUBLIC ACCESS) ---
+  {
+    name: 'File Converter',
+    icon: LuFiles,
+    // No requiredAccess here means it's available to everyone
+    children: [
+      { name: 'Image Converter', path: '/converter/image', badge: 'NEW' },
+    ],
+  },
+  
   { name: 'Visiting Cards', icon: LuContact, path: "/visitingcards", requiredAccess: 'visitingCard' },
   { name: 'Image Enhancer', icon: LuWand, path: '/imageenhancer', requiredAccess: 'imageEnhancer', isUnderDevelopment: true },
   { name: 'ID Card Maker', icon: LuIdCard, path: "/idcard", requiredAccess: 'idCard' },
   { name: 'Posters', icon: LuLayoutTemplate, path: "/poster", requiredAccess: 'posterEditor' },
+  
   {
     name: 'Branding Assets',
     icon: LuPalette,
@@ -140,13 +151,11 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     return false
   }
 
-  // --- RENDER CONTENT FUNCTION ---
   const renderSidebarContent = (isMobile: boolean, isDesktopHovered = false) => {
     const isVisuallyOpen = isMobile || isDesktopHovered;
 
     return (
       <aside
-        // ADDED overflow-hidden here to strictly chop off leaking content
         className={`flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative overflow-hidden
           ${isMobile ? 'w-full h-full' : isDesktopHovered ? 'w-[260px] h-[100dvh]' : 'w-[88px] h-[100dvh]'}
           bg-[#F5F5F7]/95 
@@ -158,8 +167,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         {/* --- HEADER --- */}
         <div className={`flex items-center justify-between relative z-10 shrink-0 ${isMobile ? 'p-6 pb-2' : 'p-5 h-[85px] mb-2'}`}>
           <div className="flex items-center w-full relative">
-            
-            {/* Expanded Logo State */}
             <div className={`absolute transition-all duration-500 ease-out flex items-center gap-3 ${isVisuallyOpen ? "opacity-100 scale-100 left-0" : "opacity-0 scale-90 -left-4 pointer-events-none"}`}>
               <motion.div 
                  whileHover={{ scale: 1.05 }}
@@ -174,14 +181,12 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
               </div>
             </div>
 
-            {/* Collapsed Logo State (Desktop Only) */}
             <div className={`absolute transition-all duration-500 ease-out ${!isVisuallyOpen ? "opacity-100 scale-100" : "opacity-0 scale-50 pointer-events-none"}`}>
                <div className="w-10 h-10 bg-white rounded-[12px] flex items-center justify-center border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                   <Image src="/logos/ssilogo.png" alt="Logo" width={22} height={22} className="object-contain" />
                </div>
             </div>
             
-            {/* Mobile Close Button */}
             {isMobile && (
               <button 
                   onClick={toggleSidebar}
@@ -193,9 +198,8 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
           </div>
         </div>
         
-        {/* --- NAVIGATION (Scrollable) --- */}
+        {/* --- NAVIGATION --- */}
         <motion.nav 
-          // ADDED overflow-x-hidden to prevent horizontal scrolling completely
           className="flex-1 px-3.5 py-2 overflow-y-auto overflow-x-hidden no-scrollbar space-y-1" 
           variants={menuContainerVariants} 
           initial="hidden" 
@@ -236,7 +240,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                     ${isDeveloping ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}
                   `}
                   type="button"
-                  data-tooltip-id={`tooltip-${item.name.replace(/\s/g, '-')}`}
                 >
                   <div className="relative flex items-center gap-3.5 z-10">
                     <Icon 
@@ -259,7 +262,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                 {item.children && (
                   <motion.div 
                       initial={false} 
-                      // 🚨 FIXED: Height explicitly goes to 0 when sidebar closes, killing the leak 🚨
                       animate={{ 
                           height: isOpenMenuItem && isVisuallyOpen ? 'auto' : 0, 
                           opacity: isOpenMenuItem && isVisuallyOpen ? 1 : 0 
@@ -279,7 +281,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                               if (isOpen) toggleSidebar();
                             }
                           }}
-                          // 🚨 FIXED: Added 'whitespace-nowrap' here so text physically cannot wrap 🚨
                           className={`flex items-center justify-between w-full text-left px-3 py-2 text-[12.5px] rounded-[10px] transition-all cursor-pointer font-semibold whitespace-nowrap overflow-hidden
                             ${pathname.startsWith(child.path) 
                                ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.03)]' 
@@ -310,31 +311,21 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
               transition={{ duration: 0.4, ease: "backOut" }}
           >
               <div>
-              <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1 whitespace-nowrap overflow-hidden">Ecosystem</div>
-              <div className="grid grid-cols-2 gap-2">
-                  <motion.a 
-                      href="#" 
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
-                  >
-                  <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
-                  <span className="text-[10px] font-bold text-slate-600">iOS App</span>
-                  </motion.a>
-                  <motion.a 
-                      href="#" 
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer"
-                  >
-                  <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
-                  <span className="text-[10px] font-bold text-slate-600">Desktop</span>
-                  </motion.a>
-              </div>
+                <div className="text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em] mb-3 px-1 whitespace-nowrap overflow-hidden">Ecosystem</div>
+                <div className="grid grid-cols-2 gap-2">
+                    <motion.a href="#" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer">
+                      <LuSmartphone size={18} className="text-[#007AFF] mb-1.5" />
+                      <span className="text-[10px] font-bold text-slate-600">iOS App</span>
+                    </motion.a>
+                    <motion.a href="#" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 bg-white/50 hover:bg-white hover:shadow-sm hover:border-transparent transition-all cursor-pointer">
+                      <LuMonitor size={18} className="text-[#5856D6] mb-1.5" />
+                      <span className="text-[10px] font-bold text-slate-600">Desktop</span>
+                    </motion.a>
+                </div>
               </div>
               <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-bold whitespace-nowrap overflow-hidden">
-              <span className="font-mono opacity-70">v.1.08.25</span>
-              <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
+                <span className="font-mono opacity-70">v.1.08.25</span>
+                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">BETA</span>
               </div>
               <motion.button 
                   whileHover={{ scale: 1.02 }}
@@ -342,12 +333,11 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
                   onClick={logout} 
                   className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 bg-red-50/80 hover:bg-red-100 rounded-[14px] transition-colors cursor-pointer overflow-hidden whitespace-nowrap"
               >
-              <LuLogOut size={15} /> <span className={`${isVisuallyOpen ? 'block' : 'hidden'}`}>Sign Out</span>
+                <LuLogOut size={15} /> <span className={`${isVisuallyOpen ? 'block' : 'hidden'}`}>Sign Out</span>
               </motion.button>
           </motion.div>
         )}
 
-        {/* --- MOBILE SAFE AREA SPACER --- */}
         {isMobile && <div className="h-safe-bottom shrink-0 w-full" style={{ height: 'env(safe-area-inset-bottom)' }} />}
       </aside>
     )
@@ -357,7 +347,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
     <>
       <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
       
-      {/* --- DESKTOP VIEW --- */}
       <div 
         className="hidden lg:block fixed top-0 left-0 h-[100dvh] z-30" 
         onMouseEnter={() => setIsHovered(true)} 
@@ -366,7 +355,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         {renderSidebarContent(false, isHovered)}
       </div>
 
-      {/* --- MOBILE VIEW --- */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -375,11 +363,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
             exit={{ opacity: 0 }} 
             className="fixed inset-0 z-40 lg:hidden"
           >
-            <div 
-                className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" 
-                onClick={toggleSidebar} 
-            />
-            
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-md" onClick={toggleSidebar} />
             <motion.div 
                 initial={{ x: '-100%' }} 
                 animate={{ x: '0%' }} 
@@ -396,21 +380,9 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
       <AnimatePresence>{redirectUrl && <LoadingScreen redirectUrl={redirectUrl} />}</AnimatePresence>
       
       <style>{`
-        .font-quicksand {
-          font-family: 'Quicksand', sans-serif;
-        }
-        
-        /* 🚨 MORE AGGRESSIVE SCROLLBAR HIDING 🚨 */
-        .no-scrollbar::-webkit-scrollbar { 
-            display: none !important; 
-            width: 0 !important; 
-            height: 0 !important;
-            background: transparent !important;
-        }
-        .no-scrollbar { 
-            -ms-overflow-style: none !important; 
-            scrollbar-width: none !important; 
-        }
+        .font-quicksand { font-family: 'Quicksand', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none !important; width: 0 !important; }
+        .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
     </>
   )
