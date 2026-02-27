@@ -3,7 +3,9 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import ClientRootLayout from './ClientRootLayout';
 import SecurityGuard from '@/components/SecurityGuard'; 
-import SmoothScroll from '@/components/SmoothScroll'; // ✅ Import SmoothScroll
+import SmoothScroll from '@/components/SmoothScroll';
+import ProgressBar from '@/components/ProgressBar'; // ✅ Import ProgressBar
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/logos/ssilogo.png" />
       </head>
       <body className={inter.className}>
-        <SmoothScroll> {/* ✅ Wrapped everything inside SmoothScroll */}
+        {/* ✅ YouTube Loading Bar Logic */}
+        <Suspense fallback={null}>
+          <ProgressBar />
+        </Suspense>
+
+        <SmoothScroll>
           <SecurityGuard /> 
           <ClientRootLayout>{children}</ClientRootLayout>
         </SmoothScroll>
