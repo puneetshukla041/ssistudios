@@ -69,10 +69,12 @@ export default function BulkInvitationPage() {
   
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   
+  // Download Target State
+  const [downloadTarget, setDownloadTarget] = useState<{mode: 'single' | 'bulk', entry?: InvitationData}>({ mode: 'bulk' })
+  const [selectedTemplate, setSelectedTemplate] = useState<'national' | 'international'>('national')
   const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '', type: 'national' as 'national' | 'international' })
-  const [bulkType, setBulkType] = useState<'national' | 'international'>('national')
 
   const filteredData = useMemo(() => {
     const lowerQuery = searchQuery.toLowerCase();
@@ -115,44 +117,42 @@ export default function BulkInvitationPage() {
     return await pdfDoc.save()
   }
 
-  const handleDownloadSingle = async (name: string, hospital: string, type: 'national' | 'international') => {
-    setIsProcessing(true)
-    try {
-      const pdfBytes = await generatePdfBlob(name, hospital, type)
-      const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${type.toUpperCase()}_Invitation_${name.replace(/\s+/g, '_')}.pdf`;
-      link.click();
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
-    } catch (error) {
-      alert("Template Error. Check /public/invitation/")
-    } finally {
-      setIsProcessing(false)
-    }
+  // Triggered when clicking individual row download or Finalize All
+  const initiateDownload = (mode: 'single' | 'bulk', entry?: InvitationData) => {
+    setDownloadTarget({ mode, entry });
+    setIsDownloadModalOpen(true);
   }
 
-  const handleBulkDownload = async () => {
+  const handleExecuteDownload = async () => {
     setIsProcessing(true)
     try {
-      for (const item of data) {
-        const pdfBytes = await generatePdfBlob(item.name, item.hospital, bulkType);
+      if (downloadTarget.mode === 'single' && downloadTarget.entry) {
+        const { name, hospital } = downloadTarget.entry;
+        const pdfBytes = await generatePdfBlob(name, hospital, selectedTemplate);
         const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${bulkType.toUpperCase()}_Invitation_${item.name.replace(/\s+/g, '_')}.pdf`;
+        link.download = `${selectedTemplate.toUpperCase()}_Invitation_${name.replace(/\s+/g, '_')}.pdf`;
         link.click();
-        // Small delay to prevent browser download blocking
-        await new Promise(r => setTimeout(r, 300));
+      } else {
+        // Bulk Mode
+        for (const item of data) {
+          const pdfBytes = await generatePdfBlob(item.name, item.hospital, selectedTemplate);
+          const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${selectedTemplate.toUpperCase()}_Invitation_${item.name.replace(/\s+/g, '_')}.pdf`;
+          link.click();
+          await new Promise(r => setTimeout(r, 350)); // Sequential delay
+        }
       }
-      setIsBulkModalOpen(false);
+      setIsDownloadModalOpen(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      alert("Bulk Generation Error");
+      alert("Process failed. Please check your template files.");
     } finally {
       setIsProcessing(false)
     }
@@ -202,16 +202,13 @@ export default function BulkInvitationPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7FB] text-[#5C6370] lg:pl-[88px] font-sans overflow-hidden selection:bg-[#818CF8]/30">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7FB] text-[#5C6370] lg:pl-[88px] font-sans overflow-hidden">
       
       <AnimatePresence>
         {showSuccess && (
-          <motion.div 
-            initial={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }} animate={{ y: 32, opacity: 1, x: '-50%', scale: 1 }} exit={{ y: -60, opacity: 0, x: '-50%', scale: 0.9 }}
-            className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-xl rounded-full"
-          >
+          <motion.div initial={{ y: -60, opacity: 0, x: '-50%' }} animate={{ y: 32, opacity: 1, x: '-50%' }} exit={{ y: -60, opacity: 0, x: '-50%' }} className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-xl border border-[#E0E7FF] shadow-xl rounded-full">
             <LuSparkles className="text-[#818CF8]" size={18} />
-            <span className="text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent">Document beautifully crafted!</span>
+            <span className="text-[14px] font-medium bg-gradient-to-r from-[#6366F1] to-[#818CF8] bg-clip-text text-transparent">Crafted Successfully!</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -224,12 +221,12 @@ export default function BulkInvitationPage() {
           <h1 className="text-2xl font-semibold text-[#1F2937]">Invitations</h1>
           <div className="flex items-center gap-2 mt-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
-            <p className="text-[11px] text-[#94A3B8] font-semibold uppercase tracking-widest">System Live</p>
+            <p className="text-[11px] text-[#94A3B8] font-semibold uppercase tracking-widest">Live</p>
           </div>
         </div>
 
         <div className="space-y-6 flex-1">
-            <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-between p-4.5 rounded-3xl bg-[#F5F8FF] border border-white hover:bg-white transition-all group cursor-pointer">
+            <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-between p-4.5 rounded-3xl bg-[#F5F8FF] border border-white hover:bg-white transition-all cursor-pointer group">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-white rounded-xl text-[#6366F1] group-hover:bg-[#6366F1] group-hover:text-white transition-colors cursor-pointer"><LuUserPlus size={18} /></div>
                     <span className="text-[14px] font-medium text-[#4B5563]">Individual Entry</span>
@@ -241,34 +238,31 @@ export default function BulkInvitationPage() {
                 <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                 <div className="w-full border-2 border-dashed border-[#E5E7EB] rounded-[32px] p-10 flex flex-col items-center justify-center gap-3 bg-white/20 group-hover:bg-white transition-all cursor-pointer">
                     <LuUpload size={20} className="text-[#818CF8]" />
-                    <span className="text-[12px] font-semibold text-[#94A3B8] uppercase">Spreadsheet Sync</span>
+                    <span className="text-[12px] font-semibold text-[#94A3B8] uppercase">Upload List</span>
                 </div>
             </div>
 
             <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase">Target Date</label>
-                <div className="relative cursor-pointer">
-                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#818CF8]" size={15} />
-                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full pl-11 pr-4 py-4 bg-white/50 border border-white rounded-[20px] text-[13px] outline-none cursor-pointer" />
-                </div>
+                <label className="text-[11px] font-bold text-[#94A3B8] ml-2 uppercase">Date</label>
+                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full px-4 py-4 bg-white/50 border border-white rounded-[20px] text-[13px] outline-none cursor-pointer" />
             </div>
         </div>
 
         <div className="mt-8 pt-8 border-t border-[#F0F2F5] space-y-3">
           <button 
             disabled={data.length === 0}
-            onClick={() => setIsBulkModalOpen(true)}
-            className="w-full py-4 rounded-2xl bg-[#1F2937] text-white text-[13px] font-medium cursor-pointer hover:bg-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={() => initiateDownload('bulk')}
+            className="w-full py-4 rounded-2xl bg-[#1F2937] text-white text-[13px] font-medium cursor-pointer hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Finalize All ({data.length})
           </button>
-          <button onClick={() => setData([])} className="w-full py-3 rounded-2xl text-red-500 text-[12px] font-semibold cursor-pointer hover:bg-red-50 transition-colors">Clear Workspace</button>
+          <button onClick={() => setData([])} className="w-full py-3 rounded-2xl text-red-500 text-[12px] font-semibold cursor-pointer hover:bg-red-50 transition-colors">Clear</button>
         </div>
       </motion.div>
 
       <div className="flex-1 h-full flex flex-col overflow-hidden">
         <header className="h-20 bg-white/30 backdrop-blur-md border-b border-white flex items-center px-10 justify-between">
-            <h2 className="text-[17px] font-semibold text-[#1F2937]">Archive Preview</h2>
+            <h2 className="text-[17px] font-semibold text-[#1F2937]">Preview</h2>
             <div className="relative flex-1 max-w-sm ml-8">
                 <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={15} />
                 <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white/80 rounded-full text-[13px] outline-none border border-transparent focus:border-[#C7D2FE] transition-all" />
@@ -278,31 +272,30 @@ export default function BulkInvitationPage() {
         <main className="flex-1 overflow-auto p-10">
             {data.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-[#94A3B8]">
-                    <div className="w-24 h-24 bg-white rounded-[35px] shadow-sm flex items-center justify-center mb-6"><LuFileSpreadsheet size={40} className="opacity-10" /></div>
-                    <p className="text-[15px] font-medium">System Idle</p>
+                    <LuFileSpreadsheet size={40} className="opacity-10 mb-4" />
+                    <p className="text-[15px] font-medium">No Data Loaded</p>
                 </div>
             ) : (
                 <div className="bg-white/80 backdrop-blur-md rounded-[32px] border border-white shadow-sm overflow-hidden">
                     <table className="w-full text-left">
                         <thead className="bg-[#F9FBFF]/50 border-b border-[#F0F2F5]">
                             <tr className="text-[11px] font-bold text-[#94A3B8] uppercase">
-                                <th className="px-10 py-5">Type</th>
+                                <th className="px-10 py-5">Status</th>
                                 <th className="px-10 py-5">Name</th>
                                 <th className="px-10 py-5 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F0F2F5]">
                             {filteredData.map((row) => (
-                                <tr key={row.id} className="hover:bg-white transition-colors cursor-default">
+                                <tr key={row.id} className="hover:bg-white transition-colors">
                                     <td className="px-10 py-5">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${row.type === 'international' ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                          {row.type === 'international' ? <LuGlobe size={12}/> : <LuFlag size={12}/>}
-                                          {row.type === 'international' ? 'International' : 'National'}
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${row.type === 'international' ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                          {row.type}
                                         </span>
                                     </td>
                                     <td className="px-10 py-5 text-[14px] font-medium text-[#374151]">{row.name}</td>
                                     <td className="px-10 py-5 text-right">
-                                        <button onClick={() => handleDownloadSingle(row.name, row.hospital, row.type)} className="p-3 text-[#6366F1] bg-[#F5F8FF] rounded-2xl hover:bg-[#6366F1] hover:text-white transition-all cursor-pointer"><LuDownload size={16} /></button>
+                                        <button onClick={() => initiateDownload('single', row)} className="p-3 text-[#6366F1] bg-[#F5F8FF] rounded-2xl hover:bg-[#6366F1] hover:text-white transition-all cursor-pointer"><LuDownload size={16} /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -313,35 +306,29 @@ export default function BulkInvitationPage() {
         </main>
       </div>
 
-      {/* --- BULK DOWNLOAD SELECTOR MODAL --- */}
+      {/* --- CHOICE POPUP CARD (The Card you asked for) --- */}
       <AnimatePresence>
-        {isBulkModalOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#1F2937]/10 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-2xl border border-white">
-               <div className="flex justify-between items-center mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><LuLayers size={18}/></div>
-                    <h3 className="text-xl font-semibold">Batch Config</h3>
-                  </div>
-                  <button onClick={() => setIsBulkModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer"><LuX size={20}/></button>
-              </div>
-              <p className="text-[13px] text-gray-500 mb-6 leading-relaxed">Select the invitation template to apply for all <span className="font-bold text-gray-900">{data.length} records</span> in this batch.</p>
-              <div className="space-y-6">
-                <div className="flex p-1 bg-[#F9FAFB] rounded-[20px] border">
+        {isDownloadModalOpen && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-[#1F2937]/20 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="w-full max-w-xs bg-white rounded-[32px] p-8 shadow-2xl border border-white flex flex-col items-center text-center">
+               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6"><LuDownload size={28}/></div>
+               <h3 className="text-xl font-bold text-gray-900 mb-2">Select Template</h3>
+               <p className="text-[13px] text-gray-500 mb-8">Choose which invitation format you want to generate now.</p>
+               
+               <div className="w-full space-y-3 mb-8">
                   {(['national', 'international'] as const).map((t) => (
-                    <button key={t} onClick={() => setBulkType(t)} className={`flex-1 py-3 text-[12px] font-bold rounded-[15px] capitalize cursor-pointer transition-all ${bulkType === t ? 'bg-white text-[#6366F1] shadow-sm' : 'text-[#94A3B8]'}`}>
+                    <button key={t} onClick={() => setSelectedTemplate(t)} className={`w-full py-4 rounded-2xl font-bold text-[14px] capitalize transition-all cursor-pointer border-2 ${selectedTemplate === t ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-100 text-gray-400'}`}>
                       {t}
                     </button>
                   ))}
-                </div>
-                <button 
-                  onClick={handleBulkDownload}
-                  disabled={isProcessing}
-                  className="w-full py-4.5 bg-[#1F2937] text-white font-semibold rounded-[24px] cursor-pointer shadow-lg hover:bg-black transition-all flex items-center justify-center gap-3"
-                >
-                  {isProcessing ? <LuLoader className="animate-spin" /> : <><LuDownload size={18}/> Download All</>}
-                </button>
-              </div>
+               </div>
+
+               <div className="flex gap-3 w-full">
+                  <button onClick={() => setIsDownloadModalOpen(false)} className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 font-bold text-[14px] cursor-pointer">Cancel</button>
+                  <button onClick={handleExecuteDownload} disabled={isProcessing} className="flex-1 py-4 rounded-2xl bg-[#1F2937] text-white font-bold text-[14px] cursor-pointer flex items-center justify-center">
+                    {isProcessing ? <LuLoader className="animate-spin"/> : 'Confirm'}
+                  </button>
+               </div>
             </motion.div>
           </div>
         )}
@@ -356,18 +343,20 @@ export default function BulkInvitationPage() {
                   <h3 className="text-xl font-semibold">Quick Add</h3>
                   <button onClick={() => setIsModalOpen(false)} className="p-2 text-[#94A3B8] hover:text-red-500 cursor-pointer"><LuX size={20}/></button>
               </div>
-              <div className="space-y-5">
-                <div className="flex p-1 bg-[#F9FAFB] rounded-[20px] border">
-                  {(['national', 'international'] as const).map((t) => (
-                    <button key={t} onClick={() => setSingleEntry({ ...singleEntry, type: t })} className={`flex-1 py-2 text-[12px] font-bold rounded-[15px] capitalize cursor-pointer transition-all ${singleEntry.type === t ? 'bg-white text-[#6366F1] shadow-sm' : 'text-[#94A3B8]'}`}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <input type="text" placeholder="Full Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all" />
-                <input type="text" placeholder="Institution" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[24px] outline-none border border-transparent focus:border-[#C7D2FE] focus:bg-white transition-all" />
-                <button disabled={!singleEntry.name || isProcessing} onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital, singleEntry.type); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '', type: 'national' }) }} className="w-full py-4.5 bg-[#6366F1] text-white font-semibold rounded-[24px] cursor-pointer disabled:opacity-50 shadow-lg hover:shadow-indigo-200 transition-all">
-                  {isProcessing ? <LuLoader className="animate-spin" /> : "Generate PDF"}
+              <div className="space-y-4">
+                <input type="text" placeholder="Full Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[22px] outline-none focus:bg-white border focus:border-indigo-200 transition-all" />
+                <input type="text" placeholder="Institution" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-6 py-4 bg-[#F9FAFB] rounded-[22px] outline-none focus:bg-white border focus:border-indigo-200 transition-all" />
+                <button 
+                  disabled={!singleEntry.name} 
+                  onClick={() => {
+                    const newEntry: InvitationData = { id: Date.now().toString(), name: singleEntry.name, hospital: singleEntry.hospital, sourceSheet: 'manual', status: 'uploaded', type: 'national' };
+                    setData([...data, newEntry]);
+                    setIsModalOpen(false);
+                    setSingleEntry({name:'', hospital:'', type:'national'});
+                  }} 
+                  className="w-full py-4.5 bg-indigo-600 text-white font-bold rounded-[22px] cursor-pointer shadow-lg shadow-indigo-100"
+                >
+                  Add to Workspace
                 </button>
               </div>
             </motion.div>
