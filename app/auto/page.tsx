@@ -29,6 +29,7 @@ const SECOND_NAME_MARGIN_LEFT = 98
 const SECOND_NAME_MARGIN_TOP = 238
 const DATE_MARGIN_LEFT = 455    
 const DATE_MARGIN_TOP = 75      
+
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
 
@@ -40,6 +41,18 @@ interface InvitationData {
   email: string;
   sourceSheet: string;
   status: 'pending' | 'uploaded' | 'generated' | 'error';
+}
+
+// --- HELPER: DOWNLOAD SINGLE FILE ---
+const downloadFile = (blob: Blob, fileName: string) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 // --- HELPER: SMART CAPITALIZE ---
@@ -109,22 +122,12 @@ export default function BulkInvitationPage() {
     return await pdfDoc.save()
   }
 
-  const downloadFile = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
   const handleDownloadSingle = async (name: string, hospital: string) => {
     setIsProcessing(true)
     try {
       const pdfBytes = await generatePdfBlob(name, hospital)
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+      // FIX: Cast as any to resolve "Uint8Array not assignable to BlobPart"
+      const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
       downloadFile(blob, `Invitation_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
     } catch (error) {
       console.error(error)
@@ -196,7 +199,6 @@ export default function BulkInvitationPage() {
         </div>
 
         <div className="space-y-4">
-            {/* SINGLE EXPORT TRIGGER */}
             <button 
                 onClick={() => setIsModalOpen(true)}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 transition-all group"
@@ -210,7 +212,6 @@ export default function BulkInvitationPage() {
                 </div>
             </button>
 
-            {/* BULK UPLOAD */}
             <div className="relative group">
                 <input 
                     type="file" 
@@ -224,7 +225,6 @@ export default function BulkInvitationPage() {
                 </div>
             </div>
 
-            {/* CALENDAR */}
             <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Invitation Date</label>
                 <div className="relative">
@@ -240,26 +240,13 @@ export default function BulkInvitationPage() {
         </div>
 
         <div className="mt-8 lg:mt-auto space-y-3 pt-6 border-t border-slate-100">
-          <button
-            disabled={data.length === 0 || isProcessing}
-            onClick={() => {/* Custom logic for DB */}}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white font-bold text-[13px] hover:bg-slate-800 disabled:opacity-50 transition-all"
-          >
+          <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white font-bold text-[13px] hover:bg-slate-800 disabled:opacity-50 transition-all">
             <LuDatabase size={16} /> Sync with Database
           </button>
-
-          <button
-            onClick={() => {/* Folder save logic */}}
-            disabled={filteredData.length === 0 || isProcessing}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold text-[13px] shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-all"
-          >
+          <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold text-[13px] shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-all">
              <LuFolderInput size={16} /> Export All to Folder
           </button>
-
-          <button
-              onClick={() => setData([])}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all"
-          >
+          <button onClick={() => setData([])} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all">
             <LuTrash2 size={16} /> Clear List
           </button>
         </div>
@@ -271,7 +258,6 @@ export default function BulkInvitationPage() {
             <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <LuFileText className="text-slate-400" /> Preview ({filteredData.length})
             </h2>
-
             <div className="relative flex-1 max-w-md">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
@@ -305,19 +291,12 @@ export default function BulkInvitationPage() {
                         <tbody className="divide-y divide-slate-100">
                             {filteredData.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
-                                    <td className="px-6 py-3">
-                                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md w-fit">
-                                            <LuCheck size={12} /> Ready
-                                        </span>
-                                    </td>
+                                    <td className="px-6 py-3 text-green-600 bg-green-50/50 text-[10px] font-bold uppercase"><LuCheck className="inline mr-1"/> Ready</td>
                                     <td className="px-6 py-3 text-sm font-bold text-slate-700">{row.name}</td>
                                     <td className="px-6 py-3 text-sm text-slate-500">{row.hospital || '—'}</td>
                                     <td className="px-6 py-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{row.sourceSheet}</td>
                                     <td className="px-6 py-3 text-right">
-                                        <button 
-                                            onClick={() => handleDownloadSingle(row.name, row.hospital)}
-                                            className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-all"
-                                        >
+                                        <button onClick={() => handleDownloadSingle(row.name, row.hospital)} className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-all">
                                             <LuDownload size={18} />
                                         </button>
                                     </td>
@@ -334,67 +313,17 @@ export default function BulkInvitationPage() {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8">
               <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">Single Invitation</h3>
-                  <p className="text-xs text-slate-400 font-medium">Quickly generate one certificate</p>
-                </div>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <LuX size={20} className="text-slate-400" />
-                </button>
+                <h3 className="text-xl font-bold text-slate-900">Single Invitation</h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><LuX size={20} className="text-slate-400" /></button>
               </div>
-
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Participant Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter full name..."
-                    value={singleEntry.name}
-                    onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})}
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hospital / Organization</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter hospital name..."
-                    value={singleEntry.hospital}
-                    onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})}
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
+                <input type="text" placeholder="Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold outline-none" />
+                <input type="text" placeholder="Hospital" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold outline-none" />
               </div>
-
-              <button 
-                disabled={!singleEntry.name || isProcessing}
-                onClick={async () => {
-                    await handleDownloadSingle(singleEntry.name, singleEntry.hospital)
-                    setIsModalOpen(false)
-                    setSingleEntry({ name: '', hospital: '' })
-                }}
-                className="w-full mt-8 flex items-center justify-center gap-3 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95"
-              >
-                {isProcessing ? <LuLoader className="animate-spin" /> : <LuDownload size={18} />}
-                Generate & Download
-              </button>
+              <button disabled={!singleEntry.name || isProcessing} onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '' }) }} className="w-full mt-8 py-4 bg-blue-600 text-white font-bold rounded-2xl active:scale-95 transition-all">Generate & Download</button>
             </motion.div>
           </div>
         )}
