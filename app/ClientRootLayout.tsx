@@ -173,7 +173,7 @@ function AppLayout({ children }: { children: ReactNode }) {
             
             <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit/90 backdrop-blur-sm">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
-                {pathname === "/dashboard" ? "" : "SSI Studios"}
+                {pathname === "/dashboard" ? "" : ""}
               </h1>
               <button
                 onClick={toggleSidebar}
