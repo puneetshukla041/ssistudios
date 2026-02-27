@@ -94,7 +94,7 @@ const menu: MenuItem[] = [
     icon: LuSettings,
     requiredAccess: 'settings',
     children: [
-      { name: 'Theme', path: '/theme' },
+     
       { name: 'Profile & Preferences', path: '/userprofile' },
     ],
   },
