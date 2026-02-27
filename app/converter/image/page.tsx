@@ -11,7 +11,8 @@ import {
   LuDownload, 
   LuRefreshCw, 
   LuChevronRight,
-  LuLayers
+  LuLayers,
+  LuShield
 } from 'react-icons/lu'
 import confetti from 'canvas-confetti'
 
@@ -126,7 +127,9 @@ export default function ConverterPage() {
             
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-[#1C1C1E] tracking-tight">Image Format Converter</h1>
-              <p className="text-[#8E8E93] mt-1 font-bold text-lg">ssistudios application</p>
+                            <p className="text-[#8E8E93] mt-1 font-bold text-lg flex items-center gap-2">
+                              <LuShield size={18} className="text-green-500" /> ssistudios application
+                            </p>
             </div>
           </div>
           
