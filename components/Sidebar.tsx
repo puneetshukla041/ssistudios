@@ -178,7 +178,7 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
               </motion.div>
               <div>
                   <h1 className="text-slate-800 font-bold text-[16px] tracking-tight leading-none">SSI Studios</h1>
-                  <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-1">Creative Ops</p>
+                  <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-1">Creative Operations</p>
               </div>
             </div>
 
