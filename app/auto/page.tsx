@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -33,6 +34,9 @@ const DATE_MARGIN_TOP = 75
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
 
+// --- APPLE ANIMATION CONFIG ---
+const springTransition = { type: "spring", stiffness: 300, damping: 30 }
+
 // --- TYPES ---
 interface InvitationData {
   id: string;
@@ -43,7 +47,6 @@ interface InvitationData {
   status: 'pending' | 'uploaded' | 'generated' | 'error';
 }
 
-// --- HELPER: DOWNLOAD SINGLE FILE ---
 const downloadFile = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -55,47 +58,34 @@ const downloadFile = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url);
 }
 
-// --- HELPER: SMART CAPITALIZE ---
 const toTitleCase = (str: any) => {
   if (!str) return '';
-  return String(str).trim().replace(
-    /\w\S*/g,
-    (txt) => txt.charAt(0).toUpperCase() + txt.slice(1) 
-  );
+  return String(str).trim().replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1));
 }
 
 export default function BulkInvitationPage() {
   const [data, setData] = useState<InvitationData[]>([])
   const [searchQuery, setSearchQuery] = useState('') 
   const [isProcessing, setIsProcessing] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-
-  // --- SINGLE EXPORT MODAL STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [singleEntry, setSingleEntry] = useState({ name: '', hospital: '' })
 
-  // --- FILTERED DATA ---
   const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
     const lowerQuery = searchQuery.toLowerCase();
     return data.filter(item => 
         item.name.toLowerCase().includes(lowerQuery) ||
         item.hospital.toLowerCase().includes(lowerQuery) ||
-        item.email.toLowerCase().includes(lowerQuery) ||
         item.sourceSheet.toLowerCase().includes(lowerQuery)
     );
   }, [data, searchQuery]);
 
-  // --- GENERATE PDF LOGIC ---
   const generatePdfBlob = async (name: string, hospital: string): Promise<Uint8Array> => {
     const existingPdfBytes = await fetch('/invitation/Invitation.pdf').then(res => res.arrayBuffer())
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
     pdfDoc.registerFontkit(fontkit)
-
     const fontBytes = await fetch('/fonts/Poppins-Regular.ttf').then(res => res.arrayBuffer())
     const customFont = await pdfDoc.embedFont(fontBytes)
-
     const pages = pdfDoc.getPages()
     const firstPage = pages[0]
     const { height: pageHeight } = firstPage.getSize()
@@ -105,19 +95,12 @@ export default function BulkInvitationPage() {
     const secondNameY = pageHeight - SECOND_NAME_MARGIN_TOP 
     const dateY = pageHeight - DATE_MARGIN_TOP
 
-    if (name) {
-      firstPage.drawText(name, { x: NAME_MARGIN_LEFT, y: nameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
-    }
-    if (hospital) {
-      firstPage.drawText(hospital, { x: HOSPITAL_MARGIN_LEFT, y: hospitalY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
-    }
-    if (name) {
-      firstPage.drawText(`${name},`, { x: SECOND_NAME_MARGIN_LEFT, y: secondNameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
-    }
+    if (name) firstPage.drawText(name, { x: NAME_MARGIN_LEFT, y: nameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
+    if (hospital) firstPage.drawText(hospital, { x: HOSPITAL_MARGIN_LEFT, y: hospitalY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
+    if (name) firstPage.drawText(`${name},`, { x: SECOND_NAME_MARGIN_LEFT, y: secondNameY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
 
     const now = new Date(selectedDate + 'T12:00:00') 
     const dateLine = `${now.toLocaleString('en-US', { month: 'short' })} ${String(now.getDate()).padStart(2, '0')}, ${now.getFullYear()}` 
-
     firstPage.drawText(dateLine, { x: DATE_MARGIN_LEFT, y: dateY, size: FONT_SIZE, font: customFont, color: TEXT_COLOR })
     return await pdfDoc.save()
   }
@@ -126,7 +109,6 @@ export default function BulkInvitationPage() {
     setIsProcessing(true)
     try {
       const pdfBytes = await generatePdfBlob(name, hospital)
-      // FIX: Cast as any to resolve "Uint8Array not assignable to BlobPart"
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
       downloadFile(blob, `Invitation_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
     } catch (error) {
@@ -136,7 +118,6 @@ export default function BulkInvitationPage() {
     }
   }
 
-  // --- EXCEL UPLOAD ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -153,27 +134,20 @@ export default function BulkInvitationPage() {
           if (!rawData || rawData.length === 0) return;
           const firstRow = rawData[0] as any;
           const keys = Object.keys(firstRow);
-          const nameKey = keys.find(k => /name|doctor|participant|faculty/i.test(k));
-          const hospitalKey = keys.find(k => /hospital|society|org|institute|clinic/i.test(k));
-          const emailKey = keys.find(k => /email|e-mail|mail/i.test(k));
-          if (!nameKey) return; 
-          const sheetData = rawData.map((row: any, index: number): InvitationData | null => {
-            const nameVal = row[nameKey];
-            if (!nameVal) return null;
-            return {
-              id: `${sheetName}-${index}-${Date.now()}`,
-              sourceSheet: sheetName,
-              name: toTitleCase(nameVal),
-              hospital: hospitalKey ? toTitleCase(row[hospitalKey]) : '', 
-              email: emailKey ? String(row[emailKey] || '') : '', 
-              status: 'uploaded' 
-            };
-          }).filter((item): item is InvitationData => item !== null);
-          allExtractedData = [...allExtractedData, ...sheetData];
+          const nK = keys.find(k => /name|doctor|participant/i.test(k));
+          const hK = keys.find(k => /hospital|society|clinic/i.test(k));
+          if (!nK) return; 
+          allExtractedData = [...allExtractedData, ...rawData.map((row: any, index: number) => ({
+            id: `${sheetName}-${index}-${Date.now()}`,
+            sourceSheet: sheetName,
+            name: toTitleCase(row[nK]),
+            hospital: hK ? toTitleCase(row[hK]) : '', 
+            status: 'uploaded' 
+          }))];
         });
         setData(allExtractedData);
       } catch (error) {
-        alert("Failed to parse Excel file.")
+        alert("Execution Error: Failed to process data structure.")
       } finally {
         setIsProcessing(false)
       }
@@ -182,34 +156,35 @@ export default function BulkInvitationPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F5F5F7] font-sans overflow-hidden lg:pl-[88px]">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#FBFBFD] text-[#1D1D1F] lg:pl-[88px]">
       
       {/* --- SIDEBAR --- */}
       <motion.div 
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        className="w-full lg:w-[320px] h-fit lg:h-full bg-white border-b lg:border-r border-slate-200/60 z-20 flex flex-col p-6 shadow-sm overflow-y-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={springTransition}
+        className="w-full lg:w-[320px] h-fit lg:h-full bg-white border-b lg:border-r border-[#D2D2D7]/50 z-20 flex flex-col p-8 shadow-sm overflow-y-auto"
       >
-        <div className="mb-8">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center mb-4 shadow-lg shadow-blue-200">
-             <LuFileSpreadsheet size={20} />
+        <div className="mb-10">
+          <div className="mb-6 relative w-16 h-16">
+            <Image 
+              src="/logos/ssilogo.png" 
+              alt="SSI Logo" 
+              fill 
+              className="object-contain"
+            />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Bulk Processor</h1>
-          <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-wider">Invitation System</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Invitation Letter</h1>
+          <p className="text-[13px] text-[#86868B] mt-1 font-medium">Internal Distribution System</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6 flex-1">
             <button 
                 onClick={() => setIsModalOpen(true)}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 transition-all group"
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-[#F5F5F7] hover:bg-[#E8E8ED] transition-all group"
             >
-                <div className="p-2 bg-white rounded-lg shadow-sm group-hover:scale-110 transition-transform">
-                    <LuUserPlus size={18} />
-                </div>
-                <div className="text-left">
-                    <p className="text-sm font-bold">Single Export</p>
-                    <p className="text-[10px] opacity-70 font-medium">Quick manual entry</p>
-                </div>
+                <LuUserPlus size={20} className="text-[#1D1D1F]" />
+                <span className="text-sm font-semibold">Single Recipient</span>
             </button>
 
             <div className="relative group">
@@ -219,85 +194,90 @@ export default function BulkInvitationPage() {
                     onChange={handleFileUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <div className="w-full border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 group-hover:border-blue-400 group-hover:bg-blue-50/50 transition-all">
-                    <LuUpload size={20} className="text-slate-400 group-hover:text-blue-500" />
-                    <span className="text-sm font-bold text-slate-600">Import Excel</span>
+                <div className="w-full border border-[#D2D2D7] rounded-xl p-8 flex flex-col items-center justify-center gap-3 group-hover:bg-[#F5F5F7] transition-all">
+                    <LuUpload size={24} className="text-[#86868B]" />
+                    <span className="text-sm font-semibold">Bulk Import Data</span>
                 </div>
             </div>
 
             <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Invitation Date</label>
+                <label className="text-[12px] font-semibold text-[#86868B] ml-1">Distribution Date</label>
                 <div className="relative">
-                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1D1D1F]" size={16} />
                     <input
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer"
+                      className="w-full pl-11 pr-4 py-3 bg-[#F5F5F7] rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#0071E3]/20 transition-all"
                     />
                 </div>
             </div>
         </div>
 
-        <div className="mt-8 lg:mt-auto space-y-3 pt-6 border-t border-slate-100">
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white font-bold text-[13px] hover:bg-slate-800 disabled:opacity-50 transition-all">
-            <LuDatabase size={16} /> Sync with Database
+        <div className="mt-10 space-y-4 pt-8 border-t border-[#F5F5F7]">
+          <button className="w-full py-3.5 rounded-xl bg-[#1D1D1F] text-white text-[13px] font-semibold hover:bg-[#000000] transition-all">
+            <LuDatabase className="inline mr-2" size={16} /> Synchronize Database
           </button>
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold text-[13px] shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-all">
-             <LuFolderInput size={16} /> Export All to Folder
+          <button className="w-full py-3.5 rounded-xl bg-[#0071E3] text-white text-[13px] font-semibold hover:bg-[#0077ED] transition-all shadow-md">
+             <LuFolderInput className="inline mr-2" size={16} /> Export Local Directory
           </button>
-          <button onClick={() => setData([])} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all">
-            <LuTrash2 size={16} /> Clear List
+          <button onClick={() => setData([])} className="w-full py-3.5 rounded-xl text-[#FF3B30] text-[13px] font-semibold hover:bg-[#FF3B30]/5 transition-all">
+            <LuTrash2 className="inline mr-2" size={16} /> Clear Cache
           </button>
         </div>
       </motion.div>
 
-      {/* --- MAIN AREA --- */}
+      {/* --- MAIN PREVIEW AREA --- */}
       <div className="flex-1 h-full flex flex-col overflow-hidden relative">
-        <div className="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex items-center px-4 lg:px-8 justify-between shrink-0 gap-4">
-            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <LuFileText className="text-slate-400" /> Preview ({filteredData.length})
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#D2D2D7]/30 flex items-center px-8 justify-between shrink-0 gap-6">
+            <h2 className="text-[15px] font-semibold flex items-center gap-3">
+                <LuFileText className="text-[#86868B]" /> Archive Preview
             </h2>
-            <div className="relative flex-1 max-w-md">
-                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <div className="relative flex-1 max-w-lg">
+                <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={16} />
                 <input 
                     type="text" 
-                    placeholder="Search records..." 
+                    placeholder="Search by name or institution..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white focus:border-slate-300 rounded-xl text-sm transition-all outline-none"
+                    className="w-full pl-12 pr-4 py-3 bg-[#F5F5F7] rounded-full text-sm font-medium outline-none focus:bg-white border border-transparent focus:border-[#D2D2D7] transition-all"
                 />
             </div>
-        </div>
+        </header>
 
-        <div className="flex-1 overflow-auto p-4 lg:p-8">
+        <main className="flex-1 overflow-auto p-8 lg:p-12">
             {data.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4">
-                    <LuFileSpreadsheet className="w-16 h-16 opacity-10" />
-                    <p className="text-sm font-bold">Import a file to start bulk processing</p>
+                <div className="h-full flex flex-col items-center justify-center text-[#86868B]">
+                    <LuFileSpreadsheet size={48} strokeWidth={1.5} className="mb-6 opacity-20" />
+                    <p className="text-[15px] font-medium tracking-tight">System idle. Awaiting data import.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-                    <table className="w-full text-left min-w-[800px]">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Full Name</th>
-                                <th className="px-6 py-4">Hospital / Clinic</th>
-                                <th className="px-6 py-4">Source</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
+                <div className="bg-white rounded-2xl border border-[#D2D2D7]/40 shadow-sm overflow-x-auto">
+                    <table className="w-full text-left min-w-[900px]">
+                        <thead className="bg-[#FBFBFD] border-b border-[#D2D2D7]/30">
+                            <tr className="text-[11px] font-bold text-[#86868B] uppercase tracking-widest">
+                                <th className="px-8 py-5">Verification</th>
+                                <th className="px-8 py-5">Full Legal Name</th>
+                                <th className="px-8 py-5">Institution</th>
+                                <th className="px-8 py-5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#F5F5F7]">
                             {filteredData.map((row) => (
-                                <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
-                                    <td className="px-6 py-3 text-green-600 bg-green-50/50 text-[10px] font-bold uppercase"><LuCheck className="inline mr-1"/> Ready</td>
-                                    <td className="px-6 py-3 text-sm font-bold text-slate-700">{row.name}</td>
-                                    <td className="px-6 py-3 text-sm text-slate-500">{row.hospital || '—'}</td>
-                                    <td className="px-6 py-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{row.sourceSheet}</td>
-                                    <td className="px-6 py-3 text-right">
-                                        <button onClick={() => handleDownloadSingle(row.name, row.hospital)} className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-all">
-                                            <LuDownload size={18} />
+                                <tr key={row.id} className="hover:bg-[#F5F5F7]/40 transition-colors">
+                                    <td className="px-8 py-4">
+                                        <div className="flex items-center gap-2 text-[12px] font-bold text-[#34C759]">
+                                            <LuCheck size={14} /> VERIFIED
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-4 text-[14px] font-semibold text-[#1D1D1F]">{row.name}</td>
+                                    <td className="px-8 py-4 text-[14px] text-[#86868B] font-medium">{row.hospital || '—'}</td>
+                                    <td className="px-8 py-4 text-right">
+                                        <button 
+                                            onClick={() => handleDownloadSingle(row.name, row.hospital)}
+                                            className="p-3 bg-white border border-[#D2D2D7] rounded-lg hover:border-[#1D1D1F] transition-all"
+                                        >
+                                            <LuDownload size={16} />
                                         </button>
                                     </td>
                                 </tr>
@@ -306,24 +286,67 @@ export default function BulkInvitationPage() {
                     </table>
                 </div>
             )}
-        </div>
+        </main>
       </div>
 
-      {/* --- SINGLE EXPORT MODAL --- */}
+      {/* --- APPLE-STYLE MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Single Invitation</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><LuX size={20} className="text-slate-400" /></button>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setIsModalOpen(false)} 
+              className="absolute inset-0 bg-[#000000]/20 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }} 
+              transition={springTransition}
+              className="relative w-full max-w-lg bg-white rounded-[28px] shadow-2xl p-10"
+            >
+              <div className="flex justify-between items-start mb-10">
+                <div>
+                  <h3 className="text-[22px] font-semibold tracking-tight">Single Recipient</h3>
+                  <p className="text-[14px] text-[#86868B] mt-1">Manual generation of individual records</p>
+                </div>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-[#F5F5F7] rounded-full transition-colors">
+                  <LuX size={20} className="text-[#1D1D1F]" />
+                </button>
               </div>
-              <div className="space-y-4">
-                <input type="text" placeholder="Name" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold outline-none" />
-                <input type="text" placeholder="Hospital" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold outline-none" />
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#86868B] uppercase tracking-wider ml-1">Legal Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="First Middle Last"
+                    value={singleEntry.name}
+                    onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})}
+                    className="w-full px-5 py-4 bg-[#F5F5F7] rounded-xl text-[15px] font-medium focus:ring-2 focus:ring-[#0071E3]/20 transition-all outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#86868B] uppercase tracking-wider ml-1">Institution</label>
+                  <input 
+                    type="text" 
+                    placeholder="Medical Center / University"
+                    value={singleEntry.hospital}
+                    onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})}
+                    className="w-full px-5 py-4 bg-[#F5F5F7] rounded-xl text-[15px] font-medium focus:ring-2 focus:ring-[#0071E3]/20 transition-all outline-none"
+                  />
+                </div>
               </div>
-              <button disabled={!singleEntry.name || isProcessing} onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '' }) }} className="w-full mt-8 py-4 bg-blue-600 text-white font-bold rounded-2xl active:scale-95 transition-all">Generate & Download</button>
+
+              <button 
+                disabled={!singleEntry.name || isProcessing} 
+                onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '' }) }} 
+                className="w-full mt-12 py-4.5 bg-[#0071E3] text-white text-[15px] font-semibold rounded-2xl hover:bg-[#0077ED] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-[#0071E3]/20 active:scale-[0.98]"
+              >
+                {isProcessing ? <LuLoader className="animate-spin" /> : "Generate Document"}
+              </button>
             </motion.div>
           </div>
         )}
