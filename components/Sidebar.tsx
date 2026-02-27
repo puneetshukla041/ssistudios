@@ -160,7 +160,6 @@ export default function Sidebar({ forceActive, isOpen, toggleSidebar }: SidebarP
         className={`flex flex-col font-quicksand transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative overflow-hidden
           ${isMobile ? 'w-full h-full' : isDesktopHovered ? 'w-[260px] h-[100dvh]' : 'w-[88px] h-[100dvh]'}
           bg-[#F5F5F7]/95 
-          backdrop-blur-3xl 
           border-r border-slate-200/60
           shadow-[20px_0_60px_-10px_rgba(0,0,0,0.05)]
         `}
