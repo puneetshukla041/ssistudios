@@ -4,8 +4,7 @@ import { Inter } from 'next/font/google';
 import ClientRootLayout from './ClientRootLayout';
 import SecurityGuard from '@/components/SecurityGuard'; 
 import SmoothScroll from '@/components/SmoothScroll';
-import ProgressBar from '@/components/ProgressBar'; // ✅ Import ProgressBar
-import { Suspense } from 'react';
+import NextTopLoader from 'nextjs-toploader'; 
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,10 +20,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/logos/ssilogo.png" />
       </head>
       <body className={inter.className}>
-        {/* ✅ YouTube Loading Bar Logic */}
-        <Suspense fallback={null}>
-          <ProgressBar />
-        </Suspense>
+        {/* INCREASED Z-INDEX & HEIGHT FOR VISIBILITY */}
+        <NextTopLoader
+          color="#2233F0"
+          initialPosition={0.08}
+          crawlSpeed={500}
+          height={4} 
+          crawl={true}
+          showSpinner={false}
+          easing="ease-in-out"
+          speed={800}
+          /* Added spread radius to the shadow for the "Bloom" effect */
+          shadow="0 0 15px #2233F0, 0 0 50px #2233F0, 0 0 200px 50px rgba(34, 51, 240, 0.5)"
+          zIndex={99999} 
+        />
 
         <SmoothScroll>
           <SecurityGuard /> 

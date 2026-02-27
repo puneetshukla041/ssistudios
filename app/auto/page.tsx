@@ -34,14 +34,13 @@ const DATE_MARGIN_TOP = 75
 const FONT_SIZE = 10
 const TEXT_COLOR = rgb(0, 0, 0)
 
-// --- APPLE ANIMATION CONFIG ---
-// FIXED: Added 'as const' to resolve the Transition type error
-const springTransition = { type: "spring", stiffness: 400, damping: 30 } as const;
-const fadeIn = { 
-  initial: { opacity: 0, y: 10 }, 
-  animate: { opacity: 1, y: 0 }, 
-  exit: { opacity: 0, y: -10 },
-  transition: { duration: 0.2 }
+// --- SOFT ANIMATION CONFIG ---
+const softSpring = { type: "spring", stiffness: 300, damping: 25 } as const;
+const fadeInSoft = { 
+  initial: { opacity: 0, scale: 0.98 }, 
+  animate: { opacity: 1, scale: 1 }, 
+  exit: { opacity: 0, scale: 0.98 },
+  transition: { duration: 0.3 }
 } as const;
 
 // --- TYPES ---
@@ -119,8 +118,6 @@ export default function BulkInvitationPage() {
       const pdfBytes = await generatePdfBlob(name, hospital)
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
       downloadFile(blob, `Invitation_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
-      
-      // TRIGGER POSITIVE COMPLETION ANIMATION
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 2500)
     } catch (error) {
@@ -159,7 +156,7 @@ export default function BulkInvitationPage() {
         });
         setData(allExtractedData);
       } catch (error) {
-        alert("Failed to process Excel data.")
+        alert("Oops! Check your Excel file.")
       } finally {
         setIsProcessing(false)
       }
@@ -168,26 +165,21 @@ export default function BulkInvitationPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F2F2F7] text-[#1D1D1F] lg:pl-[88px] font-sans overflow-hidden select-none">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F9FAFC] text-[#4A4A4A] lg:pl-[88px] font-sans overflow-hidden">
       
-      {/* --- APPLE DYNAMIC SUCCESS TOAST --- */}
+      {/* --- CUTE SUCCESS TOAST --- */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div 
-            initial={{ y: -100, opacity: 0, x: '-50%' }}
-            animate={{ y: 20, opacity: 1, x: '-50%' }}
-            exit={{ y: -100, opacity: 0, x: '-50%' }}
-            className="fixed top-0 left-1/2 z-[300] flex items-center gap-4 px-6 py-3 bg-white/80 backdrop-blur-2xl border border-white shadow-[0_20px_40px_rgba(0,0,0,0.1)] rounded-full"
+            initial={{ y: -50, opacity: 0, x: '-50%' }}
+            animate={{ y: 30, opacity: 1, x: '-50%' }}
+            exit={{ y: -50, opacity: 0, x: '-50%' }}
+            className="fixed top-0 left-1/2 z-[300] flex items-center gap-3 px-5 py-2.5 bg-white/90 backdrop-blur-xl border border-[#E0E7FF] shadow-[0_10px_30px_rgba(99,102,241,0.1)] rounded-2xl"
           >
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.1, type: "spring" }}
-              className="w-8 h-8 bg-[#34C759] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#34C759]/30"
-            >
-              <LuCheck size={20} strokeWidth={4} />
-            </motion.div>
-            <span className="text-[15px] font-bold tracking-tight">Letter Generated Successfully</span>
+            <div className="w-7 h-7 bg-[#818CF8] rounded-full flex items-center justify-center text-white">
+              <LuCheck size={16} />
+            </div>
+            <span className="text-[14px] font-medium text-[#6366F1]">All done! Letter is ready.</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -196,121 +188,114 @@ export default function BulkInvitationPage() {
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={springTransition}
-        className="w-full lg:w-[320px] h-full bg-white/70 backdrop-blur-3xl border-r border-[#D2D2D7]/50 z-20 flex flex-col p-8 overflow-y-auto"
+        transition={softSpring}
+        className="w-full lg:w-[300px] h-full bg-white/60 backdrop-blur-2xl border-r border-[#F0F2F5] z-20 flex flex-col p-8"
       >
-        <div className="mb-10">
-          <motion.div whileHover={{ scale: 1.05 }} className="mb-6 relative w-12 h-12 shadow-xl rounded-2xl overflow-hidden bg-white p-2 border border-[#D2D2D7]/30">
+        <div className="mb-12">
+          <div className="mb-4 relative w-10 h-10 shadow-sm rounded-xl overflow-hidden bg-white p-1.5 border border-[#F0F2F5]">
             <Image src="/logos/ssilogo.png" alt="Logo" fill className="object-contain" />
-          </motion.div>
-          <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
-          <p className="text-[11px] text-[#86868B] mt-0.5 font-black uppercase tracking-[0.2em]">Automated </p>
+          </div>
+          <h1 className="text-xl font-medium tracking-tight text-[#2D3748]">Invitations</h1>
+          <p className="text-[12px] text-[#A0AEC0] font-normal uppercase tracking-widest">Studio Workspace</p>
         </div>
 
-        <div className="space-y-6 flex-1">
+        <div className="space-y-5 flex-1">
             <motion.button 
-                whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,1)" }}
+                whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsModalOpen(true)}
-                className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/50 border border-white shadow-sm backdrop-blur-md transition-all cursor-pointer"
+                className="w-full flex items-center justify-between p-4 rounded-2xl bg-[#EEF2FF] border border-white hover:shadow-md transition-all cursor-pointer"
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#0071E3] rounded-xl text-white shadow-lg shadow-[#0071E3]/20">
+                    <div className="p-2 bg-white rounded-lg text-[#6366F1] shadow-sm">
                         <LuUserPlus size={18} />
                     </div>
-                    <span className="text-[15px] font-semibold">Single Recipient</span>
+                    <span className="text-[14px] font-medium">Add Recipient</span>
                 </div>
-                <LuChevronRight size={16} className="text-[#D2D2D7]" />
+                <LuChevronRight size={16} className="text-[#C7D2FE]" />
             </motion.button>
 
             <div className="relative group">
                 <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                 <motion.div 
-                    whileHover={{ scale: 1.01, borderColor: "#0071E3" }}
-                    className="w-full border-2 border-dashed border-[#D2D2D7] rounded-3xl p-10 flex flex-col items-center justify-center gap-3 bg-white/30 transition-all cursor-pointer"
+                    whileHover={{ scale: 1.01, borderColor: "#C7D2FE" }}
+                    className="w-full border-2 border-dashed border-[#E2E8F0] rounded-3xl p-8 flex flex-col items-center justify-center gap-2 bg-[#F8FAFC]/50 transition-all cursor-pointer"
                 >
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <LuUpload size={20} className="text-[#0071E3]" />
-                    </div>
-                    <span className="text-[12px] font-bold text-[#86868B] uppercase tracking-wider">Excel Drop Zone</span>
+                    <LuUpload size={20} className="text-[#94A3B8]" />
+                    <span className="text-[12px] font-medium text-[#94A3B8]">Import Excel</span>
                 </motion.div>
             </div>
 
-            <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#86868B] ml-2 uppercase tracking-widest">Effective Date</label>
+            <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-[#A0AEC0] ml-1 uppercase tracking-wider">Event Date</label>
                 <div className="relative">
-                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0071E3]" size={16} />
-                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full pl-11 pr-4 py-3.5 bg-white/80 border border-white rounded-2xl text-sm font-bold outline-none cursor-pointer focus:ring-4 focus:ring-[#0071E3]/10 transition-all" />
+                    <LuCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#F8FAFC] border border-[#F0F2F5] rounded-xl text-[13px] text-[#4A5568] outline-none focus:border-[#C7D2FE] transition-all" />
                 </div>
             </div>
         </div>
 
-        <div className="mt-10 space-y-3 pt-8 border-t border-[#D2D2D7]/30">
-          <button className="w-full py-3.5 rounded-2xl bg-[#1D1D1F] text-white text-[13px] font-bold hover:bg-black transition-all cursor-pointer flex items-center justify-center gap-2">
-            <LuDatabase size={16} /> Cloud Sync
+        <div className="mt-8 space-y-2 pt-6 border-t border-[#F0F2F5]">
+          <button className="w-full py-3 rounded-xl bg-[#2D3748] text-white text-[13px] font-medium hover:bg-[#1A202C] transition-all">
+            Cloud Sync
           </button>
-          <button onClick={() => setData([])} className="w-full py-3.5 rounded-2xl bg-white/50 text-[#FF3B30] text-[13px] font-bold hover:bg-[#FF3B30] hover:text-white transition-all cursor-pointer border border-[#FF3B30]/10">
-            <LuTrash2 className="inline mr-2" size={16} /> Clear Workspace
+          <button onClick={() => setData([])} className="w-full py-3 rounded-xl bg-transparent text-[#E53E3E] text-[12px] font-medium hover:bg-red-50 transition-all">
+            Reset Data
           </button>
         </div>
       </motion.div>
 
       {/* --- MAIN CONTENT AREA --- */}
-      <div className="flex-1 h-full flex flex-col overflow-hidden relative">
-        <header className="h-20 bg-white/30 backdrop-blur-xl border-b border-[#D2D2D7]/30 flex items-center px-10 justify-between shrink-0">
-            <h2 className="text-[19px] font-bold tracking-tight">Active Queue</h2>
-            <div className="relative flex-1 max-w-sm">
-                <LuSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={16} />
+      <div className="flex-1 h-full flex flex-col overflow-hidden">
+        <header className="h-16 bg-white/40 backdrop-blur-md border-b border-[#F0F2F5] flex items-center px-8 justify-between shrink-0">
+            <h2 className="text-[15px] font-medium text-[#4A5568]">Review List</h2>
+            <div className="relative flex-1 max-w-xs">
+                <LuSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A0AEC0]" size={14} />
                 <input 
                     type="text" 
-                    placeholder="Search database..." 
+                    placeholder="Search name..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white/60 rounded-full text-sm font-medium outline-none focus:bg-white border border-[#D2D2D7]/30 focus:border-[#0071E3] transition-all"
+                    className="w-full pl-10 pr-4 py-2 bg-white/50 rounded-full text-[13px] outline-none border border-[#F0F2F5] focus:border-[#C7D2FE] transition-all"
                 />
             </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-8 lg:p-12">
+        <main className="flex-1 overflow-auto p-8">
             <AnimatePresence mode='wait'>
             {data.length === 0 ? (
-                <motion.div {...fadeIn} className="h-full flex flex-col items-center justify-center text-[#86868B]">
-                    <div className="w-28 h-28 bg-white/40 backdrop-blur-lg rounded-[40px] flex items-center justify-center shadow-inner mb-6 border border-white">
-                        <LuFileText size={44} className="opacity-10 text-black" />
-                    </div>
-                    <p className="text-[18px] font-bold text-[#1D1D1F]">No Records Active</p>
-                    <p className="text-sm font-medium">Please import a source file or add manually.</p>
+                <motion.div {...fadeInSoft} className="h-full flex flex-col items-center justify-center text-[#A0AEC0]">
+                    <LuFileText size={40} className="mb-4 opacity-20" />
+                    <p className="text-[14px] font-normal">Your list will appear here</p>
                 </motion.div>
             ) : (
-                <motion.div {...fadeIn} className="bg-white/50 backdrop-blur-md rounded-[32px] border border-white shadow-2xl shadow-black/5 overflow-hidden">
+                <motion.div {...fadeInSoft} className="bg-white rounded-3xl border border-[#F0F2F5] shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
                     <table className="w-full text-left">
-                        <thead className="bg-[#FBFBFD]/60 border-b border-[#D2D2D7]/30">
-                            <tr className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]">
-                                <th className="px-10 py-5">Verification</th>
-                                <th className="px-10 py-5">Full Name</th>
-                                <th className="px-10 py-5">Institution</th>
-                                <th className="px-10 py-5 text-right">Download</th>
+                        <thead className="bg-[#F9FAFC] border-b border-[#F0F2F5]">
+                            <tr className="text-[11px] font-medium text-[#A0AEC0] uppercase tracking-wider">
+                                <th className="px-8 py-4">Status</th>
+                                <th className="px-8 py-4">Name</th>
+                                <th className="px-8 py-4">Institution</th>
+                                <th className="px-8 py-4 text-right">PDF</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#D2D2D7]/20">
+                        <tbody className="divide-y divide-[#F0F2F5]">
                             {filteredData.map((row) => (
-                                <motion.tr layout key={row.id} className="hover:bg-white/80 transition-colors cursor-default group">
-                                    <td className="px-10 py-5">
-                                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#34C759]/10 text-[#34C759] text-[11px] font-black tracking-tight">
-                                            <LuCheck size={14} strokeWidth={4} /> VALIDATED
+                                <motion.tr layout key={row.id} className="hover:bg-[#F9FAFC] transition-colors">
+                                    <td className="px-8 py-4">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0FDF4] text-[#22C55E] text-[11px] font-medium">
+                                          <LuCheck size={12} /> Ready
                                         </span>
                                     </td>
-                                    <td className="px-10 py-5 text-[15px] font-bold text-[#1D1D1F]">{row.name}</td>
-                                    <td className="px-10 py-5 text-[14px] text-[#86868B] font-semibold">{row.hospital || '—'}</td>
-                                    <td className="px-10 py-5 text-right">
-                                        <motion.button 
-                                            whileHover={{ scale: 1.15, rotate: 5 }}
-                                            whileTap={{ scale: 0.9 }}
+                                    <td className="px-8 py-4 text-[14px] text-[#2D3748]">{row.name}</td>
+                                    <td className="px-8 py-4 text-[13px] text-[#718096]">{row.hospital || '—'}</td>
+                                    <td className="px-8 py-4 text-right">
+                                        <button 
                                             onClick={() => handleDownloadSingle(row.name, row.hospital)}
-                                            className="p-3 bg-[#0071E3] text-white rounded-2xl shadow-lg shadow-[#0071E3]/20 cursor-pointer inline-flex transition-colors hover:bg-[#0077ED]"
+                                            className="p-2.5 text-[#6366F1] hover:bg-[#EEF2FF] rounded-xl transition-all"
                                         >
-                                            <LuDownload size={18} strokeWidth={2.5} />
-                                        </motion.button>
+                                            <LuDownload size={16} />
+                                        </button>
                                     </td>
                                 </motion.tr>
                             ))}
@@ -322,34 +307,33 @@ export default function BulkInvitationPage() {
         </main>
       </div>
 
-      {/* --- APPLE SHEET MODAL --- */}
+      {/* --- CUTE MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-black/10 backdrop-blur-md" />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/20 backdrop-blur-sm">
             <motion.div 
-              initial={{ scale: 0.85, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0, y: 40 }} transition={springTransition}
-              className="relative w-full max-w-md bg-[#F2F2F7]/95 backdrop-blur-3xl rounded-[40px] shadow-[0_40px_80px_rgba(0,0,0,0.15)] border border-white p-10"
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl border border-[#F0F2F5] p-8"
             >
-              <div className="flex justify-between items-center mb-10">
-                  <h3 className="text-2xl font-bold tracking-tight">New Recipient</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="p-2 bg-black/5 hover:bg-black/10 rounded-full cursor-pointer transition-colors"><LuX size={20} /></button>
+              <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-lg font-medium text-[#2D3748]">Quick Add</h3>
+                  <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-red-50 text-gray-400 rounded-full transition-colors"><LuX size={18} /></button>
               </div>
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <p className="text-[11px] font-black text-[#86868B] ml-2 uppercase tracking-widest">Recipient Identity</p>
-                  <input type="text" placeholder="e.g. Dr. Puneet Shukla" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-6 py-4 bg-white rounded-2xl text-[15px] font-bold shadow-sm outline-none border-none focus:ring-4 focus:ring-[#0071E3]/10 transition-all" />
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-[#A0AEC0] ml-1 uppercase">Full Name</p>
+                  <input type="text" placeholder="Who is this for?" value={singleEntry.name} onChange={(e) => setSingleEntry({...singleEntry, name: e.target.value})} className="w-full px-5 py-3.5 bg-[#F8FAFC] rounded-2xl text-[14px] outline-none border border-transparent focus:border-[#C7D2FE] transition-all" />
                 </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] font-black text-[#86868B] ml-2 uppercase tracking-widest">Institution Details</p>
-                  <input type="text" placeholder="e.g. SSI Medical Center" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-6 py-4 bg-white rounded-2xl text-[15px] font-bold shadow-sm outline-none border-none focus:ring-4 focus:ring-[#0071E3]/10 transition-all" />
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-[#A0AEC0] ml-1 uppercase">Institution</p>
+                  <input type="text" placeholder="Where do they work?" value={singleEntry.hospital} onChange={(e) => setSingleEntry({...singleEntry, hospital: e.target.value})} className="w-full px-5 py-3.5 bg-[#F8FAFC] rounded-2xl text-[14px] outline-none border border-transparent focus:border-[#C7D2FE] transition-all" />
                 </div>
                 <motion.button 
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} disabled={!singleEntry.name || isProcessing}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={!singleEntry.name || isProcessing}
                   onClick={async () => { await handleDownloadSingle(singleEntry.name, singleEntry.hospital); setIsModalOpen(false); setSingleEntry({ name: '', hospital: '' }) }}
-                  className="w-full mt-8 py-5 bg-[#0071E3] text-white text-[17px] font-bold rounded-[20px] shadow-2xl shadow-[#0071E3]/30 flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:grayscale transition-all"
+                  className="w-full mt-4 py-4 bg-[#6366F1] text-white text-[15px] font-medium rounded-2xl shadow-lg shadow-indigo-100 flex items-center justify-center disabled:opacity-30"
                 >
-                  {isProcessing ? <LuLoader className="animate-spin" /> : "Generate Document"}
+                  {isProcessing ? <LuLoader className="animate-spin" /> : "Create PDF"}
                 </motion.button>
               </div>
             </motion.div>
