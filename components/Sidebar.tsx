@@ -62,6 +62,7 @@ const menu: MenuItem[] = [
       { name: 'Analysis', path: '/certificates/analysis' },
       { name: 'Faculty Invitation', path: '/auto', badge: 'NEW' },
       { name: 'Excel Filter', path: '/filter', badge: 'NEW' },
+      {name: 'messanger', path:'/auto', badge:'New'}
     ],
   },
   { name: 'Bg Remover', icon: LuEraser, path: "/bgremover", requiredAccess: 'bgRemover' },
