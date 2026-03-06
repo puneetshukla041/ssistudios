@@ -6,7 +6,47 @@ The system provides tools for automation, analytics, asset generation, bulk oper
 The platform is built using **Next.js (App Router)** and integrates with multiple services including **MongoDB, AWS S3, Cloudinary, and SendGrid** to support scalable asset generation and distribution.
 
 ---
+---
 
+# System Architecture Diagram
+
+The SSI Studios platform follows a modular architecture built on Next.js App Router with API routes handling backend logic. The system integrates with multiple external services for storage, communication, and AI capabilities.
+
+```mermaid
+flowchart LR
+
+User[User Browser]
+
+User --> NextApp[Next.js Application]
+NextApp --> UI[React UI Components]
+NextApp --> APIRoutes[Next.js API Routes]
+
+APIRoutes --> Auth[Authentication Layer]
+APIRoutes --> AssetGen[Asset Generation Engine]
+APIRoutes --> Analytics[Usage Analytics]
+APIRoutes --> FileProcessing[File Processing Services]
+
+AssetGen --> PDF[PDF Generation]
+AssetGen --> Image[Image Processing]
+
+FileProcessing --> Sharp[Sharp Image Processor]
+FileProcessing --> XLSX[Excel Processing]
+
+APIRoutes --> MongoDB[(MongoDB Database)]
+APIRoutes --> Cloudinary[(Cloudinary Storage)]
+APIRoutes --> AWSS3[(AWS S3 Storage)]
+
+APIRoutes --> SendGrid[SendGrid Email Service]
+APIRoutes --> AI[Google Generative AI]
+
+MongoDB --> Models[Application Data Models]
+
+Models --> Certificates[Certificates]
+Models --> VisitingCards[Visiting Cards]
+Models --> IdCards[ID Cards]
+Models --> Usage[Usage Metrics]
+Models --> BugReports[Bug Reports]
+```
 # Core Features
 
 ### Digital Asset Generation
