@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import FormDataNode from "form-data"; // This is for Node.js
 import fetch from "node-fetch";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Configure this route to accept large payloads
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
