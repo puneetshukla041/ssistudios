@@ -11,6 +11,7 @@ import * as mongoose from 'mongoose';
 interface EmployeeLeanResult {
     _id: any; 
     username: string;
+    
 
 
 }
