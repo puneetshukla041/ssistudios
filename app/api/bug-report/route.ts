@@ -11,6 +11,8 @@ import * as mongoose from 'mongoose';
 interface EmployeeLeanResult {
     _id: any; 
     username: string;
+
+
 }
 
 export async function POST(req: Request) {
@@ -20,6 +22,7 @@ export async function POST(req: Request) {
         const body = await req.json();
 
         // userId in the payload is now treated as the USERNAME for lookup purposes
+        
         const { userId, title, description, rating, feedbackType } = body; 
 
         // 1. Basic Validation
