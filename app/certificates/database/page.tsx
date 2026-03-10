@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 // --- IMPORTS ---
 import HelpCard from '@/components/Certificates/ui/HelpCard'; 
-import UploadButton from '@/components/UploadButton'; 
+import UploadButton from '@/components/upload-button'; 
 import CertificateTable from '@/components/Certificates/CertificateTable';
 import HospitalPieChart from '@/components/Certificates/analysis/HospitalPieChart';
 import AddCertificateForm from '@/components/Certificates/ui/AddCertificateForm';

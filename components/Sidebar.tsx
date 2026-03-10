@@ -28,7 +28,7 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, usePathname } from 'next/navigation'
-import LoadingScreen from '@/components/aminations/LoadingScreen'
+import LoadingScreen from '@/components/animations/LoadingScreen'
 import type { UserAccess } from '@/contexts/AuthContext';
 
 // --- IOS ANIMATION PHYSICS ---

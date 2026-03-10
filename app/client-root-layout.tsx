@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext"; 
 import { UsageProvider } from "@/contexts/UsageContext"; 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 
 // --- Animated Hamburger Icon ---
@@ -49,57 +49,15 @@ const AnimatedHamburgerIcon = ({
   );
 };
 
-// --- CHAOS STYLES (The Glitch Effect) ---
-const GlobalChaosStyles = ({ active }: { active: boolean }) => {
-  if (!active) return null;
+// --- OPTIMIZED ERROR DISPLAY (No continuous animations) ---
+const ErrorDisplay = () => {
   return (
-    <style jsx global>{`
-      body {
-        overflow-x: hidden;
-        animation: shake-hard 0.2s infinite;
-        background-color: #000 !important;
-      }
-      body * {
-        user-select: none !important;
-        pointer-events: none !important;
-      }
-      img, svg, div, p, h1, h2, span, button {
-        filter: invert(1) hue-rotate(180deg) blur(0.5px);
-        animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
-      }
-      h1, h2, h3, p, span, a {
-        text-shadow: 2px 0 red, -2px 0 blue;
-        animation: glitch-text 0.1s infinite;
-        font-family: 'Courier New', Courier, monospace !important; 
-      }
-      @keyframes shake-hard {
-        0% { transform: translate(1px, 1px) rotate(0deg); }
-        10% { transform: translate(-3px, -2px) rotate(-1deg); }
-        20% { transform: translate(-3px, 0px) rotate(1deg); }
-        30% { transform: translate(3px, 2px) rotate(0deg); }
-        40% { transform: translate(1px, -1px) rotate(1deg); }
-        50% { transform: translate(-1px, 2px) rotate(-1deg); }
-        60% { transform: translate(-3px, 1px) rotate(0deg); }
-        70% { transform: translate(3px, 1px) rotate(-1deg); }
-        80% { transform: translate(-1px, -1px) rotate(1deg); }
-        90% { transform: translate(1px, 2px) rotate(0deg); }
-        100% { transform: translate(1px, -2px) rotate(-1deg); }
-      }
-      @keyframes glitch-skew {
-        0% { transform: skew(0deg); }
-        20% { transform: skew(-10deg); }
-        40% { transform: skew(10deg); }
-        60% { transform: skew(-5deg); }
-        80% { transform: skew(5deg); }
-        100% { transform: skew(0deg); }
-      }
-      @keyframes glitch-text {
-        0% { opacity: 1; transform: translateX(0); }
-        50% { opacity: 0.8; transform: translateX(2px); }
-        51% { opacity: 1; transform: translateX(-2px); }
-        100% { opacity: 1; transform: translateX(0); }
-      }
-    `}</style>
+    <div className="fixed inset-0 bg-red-900/80 z-50 flex items-center justify-center">
+      <div className="bg-red-950 border-2 border-red-500 p-6 rounded-lg max-w-md">
+        <h2 className="text-white text-xl font-bold mb-2">System Error</h2>
+        <p className="text-red-100">Please refresh the page or contact support.</p>
+      </div>
+    </div>
   );
 };
 
@@ -108,71 +66,70 @@ function AppLayout({ children }: { children: ReactNode }) {
   const auth = useAuth(); 
   const isAuthenticated = auth?.isAuthenticated;
   
-  // --- REAL TIME POLLING LOGIC ---
+  // --- OPTIMIZED: Debounced status polling ---
   const [isCrashed, setIsCrashed] = useState(false);
 
   useEffect(() => {
+    // Check status only on mount
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/system-status');
         if (res.ok) {
-           const data = await res.json();
-           setIsCrashed(data.crashed);
+          const data = await res.json();
+          setIsCrashed(data.crashed);
         }
       } catch (err) {
         console.error("Status check failed", err);
       }
     };
+    
     checkStatus();
-    const interval = setInterval(checkStatus, 3000); 
+    
+    // Poll every 30 seconds instead of 3 seconds (10x less traffic)
+    const interval = setInterval(checkStatus, 30000);
+    
     return () => clearInterval(interval);
   }, []);
-  // -------------------------------
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const forceActive = pathname === "/selector" ? "Dashboard" : undefined;
   const isEditorPage = pathname?.startsWith("/editor");
   const isLoginPage = pathname === "/login";
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
+  }, []);
 
   useEffect(() => {
-    // Only lock body if sidebar is open on MOBILE or if crashed.
-    // Otherwise let Lenis handle the scroll.
     document.body.style.overflow = (isSidebarOpen && window.innerWidth < 1024) || isCrashed ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isSidebarOpen, isCrashed]);
 
-  // Dynamic Backgrounds for Layout Wrapper
-  const themeBg = pathname === "/bgremover" ? "bg-white text-gray-900" 
-    : pathname === "/poster" ? "bg-slate-100 text-slate-900"
-    : pathname === "/idcard" ? "bg-slate-100 text-slate-900"
-    : pathname === "/userprofile" ? "bg-[#F3F4F6] text-gray-900"
-    : "bg-[#F2F2F7] text-gray-900"; // Default to iOS Gray
+  // Memoize theme configuration
+  const themeBg = useMemo(() => {
+    if (pathname === "/bgremover") return "bg-white text-gray-900";
+    if (pathname === "/poster") return "bg-slate-100 text-slate-900";
+    if (pathname === "/idcard") return "bg-slate-100 text-slate-900";
+    if (pathname === "/userprofile") return "bg-[#F3F4F6] text-gray-900";
+    return "bg-[#F2F2F7] text-gray-900";
+  }, [pathname]);
 
   if (isEditorPage) return <>{children}</>;
 
   if (!isAuthenticated && !isLoginPage) {
-      // return null; 
+    // return null; 
   }
 
   return (
     <>
-      <GlobalChaosStyles active={isCrashed} />
+      {isCrashed && <ErrorDisplay />}
 
       {!isLoginPage ? (
         <div className={`flex relative z-10 min-h-screen ${themeBg}`}>
           <Sidebar forceActive={forceActive} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
           
-          {/* ✅ FIXED FOR LENIS: 
-            1. Removed 'overflow-y-auto' (This was killing Lenis)
-            2. Removed 'h-screen' (This was locking the window)
-            3. Added 'min-h-screen' to ensure full background
-          */}
           <main className="flex-1 transition-all duration-300 relative w-full min-h-screen">
-            
-            {/* Change backdrop-blur-sm to backdrop-blur-none or simply remove it */}
-<div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit">
+            <div className="flex items-center justify-between p-4 lg:hidden sticky top-0 z-20 bg-inherit">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
                 {pathname === "/dashboard" ? "" : ""}
               </h1>

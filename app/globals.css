@@ -33,13 +33,14 @@ body {
   width: 100%;
 }
 
-/* --- LENIS CONFIGURATION --- */
+/* --- LENIS CONFIGURATION - OPTIMIZED --- */
 html.lenis, html.lenis body {
   height: auto;
 }
 
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
+  will-change: auto; /* Prevent forced GPU acceleration */
 }
 
 .lenis.lenis-smooth [data-lenis-prevent] {

@@ -1,5 +1,5 @@
 // ImagePage.tsx
-import ImageSelector from "@/components/bgremover";
+import ImageSelector from "@/components/background-remover";
 
 export default function ImagePage() {
   return (

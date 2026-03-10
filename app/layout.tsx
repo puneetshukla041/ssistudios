@@ -1,9 +1,9 @@
 // app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import ClientRootLayout from './ClientRootLayout';
-import SecurityGuard from '@/components/SecurityGuard'; 
-import SmoothScroll from '@/components/SmoothScroll';
+import ClientRootLayout from './client-root-layout';
+import SecurityGuard from '@/components/security-guard'; 
+import SmoothScroll from '@/components/smooth-scroll';
 import NextTopLoader from 'nextjs-toploader'; 
 
 const inter = Inter({ subsets: ['latin'] });
