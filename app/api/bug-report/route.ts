@@ -10,9 +10,8 @@ import * as mongoose from 'mongoose';
 // We use 'any' for _id since it could be ObjectId or a string UUID depending on how Member is setup.
 interface EmployeeLeanResult {
     _id: any; 
-    
     username: string;
-
+    
 
 
 }
