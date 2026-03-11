@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     // Get file from frontend
     const formData = await req.formData();
     const file = formData.get("image") as File;
+    
 
     if (!file) {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
