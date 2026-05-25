@@ -115,10 +115,10 @@ export const generateCertificatePDF = async (
 
       if (isV2Template) {
         // Doctor Name - centered for certificate2
-        drawCenteredText(fullName, 330, fontSizeLarge, soraSemiBoldFont);
+        drawCenteredText(fullName, 360, fontSizeLarge, soraSemiBoldFont);
 
         // Hospital Name - centered below doctor name
-        drawCenteredText(hospitalName, 308, fontSizeMedium, soraFont);
+        drawCenteredText(hospitalName, 340, fontSizeMedium, soraFont);
 
         // Date of Issue - bottom-left box
         firstPage.drawText(doi, {
@@ -132,7 +132,7 @@ export const generateCertificatePDF = async (
         // Certificate Number - center area after "Certificate No.-"
         firstPage.drawText(certificateNo, {
           x: 430,
-          y: 160,
+          y: 157,
           size: fontSizeSmall,
           font: soraSemiBoldFont,
           color: colorBlack,
