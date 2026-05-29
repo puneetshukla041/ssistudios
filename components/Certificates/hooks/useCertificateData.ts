@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     ICertificateClient,
     FetchResponse,
@@ -54,6 +54,7 @@ export const useCertificateData = (
     const [isCreating, setIsCreating] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [sortConfig, setSortConfig] = useState<SortConfig | null>({ key: '_id', direction: 'desc' });
+    const initialDataHydrated = useRef(false);
 
     // --- 1. Fetch Data Logic ---
     const fetchCertificates = useCallback(async (resetPage: boolean = false) => {
@@ -225,8 +226,8 @@ export const useCertificateData = (
 
     // --- Effects ---
     useEffect(() => {
-        // If server provided initial data, hydrate and skip initial fetch
-        if (initialData && initialData.data) {
+        // If server provided initial data, hydrate on first render only
+        if (initialData && initialData.data && !initialDataHydrated.current) {
             setCertificates(initialData.data);
             setTotalItems(initialData.total);
             setTotalPages(initialData.totalPages);
@@ -235,11 +236,12 @@ export const useCertificateData = (
             setIsLoading(false);
             setSelectedIds([]);
             onRefresh(initialData.data, initialData.total, initialData.filters.hospitals || []);
+            initialDataHydrated.current = true;
             return;
         }
         fetchCertificates();
         setSelectedIds([]);
-    }, [fetchCertificates, refreshKey]);
+    }, [fetchCertificates, refreshKey, initialData]);
 
     useEffect(() => {
         setSelectedIds([]);

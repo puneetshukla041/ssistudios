@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IVisitingCardClient, SortConfig, PAGE_LIMIT } from '../utils/constants';
 
 export const useVisitingCardData = (initialData?: { data: IVisitingCardClient[]; total: number; filters: { designations: string[] }; page?: number }) => {
@@ -10,6 +10,7 @@ export const useVisitingCardData = (initialData?: { data: IVisitingCardClient[];
   const [searchQuery, setSearchQuery] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig | null>({ key: '_id' as keyof IVisitingCardClient, direction: 'desc' });
+  const initialDataHydrated = useRef(false);
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true);
@@ -37,13 +38,14 @@ export const useVisitingCardData = (initialData?: { data: IVisitingCardClient[];
   }, [currentPage, searchQuery, designationFilter]);
 
   useEffect(() => {
-    // If initial data provided from server, hydrate and skip fetch
-    if (initialData && initialData.data) {
+    // If initial data provided from server, hydrate on first render only
+    if (initialData && initialData.data && !initialDataHydrated.current) {
       setCards(initialData.data);
       setTotalItems(initialData.total);
       setUniqueDesignations(initialData.filters?.designations || []);
       setCurrentPage(initialData.page || 1);
       setIsLoading(false);
+      initialDataHydrated.current = true;
       return;
     }
     fetchCards();
