@@ -360,22 +360,43 @@ const CertificateDatabaseClient: React.FC<Props> = ({ initialData }) => {
               </p>
             </div>
 
-            <div className="relative w-full lg:w-96 group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+            <div className="flex flex-col gap-3 w-full lg:w-auto">
+              <div className="relative w-full lg:w-96 group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiSearch className="h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search database..."
+                  value={inputQuery}
+                  onChange={(e) => setInputQuery(e.target.value)}
+                  className="
+                    block w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 
+                    text-sm text-slate-900 placeholder:text-slate-400 
+                    focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none
+                    transition-all duration-200 shadow-sm
+                  "
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search database..."
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                className="
-                  block w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 
-                  text-sm text-slate-900 placeholder:text-slate-400 
-                  focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none
-                  transition-all duration-200 shadow-sm
-                "
-              />
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <UploadButton onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
+
+                {newBatchIds.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2">
+                    <div className="text-sm text-slate-600">
+                      {newBatchIds.length} new record{newBatchIds.length === 1 ? '' : 's'} uploaded.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearBatch}
+                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                    >
+                      Clear batch
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 
