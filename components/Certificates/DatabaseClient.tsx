@@ -11,6 +11,7 @@ import UploadButton from '@/components/upload-button';
 import CertificateTable from '@/components/Certificates/CertificateTable';
 import HospitalPieChart from '@/components/Certificates/analysis/HospitalPieChart';
 import AddCertificateForm from '@/components/Certificates/ui/AddCertificateForm';
+import { BatchDownloadModal } from '@/components/Certificates/ui/BatchDownloadModal';
 import { useCertificateActions } from '@/components/Certificates/hooks/useCertificateActions';
 
 // Import Constants
@@ -35,6 +36,7 @@ const CertificateDatabaseClient: React.FC<Props> = ({ initialData }) => {
   // --- NEW: Batch Upload State (With Persistence) ---
   const [newBatchIds, setNewBatchIds] = useState<string[]>([]);
   const [isBatchLoaded, setIsBatchLoaded] = useState(false);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   // Load Batch IDs from LocalStorage on mount
   useEffect(() => {
@@ -261,6 +263,7 @@ const CertificateDatabaseClient: React.FC<Props> = ({ initialData }) => {
     if (uploadedIds && Array.isArray(uploadedIds) && uploadedIds.length > 0) {
         console.log("New Batch Detected:", uploadedIds.length);
         setNewBatchIds(uploadedIds);
+        setIsDownloadModalOpen(true); // 🎉 Auto-open download modal
     } else {
         console.warn("Upload succeeded but no IDs were returned to client.");
     }
@@ -272,6 +275,7 @@ const CertificateDatabaseClient: React.FC<Props> = ({ initialData }) => {
 
   const handleClearBatch = () => {
     setNewBatchIds([]);
+    setIsDownloadModalOpen(false);
   };
 
   const handleTableDataUpdate = useCallback(
@@ -466,6 +470,17 @@ const CertificateDatabaseClient: React.FC<Props> = ({ initialData }) => {
               </div>
             </div>
       </main>
+
+      {/* ✨ Batch Download Modal */}
+      <BatchDownloadModal
+        isOpen={isDownloadModalOpen}
+        uploadedIds={newBatchIds}
+        certificates={certificateData}
+        onClose={() => {
+          setIsDownloadModalOpen(false);
+          handleClearBatch();
+        }}
+      />
     </div>
   );
 };
