@@ -75,6 +75,8 @@ const menu: MenuItem[] = [
     children: [
       { name: 'Image Converter', path: '/converter/image', badge: 'NEW' },
       { name: 'Docs Converter', path: '/converter/docs', badge: 'NEW' },
+      { name: 'Video Converter', path: '/converter/video', badge: 'NEW' },
+
     ],
   },
   
