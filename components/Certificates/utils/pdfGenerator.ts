@@ -112,87 +112,112 @@ export const generateCertificatePDF = async (
           color: colorBlack,
         });
       };
+if (isV2Template) {
+  // certificate2.pdf page size is 780 x 540 pt
+  // In pdf-lib: higher Y = moves UP, lower Y = moves DOWN
 
-      if (isV2Template) {
-        // --- COORDINATE CONFIGURATION ---
-        const nameY = 270;        
-        const hospitalY = 245;    
-        
-        const doiX = 142;         
-        const doiY = 55;          
-        
-        const certNoX = 430;      
-        const certNoY = 75;       
+  const getFittedFontSize = (
+    text: string,
+    font: PDFFont,
+    desiredSize: number,
+    maxWidth: number,
+    minSize: number
+  ): number => {
+    let size = desiredSize;
 
-        // 1. Doctor Name - centered 
-        drawCenteredText(fullName, nameY, fontSizeLarge, soraSemiBoldFont);
+    while (
+      font.widthOfTextAtSize(text, size) > maxWidth &&
+      size > minSize
+    ) {
+      size -= 0.25;
+    }
 
-        // 2. Hospital Name - centered below doctor name
-        drawCenteredText(hospitalName, hospitalY, fontSizeMedium, soraFont);
+    return size;
+  };
 
-        // 3. Date of Issue - bottom-left box
-        firstPage.drawText(doi, {
-          x: doiX,
-          y: doiY,
-          size: fontSizeSmall,
-          font: soraSemiBoldFont,
-          color: colorBlack,
-        });
+  const drawCenteredFittedText = (
+    text: string,
+    y: number,
+    desiredSize: number,
+    minSize: number,
+    font: PDFFont,
+    maxWidth: number
+  ) => {
+    const fittedSize = getFittedFontSize(
+      text,
+      font,
+      desiredSize,
+      maxWidth,
+      minSize
+    );
 
-        // 4. Certificate Number - center area after "Certificate No.-"
-        firstPage.drawText(certificateNo, {
-          x: certNoX,
-          y: certNoY,
-          size: fontSizeSmall,
-          font: soraSemiBoldFont,
-          color: colorBlack,
-        });
-      } else {
-        // Template 1 original placement
-        firstPage.drawText(fullName, {
-          x,
-          y: yBase,
-          size: fontSizeLarge,
-          font: soraFont,
-          color: colorBlack,
-        });
+    const textWidth = font.widthOfTextAtSize(text, fittedSize);
 
-        firstPage.drawText(hospitalName, {
-          x,
-          y: yBase - 20,
-          size: fontSizeMedium,
-          font: soraSemiBoldFont,
-          color: colorBlack,
-        });
+    firstPage.drawText(text, {
+      x: (pageWidth - textWidth) / 2,
+      y,
+      size: fittedSize,
+      font,
+      color: colorBlack,
+    });
+  };
 
-        // DOI
-        const doiTextWidth = soraSemiBoldFont.widthOfTextAtSize(
-          doi,
-          fontSizeSmall
-        );
+  // Corrected positions for certificate2.pdf
+  const nameY = 324;
+  const hospitalY = 303;
 
-        firstPage.drawText(doi, {
-          x: Math.max(margin, (pageWidth - doiTextWidth) / 2) - 75,
-          y: margin + 45,
-          size: fontSizeSmall,
-          font: soraSemiBoldFont,
-          color: colorBlack,
-        });
+  const doiX = 128;
+  const doiY = 68;
 
-        // Certificate No.
-        const certTextWidth = soraSemiBoldFont.widthOfTextAtSize(
-          certificateNo,
-          fontSizeSmall
-        );
+  const certNoX = 435;
+  const certNoY = 139;
 
-        firstPage.drawText(certificateNo, {
-          x: pageWidth - certTextWidth - margin - 70,
-          y: margin + 45,
-          size: fontSizeSmall,
-          font: soraSemiBoldFont,
-          color: colorBlack,
-        });
-      }
+  // 1. Doctor Name - centered in the blank space
+  drawCenteredFittedText(
+    fullName,
+    nameY,
+    fontSizeLarge,
+    14,
+    soraSemiBoldFont,
+    pageWidth - 170
+  );
+
+  // 2. Hospital Name - centered below doctor name
+  drawCenteredFittedText(
+    hospitalName,
+    hospitalY,
+    fontSizeMedium,
+    6.5,
+    soraFont,
+    pageWidth - 190
+  );
+
+  // 3. Date of Issue - inside bottom-left box, after "Date of Issue:"
+  firstPage.drawText(doi, {
+    x: doiX,
+    y: doiY,
+    size: fontSizeSmall,
+    font: soraSemiBoldFont,
+    color: colorBlack,
+  });
+
+  // 4. Certificate Number - aligned after "Certificate No.-"
+  const fittedCertNoSize = getFittedFontSize(
+    certificateNo,
+    soraSemiBoldFont,
+    fontSizeSmall,
+    pageWidth - certNoX - 70,
+    5.5
+  );
+
+  firstPage.drawText(certificateNo, {
+    x: certNoX,
+    y: certNoY,
+    size: fittedCertNoSize,
+    font: soraSemiBoldFont,
+    color: colorBlack,
+  });
+}
     }
 
     // 3. Save and Return/Download
