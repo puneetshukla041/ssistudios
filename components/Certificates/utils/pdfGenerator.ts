@@ -114,35 +114,39 @@ export const generateCertificatePDF = async (
       };
 
       if (isV2Template) {
-        // Doctor Name - centered for certificate2
-        drawCenteredText(fullName, 360, fontSizeLarge, soraSemiBoldFont);
+        // --- COORDINATE CONFIGURATION ---
+        const nameY = 270;        
+        const hospitalY = 245;    
+        
+        const doiX = 142;         
+        const doiY = 55;          
+        
+        const certNoX = 430;      
+        const certNoY = 75;       
 
-        // Hospital Name - centered below doctor name
-        drawCenteredText(hospitalName, 340, fontSizeMedium, soraFont);
+        // 1. Doctor Name - centered 
+        drawCenteredText(fullName, nameY, fontSizeLarge, soraSemiBoldFont);
 
-        // Date of Issue - bottom-left box
+        // 2. Hospital Name - centered below doctor name
+        drawCenteredText(hospitalName, hospitalY, fontSizeMedium, soraFont);
+
+        // 3. Date of Issue - bottom-left box
         firstPage.drawText(doi, {
-          x: 142,
-          y: 82,
+          x: doiX,
+          y: doiY,
           size: fontSizeSmall,
           font: soraSemiBoldFont,
           color: colorBlack,
         });
 
-        // Certificate Number - center area after "Certificate No.-"
+        // 4. Certificate Number - center area after "Certificate No.-"
         firstPage.drawText(certificateNo, {
-          x: 430,
-          y: 157,
+          x: certNoX,
+          y: certNoY,
           size: fontSizeSmall,
           font: soraSemiBoldFont,
           color: colorBlack,
         });
-
-        // Removed paragraph:
-        // has successfully completed the
-        // Robotics Training Program
-        // provided by Sudhir Srivastava Innovations Pvt. Ltd
-        // to operate the SSI Mantra Surgical Robotic System
       } else {
         // Template 1 original placement
         firstPage.drawText(fullName, {
